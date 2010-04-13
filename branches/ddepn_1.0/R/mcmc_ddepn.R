@@ -83,7 +83,9 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		if(all(bestmodel$phi==0))
 			movetype <- sample(c(3,4),1)
 		if(all(bestmodel$phi!=0))
-			movetype <- sample(c(1,2,5),1)
+			movetype <- sample(c(2,5),1)
+			#movetype <- sample(c(1,2,5),1)
+		
 		
 		st <- system.time(b1 <- mcmc_move(bestmodel, movetypes[movetype]))
 		ret <- mcmc_accept(bestmodel, b1, newlambda)
@@ -120,11 +122,13 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		if(it%%25==1){
 			if(!is.null(pdf))
 				pdf(pdf)
-			par(mfrow=c(3,2),mar=c(3,4,1,1),oma=c(1,1,1,1))
-			plot(1:l, stats[1:l,"MAP"], type='l',ylab="",xlab="iteration")
-			plot(1:l, stats[1:l,"sn"], type='l',ylim=c(0,1),ylab="",xlab="iteration",col="blue")
+			par(mfrow=c(4,2),mar=c(3,4,1,1),oma=c(1,1,1,1))
+			plot(1:l, stats[1:l,"MAP"], type='l',ylab="",xlab="iteration",main="log posterior")
+			plot(1:l, stats[1:l,"sn"], type='l',ylim=c(0,1),ylab="",xlab="iteration",col="blue",main="SN/SP plot")
 			lines(1:l, stats[1:l,"sp"], lty=2,col="violet")
-			legend("topleft", c("sn","sp"), lty=c(1,2),col=c("blue","violet")) #,"red","orange"))			
+			legend("topleft", c("sn","sp"), lty=c(1,2),col=c("blue","violet")) #,"red","orange"))
+			plot(1:l, stats[1:l,"acpt"], lty=1, col="#222222",main="acpt")
+			plot(1:l, stats[1:l,"lacpt"], lty=1, col="#222222",main="lacpt")
 			plot(1:l, stats[1:l,"lambda"], type='l',ylim=c(0,30),ylab="lambda",xlab="iteration")			
 			boxplot(as.data.frame(stats[,"stmove"]),ylab="time")
 			if(it>1000) {

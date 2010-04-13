@@ -68,16 +68,29 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
   p <- length(P)
   diffpercent <- opts <- NULL
   numequalscore <- 0
+  autoc <- list(acf=rep(0,5),n.used=10)
   for(i in 1:maxiterations) {
-	## test if the mean of the last 20 differences of the average fitness values are 
-	## equal to 0: assume it to be normally distributed, therefore perform a t-test
-	## if H0 cannot be rejected anymore, then we reached convergence
-	if(i>20) {
-		pdiff <- t.test(diff(opts[(length(opts)-20):length(opts)]))$p.value	  
-	} else {
-		pdiff <- 0
-	}
-	if(pdiff>0.1) {
+#   #### doesn't seem to be sufficient for convergence, complaint by a reviewer from ismb
+#	## test if the mean of the last 20 differences of the average fitness values are 
+#	## equal to 0: assume it to be normally distributed, therefore perform a t-test
+#	## if H0 cannot be rejected anymore, then we reached convergence
+#	if(i>20) {
+#		pdiff <- t.test(diff(opts[(length(opts)-20):length(opts)]))$p.value	  
+#	} else {
+#		pdiff <- 0
+#	}
+#	if(pdiff>0.1) {
+#		for(ii in 1:length(P)) {
+#			P[[ii]][["iterations"]] <- i
+#		}
+#		break
+#	}
+	pdiff <- "x"
+	# terminate criterion: autocorrelation ???
+	# if all autocorrelation values for all lags are bigger than 7*sqrt(n)/n, then 
+	# stop calculation
+	if(all(autoc$acf > 7*sqrt(autoc$n.used)/autoc$n.used)) {
+		print("YEEEEEEHAAAA, autocor found stop criterion.")
 		for(ii in 1:length(P)) {
 			P[[ii]][["iterations"]] <- i
 		}
@@ -110,8 +123,15 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 		if(!is.null(pdf)) {
 			pdf(scorefile,width=8,height=10)			
 		}
-		par(mfrow=c(3,1))
+		#browser()
+		par(mfrow=c(5,1))
 		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("min: ", round(min(opts),3), " max: ", round(max(opts),3)))
+		autoc <- acf(opts, main="Autocorrelation of median scores",ci.type="ma")
+		abline(h=-2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
+		abline(h=2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
+		pautoc <- pacf(opts, main="Partial autocorrelation of median scores")
+		abline(h=-2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
+		abline(h=2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
 		plot(diff(opts), type='b', ylab="differences avg scores (t-1 -> t)",xlab="generation i+1", pch="*")
 		plot(diffpercent, type='l', ylab="percent optimumscore - avgscore", xlab="generation",main=paste("optimum(minimum difference): ",min(diffpercent)))
 		if(!is.null(pdf)) {

@@ -4,7 +4,7 @@
 ###############################################################################
 
 
-plotrepresult <- function(lst,pdf) {
+plotrepresult <- function(lst,pdf,fontsize=20) {
 	phi.final <- lst$phi
 	phi.orig <- lst$phi.orig
 	weights <- lst$weights
@@ -22,8 +22,8 @@ plotrepresult <- function(lst,pdf) {
 	} else {
 		plotdetailed(phi.orig,main="Original Graph",stimuli=stimuli)		
 	}
-	plotdetailed(phi.final,weights,main="Inferred Graph, weight>=0.8",stimuli=stimuli)
-	plotdetailed(phi.final.tr,main="Inferred, transitive.reduction",stimuli=stimuli)	
+	plotdetailed(phi.final,weights,main="Inferred Graph, weight>=0.8",stimuli=stimuli,fontsize=fontsize)
+	plotdetailed(phi.final.tr,main="Inferred, transitive.reduction",stimuli=stimuli,fontsize=fontsize)	
 	boxplot(as.data.frame(t(datx)),las=2,main="Dataset's data distribution")
 	
 	if(!is.null(result)) {

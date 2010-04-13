@@ -17,7 +17,7 @@ adjacency matrix with activation edge represented by a 1, inhibition by a 2.
 }
 \usage{
 plotdetailed(phi,weights=NULL,main="",stimuli=NULL,
-			layoutType = "dot")
+			layoutType = "dot", fontsize=40)
 get.labels(phi)
 get.arrowhead(phi)
 get.arrowtail(phi)
@@ -29,6 +29,7 @@ get.arrowtail(phi)
   \item{main}{Optional character string containing main title for the plot.}
   \item{stimuli}{List of input stimuli. Are marked as red filled nodes in the plot.}
   \item{layoutType}{The graphviz layout for drawing the network.}
+  \item{fontsize}{Fontsize of text in the plot.}
 }
 \details{
 \code{get.labels}, \code{get.arrowhead} and \code{get.arrowtail} are helper functions for
