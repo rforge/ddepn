@@ -27,7 +27,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 	gammax <- NULL
 	for(sti in 1:length(stimuli)) {
 		st <- stimuli[[sti]]
-		indices <- grep(paste("^",names(st),"&",sep=""),colnames(gammaposs))
+		indices <- grep(paste("^",paste(names(st),collapse="&"),"_",sep=""),colnames(gammaposs))
 		gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps)
 		gammax <- cbind(gammax, gx)
 	}

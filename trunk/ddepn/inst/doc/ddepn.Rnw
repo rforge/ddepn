@@ -1,0 +1,164 @@
+%\VignetteIndexEntry{Dynamic Deterministic Effects Propagation Networks - exemplary workflow}
+%\VignetteDepends{}
+%\VignetteKeywords{Pathways}
+%\VignettePackage{ddepn}
+
+
+\documentclass[11pt,a4paper]{article}
+
+%\usepackage[round]{natbib}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage[latin1]{inputenc}
+\newcommand{\gene}[1]{\emph{#1}}
+
+\setlength{\parskip}{1.5ex}
+\setlength{\parindent}{0cm}
+
+% NEW COMMANDS
+% ------------------------------------------------
+\newcommand{\Robject}[1]{\texttt{#1}}
+\newcommand{\Rpackage}[1]{\textit{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+\newcommand{\Rfunction}[1]{{\small\texttt{#1}}}
+
+\newcommand{\myincfig}[4]{
+  \setkeys{Gin}{width=#1\textwidth}
+  \begin{figure}[htbp]
+    \begin{center}
+      #2
+      \caption{\label{#3}#4}
+    \end{center}
+  \end{figure}
+  \setkeys{Gin}{width=.8\textwidth}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+<<no.nonsense,echo=FALSE,results=hide>>=
+rm(list=ls())
+@
+
+\title{Dynamic Deterministic Effects Propagation Networks (DDEPN) - exemplary workflow}
+\author{ Christian Bender \footnote{German Cancer Research Center, Im Neuenheimer Feld 580, 69120 Heidelberg, Germany. eMail: c.bender@dkfz-heidelberg.de} }
+\date{\today}
+\maketitle
+
+
+\begin{abstract}
+Network modelling in systems biology has become an important tool to
+study molecular interactions, especially in the medical field like
+cancer research. The understanding of the interplay of proteins in
+cellular signalling is the basis for the development of novel drugs
+and therapies. Here, we set up a new method for the reconstruction of
+signalling networks from time course protein data after external
+perturbation. We show how to use protein expression and
+phosphorylation data measured on Reverse Phase Protein Arrays to infer
+a signalling network among proteins of the ERBB signalling cascade in
+a human breast cancer cell line. 
+
+Our method models the signalling dynamics by a boolean signal
+propagation mechanism that defines a sequence of state transitions for
+a given network structure. A likelihood score is proposed that
+describes the probability of our measurements given a particular state
+transition matrix. We identify the optimal sequence of state
+transitions via a Hidden Markov Model. Network structure search is
+performed by a genetic algorithm that optimises the overall likelihood
+of a population of candidate networks. We test our method on simulated
+networks and data and show its increased performance in comparison to
+another Dynamical Bayesian Network approach. The reconstruction of a
+network in our real data results in several known signalling chains
+from the ERBB network, showing the validity and usefulness of our
+approach.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Using DDEPN for network inference on simulated data sets}
+This document shows an exemplary workflow to reconstruct a signalling network from 
+simulated data. An analysis on real data can be performed analogously.
+
+%% chunk 1
+<<label=Load_package,echo=FALSE, eval=FALSE>>=
+library(ddepn)
+@
+
+\section{Simulating data}
+In this section we show how to generate artificial networks and data. A reference
+signalling network is simulated and used to sample measurements that incorporate
+the network structure.
+
+First, simulate a network with 6 nodes and 2 distinct input stimuli. 
+
+<<SimulateNetwork, eval=FALSE>>=
+set.seed(12345)
+n <- 6
+signet <- signalnetwork(n=n, nstim=2, cstim=0, prop.inh=0.2)
+net <- signet$phi
+stimuli <- signet$stimuli
+weights <- signet$weights
+@
+
+Second get intensities for each protein that are based on the network structure generated above.
+
+<<SimulateData, eval=FALSE>>=
+#plotdetailed(net,weights=weights,stimuli=stimuli,fontsize=15)
+## sample data
+dataset <- makedata(net, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
+@
+
+
+\section{Running the genetic algorithm}
+Now run the genetic algorithm to reconstruct the network from above. Alternatively, if real
+are used, reconstruct the unknown network structure, based on the measurements alone.
+
+<<RunGA, results=hide, eval=FALSE>>=
+ret <- ddepn(dataset$datx, phiorig=net, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
+              pdf=NULL, multicores=TRUE, maxiterations=50, p=100, q=0.3, m=0.8, P=NULL,
+              usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100)
+@
+
+
+%\section{Experimental: MCMC sampling}
+%<<MCMCsampling, echo=FALSE, results=hide, eval=FALSE>>=
+%B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
+%ret <- ddepn(dataset$datx,phiorig=net,phi=NULL,stimuli=stimuli,
+%      th=0.5, inference="mcmc", pdf=NULL, usebics=FALSE, multicores=FALSE,
+%      maxiterations=25, lambda=5, B=B, maxiter=100)
+%@
+
+\section{Examining the results}
+After the reconstruction, the generated network can be viewed as follows:
+<<PlotTheResults, eval=FALSE>>=
+plotrepresult(ret)
+@
+\begin{figure}
+\includegraphics[width=10cm,height=10cm]{netresult}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\clearpage
+
+%\bibliographystyle{abbrv}
+%\bibliography{references}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Session Information}
+
+The version number of R and packages loaded for generating the vignette were:
+
+
+<<echo=FALSE,results=tex>>=
+toLatex(sessionInfo())
+@
+
+
+\end{document}
+
+%
+%   end of file
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
