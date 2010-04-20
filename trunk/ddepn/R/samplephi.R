@@ -20,11 +20,19 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 		phi.n <- cbind(phi[,unique(unlist(stimuli)),drop=F],prop)
 		phi.n <- phi.n[,colnames(phi)]
 	}
-	longprop <- 1:max(length(tps),(nrow(phi.n)*3))
+	longprop <- 1:max(length(tps),(nrow(phi.n)*100))
 	gammaposs <- propagate.effect.set(phi.n,longprop,stimuli,reps=reps)
 	gammaposs <- uniquegammaposs(gammaposs)
 	# now get an initial gamma matrix
-	gammax <- propagate.effect.set(phi.n,tps,stimuli,reps=reps)
+	gammax <- NULL
+	for(sti in 1:length(stimuli)) {
+		st <- stimuli[[sti]]
+		indices <- grep(paste("^",names(st),"&",sep=""),colnames(gammaposs))
+		gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps)
+		gammax <- cbind(gammax, gx)
+	}
+	#gammax <- replicatecolumns(gammaposs[,sort(sample(ncol(gammaposs),length(tps),replace=TRUE))],reps)
+	#gammax <- propagate.effect.set(phi.n,tps,stimuli,reps=reps)
 	Ltmplist <- likl(dat,gammax)
 	Ltmp <- Ltmplist$L
 	thetax <- Ltmplist$theta

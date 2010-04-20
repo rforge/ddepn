@@ -13,7 +13,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	antibodies <- rownames(dat)
 	tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
 	reps <- ((ncol(dat)/length(tps))/length(stimuli))
-	longprop <- 1:max(length(tps),(nrow(phi)*3))
+	longprop <- 1:max(length(tps),(nrow(phi)*100))
 	gammaposs <- propagate.effect.set(phi,longprop,stimuli,reps=reps)
 	gammaposs <- uniquegammaposs(gammaposs)
 	# now get an initial gamma matrix
@@ -42,7 +42,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 #		cat(".")
 #		posteriorold <- bestmodel$posterior
 #		phi <- matrix(sample(c(0,1,2),length(phit),replace=T),nrow=nrow(phit),ncol=ncol(phit),dimnames=dimnames(phit))
-#		longprop <- 1:max(length(tps),(nrow(phi)*3))
+#		longprop <- 1:max(length(tps),(nrow(phi)*100))
 #		gammaposs <- propagate.effect.set(phi,longprop,stimuli,reps=reps)
 #		gammaposs <- uniquegammaposs(gammaposs)
 #		# now get an initial gamma matrix

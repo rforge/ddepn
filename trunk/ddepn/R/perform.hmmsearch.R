@@ -39,8 +39,11 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	for(s in stimuli) {
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
 		datx <- dat[,exind]
-		longprop <- 1:max(length(tps),(nrow(phi.n)*3))
+		longprop <- 1:max(length(tps),(nrow(phi.n)*100)) # set high maximum number of propagation steps
 		gammaposs <- uniquegammaposs(propagate.effect.set(phi.n,longprop,list(s),reps=R))
+	#print(paste("*************#################***************"))
+	#print(paste("Diff longprop/ncol(gammaposs): ", max(longprop), " / ", ncol(gammaposs)))
+	#print(paste("*************#################***************"))
 		V <- rownames(datx)
 		TC <- unique(colnames(datx))
 		M <- ncol(gammaposs)
