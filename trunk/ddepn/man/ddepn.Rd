@@ -167,7 +167,7 @@ B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
 ## Genetic algorithm
 ret <- ddepn(dataset$datx, phiorig=phit, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
               pdf=NULL, multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
-              usebics=TRUE, cores=10, lambda=NULL, B=NULL, maxiter=100)	
+              usebics=TRUE, cores=10, lambda=NULL, B=NULL, maxiter=100,fanin=2)	
 ## mcmc
 ret <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
       th=0.5, inference="mcmc", pdf=NULL, usebics=FALSE, multicores=FALSE,

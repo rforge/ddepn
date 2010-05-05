@@ -10,14 +10,15 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 		phi.n <- phi
 	} else {
 		#phi <- matrix(0, nrow=length(antibodies), ncol=length(antibodies), dimnames=list(antibodies,antibodies))
-		nostimmat <- phi[,-unique(unlist(stimuli))]
+		out <- match(unique(names(unlist(stimuli))),colnames(phi))
+		nostimmat <- phi[,-out]
 		proplength <- length(antibodies)-length(unique(unlist(stimuli)))
 		propnames <- colnames(nostimmat)
 		prop <- matrix(sample(c(0,1,2),length(nostimmat),replace=TRUE),
 				nrow=nrow(nostimmat),ncol=ncol(nostimmat), dimnames=dimnames(nostimmat))
 		for(p in propnames)
 			prop[p,p] <- 0
-		phi.n <- cbind(phi[,unique(unlist(stimuli)),drop=F],prop)
+		phi.n <- cbind(phi[,out,drop=F],prop)
 		phi.n <- phi.n[,colnames(phi)]	
 	}
 	## remove ingoing edges into nodes that have more than fan.in connections

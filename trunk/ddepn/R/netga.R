@@ -22,10 +22,12 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 	  phireference <- matrix(0,nrow=length(V), ncol=length(V), dimnames=list(V,V))
 	  X <- vector("list",p)
 	  X[[1]] <- phireference
-	  notstim <- setdiff(1:nrow(datx),unlist(stimuli))
-	  phireference[,notstim] <- phireference[,notstim] + 1
-	  diag(phireference) <- 0
-	  X[[2]] <- phireference
+	  if(fanin>=nrow(phireference)) {
+	  	notstim <- setdiff(1:nrow(datx),unlist(stimuli))
+	  	phireference[,notstim] <- phireference[,notstim] + 1
+	  	diag(phireference) <- 0
+	  	X[[2]] <- phireference
+	  }
 	  if(multicores) {
 		P <- mclapply(X, getfirstphi, datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin, mc.preschedule=FALSE,mc.cores=cores)		
 	  } else {
@@ -39,6 +41,11 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
   ## check if all individuals are set correctly
   ## is this a problem of mclapply/lapply? sometimes, returnvalues in the list P are null...
   for(i in 1:length(P)) {
+	  if(length(which(colSums(ifelse(P[[i]]$phi==0,0,1))>fanin))>0 |
+			  any(P[[i]]$phi[,unique(names(unlist(stimuli)))]!=0)) {
+		  print("**********  INIT: fanin too big somewhere or edge leading to stimulus")
+		  browser()
+	  }	  
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
 		  P[[i]] <- getfirstphi(X[[i]], datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
 	  }
@@ -91,7 +98,7 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 	# if all autocorrelation values for all lags are bigger than 7*sqrt(n)/n, then 
 	# stop calculation
 	if(all(autoc$acf > 7*sqrt(autoc$n.used)/autoc$n.used)) {
-		print("YEEEEEEHAAAA, autocor found stop criterion.")
+		print("autocor: found stop criterion.")
 		for(ii in 1:length(P)) {
 			P[[ii]][["iterations"]] <- i
 		}
@@ -190,7 +197,19 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 	# do all crossovers
 	counter <- 1
     for(k in 1:ncol(crossing)) {
-      phicross <- crossover(P[[crossing[1,k]]]$phi, P[[crossing[2,k]]]$phi)
+      phicross <- crossover(P[[crossing[1,k]]]$phi, P[[crossing[2,k]]]$phi,fanin=fanin)
+  if(length(which(colSums(ifelse(phicross[[1]]==0,0,1))>fanin))>0 |
+		  any(phicross[[1]][,unique(names(unlist(stimuli)))]!=0)) {
+	  print("**********  CROSS1: fanin too big somewhere or edge leading to stimulus")
+	  browser()
+  }
+ #browser()
+  if(length(which(colSums(ifelse(phicross[[2]]==0,0,1))>fanin))>0 ||
+  			any(phicross[[2]][,unique(names(unlist(stimuli)))]!=0)) {
+	  print("**********   CROSS2: fanin too big somewhere or edge leading to stimulus")
+	  browser()
+  }
+  
 	  PP[[counter]] <- P[[crossing[1,k]]]
 	  PP[[counter]]$phi <- phicross[[1]]
 	  PP[[(counter+1)]] <- P[[crossing[2,k]]]
@@ -271,8 +290,12 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 	for(k in mutation) {
 		phitmp <- Pprime[[k]]$phi
 		oldphis[[counter]] <- phitmp
-		diag(phitmp) <- -1
-		phitmp[,unlist(stimuli)] <- matrix(-1,nrow=nrow(datx),ncol=length(unlist(stimuli)))
+		# take care of fanin
+		out <- which(colSums(ifelse(phitmp==0,0,1))>=fanin)
+		diag(phitmp) <- -1	
+		phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(datx),ncol=length(unlist(stimuli)))
+		fout <- which(which(phitmp==0,arr.ind=TRUE)[,2]%in%out)
+		phitmp[which(phitmp==0)[fout]] <- -1
 		position <- sample(which(phitmp!=-1),1) # select the position
 		types <- setdiff(c(0,1,2),phitmp[position])
 		type <- sample(types, 1) # select the type of the edge to which it will mutate
@@ -280,6 +303,11 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 		oldedges <- c(oldedges, phi.n[position])
 		newedges <- c(newedges, type)
 		phi.n[position] <- type
+	if(length(which(colSums(ifelse(phi.n==0,0,1))>fanin))>0 ||
+			any(phi.n[,unique(names(unlist(stimuli)))]!=0)) {
+		print("********** MUTATION! fanin too big somewhere or edge leading to stimulus...")
+		browser()
+	}
 		Pprime[[k]]$phi <- phi.n
 		counter <- counter + 1
 	}
