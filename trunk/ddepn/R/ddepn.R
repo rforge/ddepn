@@ -12,7 +12,7 @@
 
 ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=NULL,
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
-				  usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100) {
+				  usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100, fanin=4) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations, if not provided
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
@@ -60,7 +60,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 	
 	if(inference=="netga") {
 		scorefile <- paste("score",sub("\\.pdf","",pdf),".pdf",sep="")
-        stime <- system.time(P <- netga(dat,stimuli,P=P,maxiterations=maxiterations,p=p,q=q,m=m,multicores=multicores,usebics=usebics,cores=cores,lambda=lambda,B=B,Z=Z,maxiter=maxiter,scorefile=scorefile))
+        stime <- system.time(P <- netga(dat,stimuli,P=P,maxiterations=maxiterations,p=p,q=q,m=m,multicores=multicores,usebics=usebics,cores=cores,lambda=lambda,B=B,Z=Z,maxiter=maxiter,scorefile=scorefile,fanin=fanin))
         #if(is.null(phiorig)) {
         #	phiorig <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat)))
         #}
@@ -79,7 +79,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
         conf.act <- round(phi.activation.count/length(P),digits=3)
         conf.inh <- round(phi.inhibition.count/length(P),digits=3)
         weights.tc <- round(weights.tc/length(P),digits=3)
-        ret <- list(datx=dat, phi.activation.count=phi.activation.count,
+        ret <- list(dat=dat, phi.activation.count=phi.activation.count,
 					phi.inhibition.count=phi.inhibition.count,
 					phi.orig=phiorig, phi=NULL, weights=NULL,
 					weights.tc=weights.tc, result=result, conf.act=conf.act,conf.inh=conf.inh,
@@ -93,7 +93,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 			phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
 			ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
 						th=th, multicores=multicores, pdf=pdf, maxiterations=maxiterations,
-						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, maxiter=maxiter)
+						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, maxiter=maxiter,fanin=fanin)
 		}
 	}
 	ret

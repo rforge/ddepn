@@ -8,7 +8,7 @@
 netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, maxiter=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
-		Z=NULL, scorefile="score.pdf") {
+		Z=NULL, scorefile="score.pdf",fanin=4) {
   datx[is.na(datx)] <- 0
   V <- rownames(datx)
   tps <- unique(sapply(colnames(datx), function(x) strsplit(x,"_")[[1]][2]))
@@ -27,9 +27,9 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 	  diag(phireference) <- 0
 	  X[[2]] <- phireference
 	  if(multicores) {
-		P <- mclapply(X, getfirstphi, datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, mc.preschedule=FALSE,mc.cores=cores)		
+		P <- mclapply(X, getfirstphi, datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin, mc.preschedule=FALSE,mc.cores=cores)		
 	  } else {
-		P <- lapply(X, getfirstphi, datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z)
+		P <- lapply(X, getfirstphi, datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
 	  }
   }
   if(any(sapply(P, class)!="list")) {
@@ -40,7 +40,7 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
   ## is this a problem of mclapply/lapply? sometimes, returnvalues in the list P are null...
   for(i in 1:length(P)) {
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
-		  P[[i]] <- getfirstphi(X[[i]], datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z)
+		  P[[i]] <- getfirstphi(X[[i]], datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
 	  }
   }  
   if(usebics){

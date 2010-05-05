@@ -6,15 +6,15 @@
 
 # get the final network
 get.phi.final <- function(lst,th=0.8) {
-	n <- nrow(lst$datx)
-	rn <- rownames(lst$datx)
+	n <- nrow(lst$dat)
+	rn <- rownames(lst$dat)
 	phi.final <- matrix(0,nrow=n,ncol=n,dimnames=list(rn,rn))
 	weights <- matrix(0,nrow=n,ncol=n,dimnames=list(rn,rn))
-	weights.tc <- lst$weights.tc
-	phi.activation.count <- lst$phi.activation.count
-	phi.inhibition.count <- lst$phi.inhibition.count
-	ca <- lst$conf.act
-	ci <- lst$conf.inh
+	#weights.tc <- lst$weights.tc
+	#phi.activation.count <- lst$phi.activation.count
+	#phi.inhibition.count <- lst$phi.inhibition.count
+	ca <- signif(lst$conf.act,digits=3)
+	ci <- signif(lst$conf.inh,digits=3)
 	for(i in 1:nrow(phi.final)) {
 		for(j in 1:ncol(phi.final)) {
 			if(i==j) {

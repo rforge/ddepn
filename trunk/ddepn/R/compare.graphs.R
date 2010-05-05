@@ -5,12 +5,14 @@
 
 
 compare.graphs.tc <- function(O,M) {
-	originalnc <- detailed.to.simple.regulations(O)
-	originalc <- transitive.closure(detailed.to.simple.regulations(O),mat=T)
-	matnc <- detailed.to.simple.regulations(M)
-	matc <- transitive.closure(detailed.to.simple.regulations(M),mat=T)
-	diag(matc) <- 0
-	diag(originalc) <- 0
+	#originalnc <- detailed.to.simple.regulations(O)
+	#originalc <- transitive.closure(detailed.to.simple.regulations(O),mat=T)
+	#matnc <- detailed.to.simple.regulations(M)
+	#matc <- transitive.closure(detailed.to.simple.regulations(M),mat=T)
+	originalnc <- O
+	matnc <- M
+	#diag(matc) <- 0
+	#diag(originalc) <- 0
 	diag(matnc) <- 0
 	diag(originalnc) <- 0
 

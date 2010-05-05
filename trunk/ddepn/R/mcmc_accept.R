@@ -55,6 +55,7 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 		bestproposal <- bettermodels[[1]]
 		type <- bestproposal$lastmove
 		switch(type,
+				add=type.txt<-paste("adding edge"),
 				addactivation=type.txt<-"adding activation",
 				addinhibition=type.txt<-"adding inhibition",
 				switchtype=type.txt<-"switching type",

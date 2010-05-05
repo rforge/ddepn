@@ -5,7 +5,7 @@
 
 
 samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
-		maxiter=5, phiasis=FALSE, lambda=NULL, B=B, Z=Z) {
+		maxiter=5, phiasis=FALSE, lambda=NULL, B=B, Z=Z, fanin=4) {
 	if(phiasis) {
 		phi.n <- phi
 	} else {
@@ -18,7 +18,14 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 		for(p in propnames)
 			prop[p,p] <- 0
 		phi.n <- cbind(phi[,unique(unlist(stimuli)),drop=F],prop)
-		phi.n <- phi.n[,colnames(phi)]
+		phi.n <- phi.n[,colnames(phi)]	
+	}
+	## remove ingoing edges into nodes that have more than fan.in connections
+	fanin_omit <- which(colSums(detailed.to.simple.regulations(phi.n))>fanin)
+	if(length(fanin_omit)>0) {
+		for(fi in fanin_omit) {
+			phi.n[sample(which(phi.n[,fi]!=0),(sum(detailed.to.simple.regulations(phi.n)[,fi])-fanin)),fi] <- 0
+		}
 	}
 	longprop <- 1:max(length(tps),(nrow(phi.n)*100))
 	gammaposs <- propagate.effect.set(phi.n,longprop,stimuli,reps=reps)
