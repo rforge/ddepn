@@ -52,7 +52,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 	if(searchstatespace) {
 		bestmodel <- list(phi=phi.n,L=Lnew,aic=aicnew,bic=bicnew,dat=dat,
 				theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
-				maxiter=maxiter, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1))
+				maxiter=maxiter, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1),fanin=fanin)
 		L.res <- perform.hmmsearch(phi.n, bestmodel)	
 		gammax <- matrix(L.res$gammax,nrow=nrow(bestmodel$gamma),ncol=ncol(bestmodel$gamma),dimnames=dimnames(bestmodel$gamma))
 		thetax <- matrix(L.res$thetax,nrow=nrow(bestmodel$theta),ncol=ncol(bestmodel$theta),dimnames=dimnames(bestmodel$theta))

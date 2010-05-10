@@ -32,12 +32,13 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	stimuli <- bestmodel$stimuli
 	dat <- bestmodel$dat
 	maxiter <- bestmodel$maxiter
-	R <- bestmodel$reps
+	#R <- bestmodel$reps
 	gamprimetotal <- NULL
 	gamposstotal <- NULL
 	# separates HMM für jedes experiment, also jeden stimulus
 	for(s in stimuli) {
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
+		R <- length(exind)/length(tps)
 		datx <- dat[,exind]
 		longprop <- 1:max(length(tps),(nrow(phi.n)*100)) # set high maximum number of propagation steps
 		gammaposs <- uniquegammaposs(propagate.effect.set(phi.n,longprop,list(s),reps=R))

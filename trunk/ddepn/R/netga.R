@@ -293,7 +293,8 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 		# take care of fanin
 		out <- which(colSums(ifelse(phitmp==0,0,1))>=fanin)
 		diag(phitmp) <- -1	
-		phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(datx),ncol=length(unlist(stimuli)))
+		#phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(datx),ncol=length(unlist(stimuli)))
+		phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(datx),ncol=length(unique(unlist(stimuli))))
 		fout <- which(which(phitmp==0,arr.ind=TRUE)[,2]%in%out)
 		phitmp[which(phitmp==0)[fout]] <- -1
 		position <- sample(which(phitmp!=-1),1) # select the position
