@@ -9,40 +9,21 @@
   Internal helper for \code{\link{netga}}
 }
 \usage{
-getfirstphi(x, datx, stimuli, V, tps, reps, maxiter, lambda=NULL, B=NULL, Z=NULL)
+getfirstphi(x, dat, stimuli, V, tps, reps, maxiter, lambda=NULL, B=NULL, Z=NULL, fanin=4)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
-	A candidate network, given as adjacency matrix.
-  }
-  \item{datx}{
-	The data matrix.
-  }
-  \item{stimuli}{
-	The input stimuli list.
-  }
-  \item{V}{
-	The names of the nodes.
-  }
-  \item{tps}{
-	The time points.
-  }
-  \item{reps}{
-	The number of replicates.
-  }
-  \item{maxiter}{
-	The maximum number of iterations for the HMM.
-  }
-  \item{lambda}{
-  	The Prior influence strength.
-  }
-  \item{B}{
-  	The Prior information matrix.
-  }
-  \item{Z}{
-  	The normalisation factor for the prior distribution.
-  }
+  \item{x}{A candidate network, given as adjacency matrix.}
+  \item{dat}{The data matrix.}
+  \item{stimuli}{The input stimuli list.}
+  \item{V}{The names of the nodes.}
+  \item{tps}{The time points.}
+  \item{reps}{The number of replicates.}
+  \item{maxiter}{The maximum number of iterations for the HMM.}
+  \item{lambda}{The Prior influence strength.}
+  \item{B}{The Prior information matrix.}
+  \item{Z}{The normalisation factor for the prior distribution.}
+  \item{fanin}{Integer: maximal indegree for nodes.}
 }
 \details{
 Usually called internally.

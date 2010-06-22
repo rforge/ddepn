@@ -10,11 +10,11 @@ compute the Likelihood of the data p(D|gamma,theta) as sum of all normal densiti
 data point with the corresponding parameter chosen from theta. 
 }
 \usage{
-likl(datx,gammax)
+likl(dat,gammax)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{datx}{Data matrix as described in \link{ddepn}}
+  \item{dat}{Data matrix as described in \link{ddepn}}
   \item{gammax}{Matrix containing state vectors in the columns}
 }
 \value{

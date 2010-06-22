@@ -11,64 +11,50 @@ crossing over of nodes and connected edges between pairs of nodes and mutation
 of edges to sample the search space.
 }
 \usage{
-netga(datx, stimuli, P=NULL, maxiterations=1000, p=100,
+netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, maxiter=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
-		Z=NULL, scorefile="score.pdf")
+		Z=NULL, scorefile="score.pdf", fanin = 4)
 }
 \arguments{
-  \item{datx}{
-	The data matrix. See \code{\link{ddepn}}
-}
+  \item{dat}{
+	The data matrix. See \code{\link{ddepn}}}
   \item{stimuli}{
-	The list of stimuli. See \code{\link{ddepn}}
-}
+	The list of stimuli. See \code{\link{ddepn}}}
   \item{P}{
 	A list containing a population of network models. If NULL, an initial population
-	of networks is sampled including the empty and fully connected network.
-}
+	of networks is sampled including the empty and fully connected network.}
   \item{maxiterations}{
-	Integer, maximal number of generations.
-}
+	Integer, maximal number of generations.}
   \item{p}{
-	The size of the population. Used only if P is not provided.
-}
+	The size of the population. Used only if P is not provided.}
   \item{q}{
 	Double in [0;1]. The rate of selection or crossing over. At most \eqn{(1-q) \cdot |P|}
 	nodes are selected to persist into the next generation, but only if the fitness score more optimal
 	than the median of fitnessess in the population. If less than \eqn{(1-q)*|P|} fulfill this criterion,
-	the number \eqn{q*|P|} of crossing overs is increased accordingly.
-}
+	the number \eqn{q*|P|} of crossing overs is increased accordingly.}
   \item{m}{
 	Double in [0;1]. The mutation rate - \eqn{m \cdot |P|} networks out of the Population 
 	are mutated \emph{after} selection and crossing over. Mutations happen for edges and 
-	change the type of the edge randomly.
-}
+	change the type of the edge randomly.}
   \item{maxiter}{
-	Maximum number of iterations during the HMM.
-}
+	Maximum number of iterations during the HMM.}
   \item{multicores}{
-	Use multiple processors.
-}
+	Use multiple processors.}
   \item{usebics}{
-    Use BIC statistic for model selection.
-}
+    Use BIC statistic for model selection.}
   \item{cores}{
-    Number of cores to use in case of \code{multicores}=TRUE
-}
+    Number of cores to use in case of \code{multicores}=TRUE}
   \item{lambda}{
-  	The Prior influence strength.
-  }
+  	The Prior influence strength.}
   \item{B}{
-  	The Prior information matrix.
-  }
+  	The Prior information matrix.}
   \item{Z}{
-  	The normalisation factor for the prior distribution.
-  }
+  	The normalisation factor for the prior distribution.}
   \item{scorefile}{
   	Name of pdf-file where intermediate traces of the BIC, the differences of BICs in two succeeding 
-  	generations and a comparison of optimum and average fitness are drawn.
-  }
+  	generations and a comparison of optimum and average fitness are drawn.}
+  \item{fanin}{Integer: maximal indegree for nodes.}
 }
 \details{
 TODO

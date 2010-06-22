@@ -5,15 +5,15 @@
 
 
 mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
-	tps <- bestmodel$tps
-	stimuli <- bestmodel$stimuli
-	reps <- bestmodel$reps
-	datx <- bestmodel$dat
-	maxiter <- bestmodel$maxiter
-	TSA <- bestmodel$TSA
-	Tt <- bestmodel$Tt
-	lambda <- bestmodel$lambda
-	gammaposs <- bestmodel$gammaposs
+	#tps <- bestmodel$tps
+	#stimuli <- bestmodel$stimuli
+	#reps <- bestmodel$reps
+	#datx <- bestmodel$dat
+	#maxiter <- bestmodel$maxiter
+	#TSA <- bestmodel$TSA
+	#Tt <- bestmodel$Tt
+	#lambda <- bestmodel$lambda
+	#gammaposs <- bestmodel$gammaposs
 	B <- bestmodel$B
 	Z <- bestmodel$Z
 	#browser()

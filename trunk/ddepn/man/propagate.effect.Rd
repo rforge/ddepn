@@ -12,7 +12,7 @@ propagate.effect.simple
 Effect propagation through signalling network. Usually called internally.
 }
 \usage{
-propagate.effect.set(phi,tps,stimuli,reps=1)
+propagate.effect.set(phi,tps,stimuli,reps= rep(1, length(stimuli)))
 propagate.effect.simple(phi,tps,stimulus,reps=1)
 bin2dec(x)
 }

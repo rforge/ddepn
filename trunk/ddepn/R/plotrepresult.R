@@ -9,7 +9,7 @@ plotrepresult <- function(lst,pdf=NULL,fontsize=15) {
 	weights <- lst$weights
 	result <- lst$result
 	stimuli <- lst$stimuli
-	datx <- lst$datx
+	dat <- lst$dat
 	phi.final.tr <- transitive.reduction(phi.final)
 	if(!is.null(pdf)) {
 		pdf(pdf)
@@ -23,7 +23,7 @@ plotrepresult <- function(lst,pdf=NULL,fontsize=15) {
 	}
 	plotdetailed(phi.final,weights,main="Inferred Graph, weight>=0.8",stimuli=stimuli,fontsize=fontsize)
 	plotdetailed(phi.final.tr,main="Inferred, transitive.reduction",stimuli=stimuli,fontsize=fontsize)	
-	#boxplot(as.data.frame(t(datx)),las=2,main="Dataset's data distribution")
+	#boxplot(as.data.frame(t(dat)),las=2,main="Dataset's data distribution")
 	if(all(phi.orig==0)) {
 		plot.new()
 		text(x=0.5,y=0.5,"No SN/SP plot possible.")

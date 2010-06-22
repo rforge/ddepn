@@ -1,5 +1,7 @@
 \name{posterior}
 \alias{posterior}
+\alias{pi}
+\alias{pgs}
 \title{
 Posterior probability calculation.
 }
@@ -7,7 +9,9 @@ Posterior probability calculation.
 Posterior probability calculation. Usually called internally.
 }
 \usage{
-posterior(phi, L, lambda, B, Z)
+posterior(phi, L, lambda, B, Z, gam=2.2, it=500, K=0.8)
+pi(i,gam,N)
+pgs(phi,gam,K=0.8,it=500)
 }
 \arguments{
   \item{phi}{
@@ -24,6 +28,18 @@ posterior(phi, L, lambda, B, Z)
   }
   \item{Z}{
 	The normalisation factor for the prior.
+  }
+  \item{gam}{
+  	degree distribution coefficient: \eqn{P(k) ~ k^gam}
+  }
+  \item{N}{
+  	Number of nodes
+  }
+  \item{K}{
+  	Scaling factor/Strength
+  }
+  \item{it}{
+  	Number of iterations for prior sampling.
   }
 }
 \details{

@@ -11,7 +11,7 @@ and infers the most likely network structure underlying the data.
 \usage{
 ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=NULL,
       multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
-      usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100)
+      usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100, fanin = 4)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,59 +20,42 @@ ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=
 		Matrix of double values. The data matrix to be used. Contains antibody measurements in
 		the rows and experiments (T timepoints in each R replicates) in the columns. Each
 		experiment is labeled	by the respective perturbation in the column name. See section Details
-		for an example.
-	}
+		for an example.S}
 	\item{phiorig}{
 		Adjacency matrix. Original network used for comparison to the inferred net. Entries
 		can be either 0, 1 or 2, for \emph{no edge}, \emph{activation} or \emph{inhibition},
-		respectively. NULL if no reference network is given.
-	}
+		respectively. NULL if no reference network is given.}
 	\item{phi}{
 		Adjacency matrix. Network to start the search with. Entries
-    can be either 0, 1 or 2, for \emph{no edge}, \emph{activation} or \emph{inhibition},
-    respectively. NULL if no start network should be initialised automatically.
-	}	
+    	can be either 0, 1 or 2, for \emph{no edge}, \emph{activation} or \emph{inhibition},
+    	respectively. NULL if no start network should be initialised automatically.}	
 	\item{stimuli}{
 		List containing the different perturbations in the system. See section Details for an
-		example. 
-	}
+		example. }
 	\item{th}{Threshold for inclusion of an edge in the final network. If an edge occures 
-    more than \eqn{th*p} times in all individuals, it is included in the 
-    resulting network.
-  }
+    	more than \eqn{th*p} times in all individuals, it is included in the 
+    	resulting network.}
 	\item{inference}{String giving the type of network search. 
 		\code{netga} Uses a genetic algorithm for network inference.
-		\code{mcmc} MCMC sampling for network inference.
-	}
-	\item{pdf}{String describing a path. If given, store output plots here
-	}
+		\code{mcmc} MCMC sampling for network inference.}
+	\item{pdf}{String describing a path. If given, store output plots here}
 	\item{multicores}{TRUE for using multiple cores and parallelize the repeated network
 		reconstruction. FALSE for standard sequential handling of all repeats (needs
-		R-package multicore).
-	}
+		R-package multicore).}
 	\item{maxiterations}{Integer, Maximum number of generations in
-		  \code{\link{netga}} or maximum number of iterations in \code{\link{mcmc_ddepn}}.
-	}
+		  \code{\link{netga}} or maximum number of iterations in \code{\link{mcmc_ddepn}}.}
 	\item{p}{Integer, number of individuals in
-		  the population in \code{\link{netga}}.
-	}
-	\item{q}{Double in [0;1], selection (1-q) and crossover (q) rate in \code{\link{netga}}.
-	}
-	\item{m}{Double in [0;1], mutation rate in \code{\link{netga}}.
-	}
+		  the population in \code{\link{netga}}.}
+	\item{q}{Double in [0;1], selection (1-q) and crossover (q) rate in \code{\link{netga}}.}
+	\item{m}{Double in [0;1], mutation rate in \code{\link{netga}}.}
 	\item{P}{List containing initial population of networks
-		  for \code{\link{netga}}. Set to NULL if start population should be generated automatically.
-	}
-	\item{usebics}{Use BIC statistic for model selection. (only for \code{\link{netga}})
-	}
-	\item{cores}{Number of cores to use in case of \code{multicores}=TRUE
-	}
-	\item{maxiter}{Maximum number of iterations in the HMM search.
-	}
-	\item{lambda}{The Prior influence strength.
-	}
-  \item{B}{The Prior information matrix.
-  }
+		  for \code{\link{netga}}. Set to NULL if start population should be generated automatically.}
+	\item{usebics}{Use BIC statistic for model selection. (only for \code{\link{netga}})}
+	\item{cores}{Number of cores to use in case of \code{multicores}=TRUE}
+	\item{maxiter}{Maximum number of iterations in the HMM search.}
+	\item{lambda}{The Prior influence strength.}
+  	\item{B}{The Prior information matrix.}
+  	\item{fanin}{Integer: maximal indegree for nodes.}
 }
 \details{
   \describe{

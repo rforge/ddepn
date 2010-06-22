@@ -6,12 +6,13 @@
 Do a crossover of two networks at a random node and exchange all connected edges.
 }
 \usage{
-crossover(phi1, phi2)
+crossover(phi1, phi2, fanin)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{phi1}{ Adjacency matrix, the first network. }
   \item{phi2}{ Adjacency matrix, the second network. }
+  \item{fanin}{ Max indegree of node. }
 }
 \details{
 Chooses a random node and performs crossover of network \code{phi1} and \code{phi2}. Used for \code{\link{netga}}.

@@ -4,11 +4,11 @@
 ###############################################################################
 
 
-propagate.effect.set <- function(phi,tps,stimuli,reps=1) {
+propagate.effect.set <- function(phi,tps,stimuli,reps=rep(1,length(stimuli))) {
 	gam <- NULL
 	for(i in 1:length(stimuli)) {
 		stimulus <- stimuli[[i]]
-		tmp <- propagate.effect.simple(phi,tps,stimulus,reps)		
+		tmp <- propagate.effect.simple(phi,tps,stimulus,reps[i])		
 		colnames(tmp) <- paste(paste(names(stimulus),collapse="&"), colnames(tmp), sep="_")
 		gam <- cbind(gam, tmp)
 	}

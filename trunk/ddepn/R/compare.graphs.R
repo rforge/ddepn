@@ -5,9 +5,9 @@
 
 
 compare.graphs.tc <- function(O,M) {
-	#originalnc <- detailed.to.simple.regulations(O)
+	originalnc <- detailed.to.simple.regulations(O)
 	#originalc <- transitive.closure(detailed.to.simple.regulations(O),mat=T)
-	#matnc <- detailed.to.simple.regulations(M)
+	matnc <- detailed.to.simple.regulations(M)
 	#matc <- transitive.closure(detailed.to.simple.regulations(M),mat=T)
 	originalnc <- O
 	matnc <- M
@@ -16,7 +16,7 @@ compare.graphs.tc <- function(O,M) {
 	diag(matnc) <- 0
 	diag(originalnc) <- 0
 
-	## inhibitionen/aktivierungen richtig zählen
+	## inhibitionen/aktivierungen richtig zï¿½hlen
 	tp <- length(which(originalnc==matnc & (originalnc==1 | originalnc==2)))
 	tn <- length(which(originalnc==matnc & originalnc==0))
 	fn <- length(which(originalnc!=matnc & (originalnc==1 | originalnc==2)))
@@ -24,25 +24,25 @@ compare.graphs.tc <- function(O,M) {
 	
 	## sieht gut aus, nicht sicher, ob ganz richtig, addiert sich jedenfalls zu
 	## tp + tn + fp + fn = summe(kanten)
-	## gründe für dieses zählen:
+	## grï¿½nde fï¿½r dieses zï¿½hlen:
 	## tp: kanten, die implizit in O vorhanden, werden oft direkt in I gelernt, daher tp
 	## fp: kanten, die direkt in I gelernt werden, nur dann falsch, wenn auch nicht implizit in O
 	## tn: wenn methode sagt, in den daten gibt es die kanten nicht (Iij=0) UND die kante ist
-	##     in dem originalgraphen auch wirklich nicht da, dann ist das als TN zu zählen
+	##     in dem originalgraphen auch wirklich nicht da, dann ist das als TN zu zï¿½hlen
 	## fn: wenn ich kante in I nicht lerne, sie aber im originalgraphen drin ist, dann ist sie fn
 	#tp = sum(matnc[originalc==1]==1,na.rm=TRUE)
 	#tn = sum(matnc[originalnc==0]==0,na.rm=TRUE)
 	#fp = sum(matnc[originalc==0]==1,na.rm=TRUE)
 	#fn = sum(matnc[originalnc==1]==0,na.rm=TRUE) 
 
-	## graphen soi lassen wie sie sind und nur echte, direkte verbindungen zählen
+	## graphen soi lassen wie sie sind und nur echte, direkte verbindungen zï¿½hlen
 	## ist nicht besonders gut, aber immerhin besser als AUC 0.5
 	#tp = sum(matnc[originalnc==1]==1,na.rm=TRUE)
 	#tn = sum(matnc[originalnc==0]==0,na.rm=TRUE) 
 	#fp = sum(matnc[originalnc==0]==1,na.rm=TRUE) 
 	#fn = sum(matnc[originalnc==1]==0,na.rm=TRUE)  
 	
-	## wäre auch richtig:
+	## wï¿½re auch richtig:
 	#tp = sum(matnc[originalc==1]==1,na.rm=TRUE)
 	#tn = sum(matnc[originalc==0]==0,na.rm=TRUE) 
 	#fp = sum(matnc[originalc==0]==1,na.rm=TRUE) 
@@ -69,7 +69,7 @@ compare.graphs.tc <- function(O,M) {
 
 #
 #
-### zähle echte/falsche aktiv/passiv stati
+### zï¿½hle echte/falsche aktiv/passiv stati
 #compare.graphs.ep <- function(O,M,tps,stimuli) {
 #	oprop <- propagate.effect.set(O,tps,stimuli,reps=1)
 #	mprop <- propagate.effect.set(M,tps,stimuli,reps=1)

@@ -5,14 +5,15 @@
 # nodes: names of the nodes in the network
 
 
-netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
+netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, maxiter=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile="score.pdf",fanin=4) {
-  datx[is.na(datx)] <- 0
-  V <- rownames(datx)
-  tps <- unique(sapply(colnames(datx), function(x) strsplit(x,"_")[[1]][2]))
-  reps <- ((ncol(datx)/length(tps))/length(stimuli))
+  dat[is.na(dat)] <- 0
+  V <- rownames(dat)
+  tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
+ # reps <- ((ncol(dat)/length(tps))/length(stimuli))
+  reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
   phireference <- matrix(0,nrow=length(V), ncol=length(V), dimnames=list(V,V))
 
   #####################################################################
@@ -23,15 +24,15 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 	  X <- vector("list",p)
 	  X[[1]] <- phireference
 	  if(fanin>=nrow(phireference)) {
-	  	notstim <- setdiff(1:nrow(datx),unlist(stimuli))
+	  	notstim <- setdiff(1:nrow(dat),unlist(stimuli))
 	  	phireference[,notstim] <- phireference[,notstim] + 1
 	  	diag(phireference) <- 0
 	  	X[[2]] <- phireference
 	  }
 	  if(multicores) {
-		P <- mclapply(X, getfirstphi, datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin, mc.preschedule=FALSE,mc.cores=cores)		
+		P <- mclapply(X, getfirstphi, dat=dat, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin, mc.preschedule=FALSE,mc.cores=cores)		
 	  } else {
-		P <- lapply(X, getfirstphi, datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
+		P <- lapply(X, getfirstphi, dat=dat, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
 	  }
   }
   if(any(sapply(P, class)!="list")) {
@@ -47,7 +48,7 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 		  browser()
 	  }	  
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
-		  P[[i]] <- getfirstphi(X[[i]], datx=datx, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
+		  P[[i]] <- getfirstphi(X[[i]], dat=dat, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
 	  }
   }  
   if(usebics){
@@ -293,8 +294,8 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 		# take care of fanin
 		out <- which(colSums(ifelse(phitmp==0,0,1))>=fanin)
 		diag(phitmp) <- -1	
-		#phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(datx),ncol=length(unlist(stimuli)))
-		phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(datx),ncol=length(unique(unlist(stimuli))))
+		#phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(dat),ncol=length(unlist(stimuli)))
+		phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(dat),ncol=length(unique(unlist(stimuli))))
 		fout <- which(which(phitmp==0,arr.ind=TRUE)[,2]%in%out)
 		phitmp[which(phitmp==0)[fout]] <- -1
 		position <- sample(which(phitmp!=-1),1) # select the position
@@ -318,7 +319,7 @@ netga <- function(datx, stimuli, P=NULL, maxiterations=1000, p=100,
 	} else {
 			ret <- lapply(Pprime[mutation], function(x) perform.hmmsearch(x$phi, x))	
 	}
-#	## fang ab, dass manchmal leere Werte zurückgegeben werden, warum???
+#	## fang ab, dass manchmal leere Werte zurï¿½ckgegeben werden, warum???
 	for(k in 1:length(ret)) {
 		if(is.null(ret[[k]])){
 			cat("*!*")

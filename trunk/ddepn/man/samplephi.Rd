@@ -11,7 +11,7 @@ Internal function.
 }
 \usage{
 samplephi(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
-		maxiter=5, phiasis=FALSE, lambda=NULL, B=B, Z=Z)
+		maxiter=5, phiasis=FALSE, lambda=NULL, B=B, Z=Z, fanin=4)
 initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
 		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL)
 }
@@ -30,6 +30,7 @@ initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
   \item{antibodies}{Character vector of protein names in the network.}
   \item{searchstatespace}{Do statespacesearch in initial sampling?}
   \item{phiasis}{TRUE for taking a given phi matrix as sample}
+  \item{fanin}{Integer: maximal indegree for nodes.}
 }
 \details{
 Used for initializing random networks. Called internally.

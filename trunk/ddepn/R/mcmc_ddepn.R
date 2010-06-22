@@ -6,13 +6,14 @@
 
 mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		th=0.8, multicores=FALSE, pdf=NULL, maxiterations=10000,
-		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=Z,maxiter=30,fanin=4) {
+		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,maxiter=30,fanin=4) {
 	diag(B) <- 0
 	# initialise
 	#dat[is.na(dat)] <- 0
 	antibodies <- rownames(dat)
 	tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
-	reps <- ((ncol(dat)/length(tps))/length(stimuli))
+	#reps <- ((ncol(dat)/length(tps))/length(stimuli))
+	reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
 	longprop <- 1:max(length(tps),(nrow(phi)*100))
 	gammaposs <- propagate.effect.set(phi,longprop,stimuli,reps=reps)
 	gammaposs <- uniquegammaposs(gammaposs)
@@ -21,7 +22,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	for(sti in 1:length(stimuli)) {
 		st <- stimuli[[sti]]
 		indices <- grep(paste("^",paste(names(st),collapse="&"),"_",sep=""),colnames(gammaposs))
-		gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps)
+		gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps[sti])
 		gammax <- cbind(gammax, gx)
 	}
 	#gammax <- propagate.effect.set(phi,tps,stimuli,reps=reps)
@@ -139,11 +140,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			}
 		}
 	}
-	#bestmodel[["MAPtrace"]] <- maps
-	#colnames(stats) <- c("MAP", "tp","tn","fp","fn","sp","sn")
 	bestmodel[["stats"]] <- stats
 	bestmodel[["freqa"]] <- freqa
 	bestmodel[["freqi"]] <- freqi
-	#bestmodel[["datx"]] <- dat
 	bestmodel
 }
