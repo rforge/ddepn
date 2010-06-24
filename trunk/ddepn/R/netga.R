@@ -36,7 +36,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  }
   }
   if(any(sapply(P, class)!="list")) {
-	  print("netga.R: Some elements in the network list P seem to be empty.")
+	  print("netga.R, line 39: Some elements in the network list P seem to be empty.")
 	  browser()
   }
   ## check if all individuals are set correctly
