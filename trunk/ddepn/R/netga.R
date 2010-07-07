@@ -10,6 +10,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile="score.pdf",fanin=4) {
   dat[is.na(dat)] <- 0
+  quantL <- 1
+  quantBIC <- 5
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
  # reps <- ((ncol(dat)/length(tps))/length(stimuli))
@@ -53,7 +55,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   }  
   if(usebics){
 	  wks <- sapply(P, function(x) x$bic)
-	  optwks <- quantile(wks)[3]
+	  optwks <- quantile(wks)[quantBIC]
 	  oldoptwks <- -Inf
 	  wks2 <- wks - max(wks) -1
 	  probs <- wks2/sum(wks2)
@@ -64,7 +66,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  } else {
 		  wks <- sapply(P, function(x) x$posterior)
 	  }
-	  optwks <- quantile(wks)[3]
+	  optwks <- quantile(wks)[quantL]
 	  oldoptwks <- Inf
 	  wks2 <- wks + abs(min(wks)) +1
 	  probs <- wks2/sum(wks2)
@@ -98,18 +100,18 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	# terminate criterion: autocorrelation ???
 	# if all autocorrelation values for all lags are bigger than 7*sqrt(n)/n, then 
 	# stop calculation
-	if(all(autoc$acf > 7*sqrt(autoc$n.used)/autoc$n.used)) {
-		print("autocor: found stop criterion.")
-		for(ii in 1:length(P)) {
-			P[[ii]][["iterations"]] <- i
-		}
-		break
-	}
-	# terminate criterion: 10x equal optimal score, then return
+	###if(all(autoc$acf > 7*sqrt(autoc$n.used)/autoc$n.used)) {
+	###	print("autocor: found stop criterion.")
+	###	for(ii in 1:length(P)) {
+	###		P[[ii]][["iterations"]] <- i
+	###	}
+	###	break
+	###}
+	# terminate criterion: 50x equal optimal score, then return
 	if(oldoptwks==optwks) {
 		numequalscore <- numequalscore + 1
 		print(paste("No improvement in optimal score for ", numequalscore, " times."))
-		if(numequalscore==10) {
+		if(numequalscore==50) {
 			for(ii in 1:length(P)) {
 				P[[ii]][["iterations"]] <- i
 			}
@@ -261,8 +263,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		wks <- sapply(Pprime, function(x) x$bic)
 		wks2 <- wks - max(wks) -1
 		probs <- wks2/sum(wks2)
-		#optwks <- quantile(wks,na.rm=T)[2] # 25% quantile
-		optwks <- quantile(wks,na.rm=T)[3] # median
+		#optwks <- quantile(wks,na.rm=T)[2] # 75% quantile
+		optwks <- quantile(wks,na.rm=T)[quantBIC] # median
 	} else {
 		# maximize over posterior if prior is given
 		if(is.null(lambda)) {
@@ -272,8 +274,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		}
 		wks2 <- wks + abs(min(wks)) +1
 		probs <- wks2/sum(wks2)
-		#optwks <- quantile(wks,na.rm=T)[4] # 75% quantile
-		optwks <- quantile(wks,na.rm=T)[3] # median
+		#optwks <- quantile(wks,na.rm=T)[4] # 25% quantile
+		optwks <- quantile(wks,na.rm=T)[quantL] # median
 	}
 	
     ##############
@@ -364,7 +366,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		wks <- sapply(Pprime, function(x) x$bic)
 		wks2 <- wks - max(wks) -1
 		probs <- wks2/sum(wks2)
-		optwks <- quantile(wks,na.rm=T)[3] # median
+		#optwks <- quantile(wks,na.rm=T)[2] # 75%
+		optwks <- quantile(wks,na.rm=T)[quantBIC] # median
 	} else {
 		# maximize over posterior if prior is given
 		if(is.null(lambda)) {
@@ -374,7 +377,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		}
 		wks2 <- wks + abs(min(wks)) +1
 		probs <- wks2/sum(wks2)
-		optwks <- quantile(wks,na.rm=T)[3] # median
+		#optwks <- quantile(wks,na.rm=T)[4] # 25%
+		optwks <- quantile(wks,na.rm=T)[quantL] # median
 	}
     P <- Pprime
 	garbage <- gc(verbose=FALSE)
