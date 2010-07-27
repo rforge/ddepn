@@ -10,8 +10,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile="score.pdf",fanin=4) {
   dat[is.na(dat)] <- 0
-  quantL <- 1
-  quantBIC <- 5
+  quantL <- 3
+  quantBIC <- 3
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
  # reps <- ((ncol(dat)/length(tps))/length(stimuli))

@@ -12,7 +12,12 @@ mcmc_performance <- function(lst) {
 	stats <- NULL
 	for(th in thlim) {
 		lst <- get.phi.final(lst,th=th)
-		comp <- compare.graphs.tc(O=O,M=lst$phi)
+		if(is.null(O)) {
+			comp <- rep(0,8)
+			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
+		} else {
+			comp <- compare.graphs.tc(O=O,M=lst$phi)
+		}
 		stats <- rbind(stats,comp[1:6])
 	}
 	x <- c(0,stats[,"sp"],1)

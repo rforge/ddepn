@@ -40,8 +40,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		posteriorinit <- posterior(phi, sum(Linit), lambda, B, Z)
 	}
 	#}
-	#movetypes <- c("switchtype","delete","addactivation","addinhibition","revert") ## v1
-	movetypes <- c("add","delete","revert") ## v2
+	movetypes <- c("switchtype","delete","addactivation","addinhibition","revert") ## v1
+	#movetypes <- c("add","delete","revert") ## v2
 	
 	bestmodel <- list(phi=phi,L=Linit,aic=aicinit,bic=bicinit,posterior=posteriorinit,dat=dat,
 			theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
@@ -60,12 +60,12 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		newlambda <- min(max(0.01,newlambda),30)
 		movetype <- sample(1:length(movetypes),1)
 		if(all(bestmodel$phi==0))
-			movetype <- 1 # add, ## v2
-			#movetype <- sample(c(3,4),1) ## v1
+			#movetype <- 1 # add, ## v2
+			movetype <- sample(c(3,4),1) ## v1
 		if(all(bestmodel$phi!=0))
-			movetype <- sample(c(2,3),1) # delete, revert, ## v2
+			#movetype <- sample(c(2,3),1) # delete, revert, ## v2
 			#movetype <- sample(c(2,5),1)## v1
-			#movetype <- sample(c(1,2,5),1)## v1
+			movetype <- sample(c(1,2,5),1)## v1
 		
 		st <- system.time(b1 <- mcmc_move(bestmodel, movetypes[movetype]))
 		ret <- mcmc_accept(bestmodel, b1, newlambda)
@@ -92,8 +92,11 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		
 		if(!is.null(phiorig)) {
 			comp <- compare.graphs.tc(O=phiorig,M=lst$phi)
-			stats[it,] <- as.matrix(cbind(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3]))
+		} else {
+			comp <- rep(0,8)
+			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
 		}
+		stats[it,] <- as.matrix(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3]))
 		# some convergence statistic
 		#SSW <- sd(stats[,"MAP"],na.rm=T)
 		#SSB <- 
@@ -116,7 +119,12 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			#plot(1:l, stats[1:l,"lacpt"], lty=1, col="#222222",main="lacpt",pch=".")
 			#plot(1:l, stats[1:l,"lambda"], type='l',ylim=c(0,30),ylab="lambda",xlab="iteration")			
 			#boxplot(as.data.frame(stats[,"stmove"]),ylab="time")
-			plotdetailed(phiorig,stimuli=bestmodel$stimuli,fontsize=15)
+			if(is.null(phiorig)) {
+				plot.new()
+				text(0.5,0.5,labels="no origininal network given")
+			} else {
+				plotdetailed(phiorig,stimuli=bestmodel$stimuli,fontsize=15)
+			}
 			if(it>1000) {
 				boxplot(as.data.frame(stats[(1000:it),c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
 						main=paste("avgSN: ", signif(median(stats[(1000:it),"sn"]),digits=4), "avgSP: ", signif(median(stats[(1000:it),"sp"]),digits=4)))

@@ -42,10 +42,10 @@ mcmc_move <- function(bestmodel, type) {
 		possback <- which(phi==0)
 		
 	}
-#	if(type=="switchtype") {
-#		poss <- which(bestmodel$phi!=0)
-#		possback <- poss
-#	}
+	if(type=="switchtype") {
+		poss <- which(bestmodel$phi!=0)
+		possback <- poss
+	}
 	if(type=="revert") {
 		phi <- bestmodel$phi
 		fanin_omit <- which(colSums(detailed.to.simple.regulations(bestmodel$phi))>=fanin)
@@ -94,7 +94,7 @@ mcmc_move <- function(bestmodel, type) {
 		}
 		switch(type,
 				add=phi.n[i] <- sample(c(1,2),1),
-				#switchtype=phi.n[i] <- phi.n[i]%%2 + 1,
+				switchtype=phi.n[i] <- phi.n[i]%%2 + 1,
 				delete=phi.n[i] <- 0,
 				reverse=phi.n <- reverse.direction(phi.n,i))
 if(any(colSums(detailed.to.simple.regulations(phi.n))>fanin))
