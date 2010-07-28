@@ -4,6 +4,26 @@
 # Author: benderc
 ###############################################################################
 
+# sparsity prior
+#posterior <- function(phi, L, lambda, B=NULL, Z=NULL, gam=2.2, it=500, K=0.8) {
+posterior <- function(phi, L, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL) {
+	laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
+	sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
+	if(laplace) {
+		# B has same dimensions as phi, reduce phi to network with only one edge type
+		EG <- sum(abs(B - detailed.to.simple.regulations(phi)))
+		#PGlambda <- log2(exp(-lambda * EG)) - Z
+		#PGlambda <- log2(2^(-lambda * EG)) - Z
+		PGlambda <- (-lambda * EG) - Z
+		post <- L + PGlambda
+	} else if(sparsity) {
+		post <- L + log2(pgs(phi,gam,K,it))
+	} else {
+		stop("posterior.R: Error - Prior information not specified correctly.")
+	}
+	post
+}
+
 ## laplace prior as suggested by Froehlich et. al. 2007
 #posterior2 <- function(phi, L, lambda, B, Z) {
 #	# B has same dimensions as phi, reduce phi to network with only one edge type
@@ -16,10 +36,10 @@
 #}
 
 # sparsity prior
-posterior <- function(phi, L, lambda, B=NULL, Z=NULL, gam=2.2, it=500, K=0.8) {
-	post <- L + log2(pgs(phi,gam,K,it))
-	post
-}
+#posterior3 <- function(phi, L, lambda, B=NULL, Z=NULL, gam=2.2, it=500, K=0.8) {
+#	post <- L + log2(pgs(phi,gam,K,it))
+#	post
+#}
 
 pi <- function(i,gam,N) {
 	(1-(1/(1-gam)))/(N^(1-(1/(1-gam)))) * i^(-(1/(gam-1)))
@@ -27,7 +47,7 @@ pi <- function(i,gam,N) {
 
 ## phi: network
 ## N : number of nodes
-## gam: degree distribution coefficient: P(k) ~ k^gam
+## gam: degree distribution coefficient: P(K) ~ K^gam
 ## perm: permutation
 pgs <- function(phi,gam,K=0.8,it=500) {
 	N <- nrow(phi)

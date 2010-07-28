@@ -5,7 +5,7 @@
 
 
 samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
-		maxiter=5, phiasis=FALSE, lambda=NULL, B=B, Z=Z, fanin=4) {
+		maxiter=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL) {
 	if(phiasis) {
 		phi.n <- phi
 	} else {
@@ -61,17 +61,19 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 		aicnew <- L.res$aic		
 	}
 	# if prior is given
-	if(is.null(lambda)) {
-		postnew <- NULL
+	laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
+	sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
+	if(laplace || sparsity) {
+		postnew <- posterior(phi.n, Lnew, lambda, B, Z, gam, it, K)
 	} else {
-		postnew <- posterior(phi.n, Lnew, lambda, B, Z)
+		postnew <- NULL
 	}
-	return(list(phi.n=phi.n,gammax=gammax,thetax=thetax,posterior=postnew,Lnew=Lnew,bicnew=bicnew,aicnew=aicnew,gammaposs=gammaposs,lambda=lambda,B=B,Z=Z))
+	return(list(phi.n=phi.n,gammax=gammax,thetax=thetax,posterior=postnew,Lnew=Lnew,bicnew=bicnew,aicnew=aicnew,gammaposs=gammaposs,lambda=lambda,B=B,Z=Z,gam=gam,it=it,K=K))
 }
 
 
 initialphi <- function(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
-		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL) {
+		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL) {
 	phimax <- phi
 	thetamax <- thetax
 	gammamax <- gammax
@@ -84,9 +86,9 @@ initialphi <- function(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
 			cat(".")
 		
 		if(multicores) {
-			jobs[[i]] <- parallel(samplephi(phimax,stimuli, antibodies, tps, reps, dat, lambda=lambda, B=B, Z=Z))	
+			jobs[[i]] <- parallel(samplephi(phimax,stimuli, antibodies, tps, reps, dat, lambda=lambda, B=B, Z=Z, gam=gam, it=it, K=K))	
 		} else {
-			jobs[[i]] <- samplephi(phimax,stimuli, antibodies, tps, reps, dat, lambda=lambda, B=B, Z=Z)
+			jobs[[i]] <- samplephi(phimax,stimuli, antibodies, tps, reps, dat, lambda=lambda, B=B, Z=Z, gam=gam, it=it, K=K)
 		}
 	}
 	if(multicores)
@@ -108,6 +110,6 @@ initialphi <- function(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
 			gammaposs <- res$gammaposs
 		}
 	}
-	return(list(phi=phimax, L=Lmax, aic=aicmin, bic=bicmin, posterior=posteriormax, thetax=thetamax, gammax=gammamax, gammaposs=gammaposs, lambda=lambda, B=B, Z=Z))
+	return(list(phi=phimax, L=Lmax, aic=aicmin, bic=bicmin, posterior=posteriormax, thetax=thetamax, gammax=gammamax, gammaposs=gammaposs, lambda=lambda, B=B, Z=Z, gam=gam, it=it, K=K))
 }
 

@@ -12,10 +12,15 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 	#maxiter <- bestmodel$maxiter
 	#TSA <- bestmodel$TSA
 	#Tt <- bestmodel$Tt
-	#lambda <- bestmodel$lambda
+	lambda <- bestmodel$lambda
 	#gammaposs <- bestmodel$gammaposs
 	B <- bestmodel$B
 	Z <- bestmodel$Z
+	gam <- bestmodel$gam
+	it <- bestmodel$it
+	K <- bestmodel$K
+	laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
+	sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
 	#browser()
 	#n <- length(datx)
 	#bestmodelbic <- get.bic(bestmodel$phi, bestmodel$posterior, n)
@@ -78,7 +83,7 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 	#browser()
 	#pold <- posterior(bestproposal$phi, bestproposal$L, lambda, B, Z)
 	#pold <- bestmodel$posterior
-	pnew <- posterior(bestproposal$phi, bestproposal$L, newlambda, B, Z) / scalefac
+	pnew <- posterior(bestproposal$phi, bestproposal$L, newlambda, B, Z, gam, it, K) / scalefac
 	diffpost2 <- pnew - pold
 	diffpost2 <- sign(diffpost2) * log10(abs(diffpost2))
 	if(is.na(diffpost2))# if equal posteriors, than take with p=0.5
@@ -90,7 +95,11 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 
 	takeit <- sample(c(0,1),1,prob=c((1-lacpt),lacpt))
 	if(takeit==1) {
-		bestproposal$lambda <- newlambda
+		if(laplace) {
+			bestproposal$lambda <- newlambda
+		} else if(sparsity) {
+			bestproposal$gam <- newlambda
+		}
 		bestproposal$posterior <- pnew #newpost
 	}
 	print(m)

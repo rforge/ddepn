@@ -9,7 +9,8 @@ mcmc_move <- function(bestmodel, type) {
 	nummoves <- bestmodel$nummoves
 	numposs <- 0
 	fanin <- bestmodel$fanin
-	if(type=="add") {
+	#if(type=="add") {
+	if(type=="addinhibition" || type=="addactivation" || type=="add") {
 		phi <- bestmodel$phi
 		diag(phi) <- 1
 		phi[,unlist(stimuli)] <- matrix(1,nrow=nrow(phi),ncol=length(unlist(stimuli)))
@@ -78,6 +79,11 @@ mcmc_move <- function(bestmodel, type) {
 		lambda <- bestmodel$lambda
 		B <- bestmodel$B
 		Z <- bestmodel$Z
+		gam <- bestmodel$gam
+		it <- bestmodel$it
+		K <- bestmodel$K
+		laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
+		sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
 		# permute poss to propose moves in different orders
 		#poss <- sample(poss)
 		counter <- 1
@@ -94,6 +100,8 @@ mcmc_move <- function(bestmodel, type) {
 		}
 		switch(type,
 				add=phi.n[i] <- sample(c(1,2),1),
+				addactivation=phi.n[i] <- 1,
+				addinhibition=phi.n[i] <- 2,
 				switchtype=phi.n[i] <- phi.n[i]%%2 + 1,
 				delete=phi.n[i] <- 0,
 				reverse=phi.n <- reverse.direction(phi.n,i))
@@ -108,15 +116,16 @@ if(any(colSums(detailed.to.simple.regulations(phi.n))>fanin))
 			browser()
 		bic.n <- L.res$bic
 		aic.n <- L.res$aic
-		if(is.null(lambda)) {
-			posterior.n <- NULL
+		if(laplace || sparsity) {
+			posterior.n <- posterior(phi.n, L.n, lambda, B, Z, gam, it, K)
 		} else {
-			posterior.n <- posterior(phi.n, L.n, lambda, B, Z)			
+			posterior.n <- NULL			
 		}
 		bettermodels[[numbettermodel]] <- list(phi=phi.n,L=L.n,aic=aic.n,bic=bic.n,posterior=posterior.n,dat=dat,
 				theta=theta.n, gamma=gamma.n, gammaposs=gammaposs.n, tps=tps, stimuli=stimuli,
 				reps=reps, maxiter=maxiter, TSA=NULL, Tt=NULL, lastmove=type, coords=cds,
-				lambda=lambda, B=B, Z=Z, pegm=pegm, pegmundo=pegmundo,nummoves=bestmodel$nummoves,fanin=fanin)	
+				lambda=lambda, B=B, Z=Z, pegm=pegm, pegmundo=pegmundo,nummoves=bestmodel$nummoves,fanin=fanin,
+				gam=gam, it=it, K=K)	
 		numbettermodel <- numbettermodel + 1
 	} else {
 		bettermodels <- list(bestmodel)

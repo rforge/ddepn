@@ -11,7 +11,7 @@ MCMC sampling for DDEPN. Takes an initial network and samples from the posterior
 mcmc_ddepn(dat, phiorig = NULL, phi = NULL, stimuli = NULL, th = 0.8,
 		 multicores = FALSE, pdf = NULL, maxiterations = 10000, 
 		 usebics = FALSE, cores = 2, lambda = NULL, B = NULL, Z = NULL,
-		 maxiter = 30, fanin = 4)
+		 maxiter = 30, fanin = 4, gam = NULL, it = NULL, k = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -30,6 +30,9 @@ mcmc_ddepn(dat, phiorig = NULL, phi = NULL, stimuli = NULL, th = 0.8,
   \item{Z}{Normalisation factor for prior.}
   \item{maxiter}{Maximum iterations in the HMM.}
   \item{fanin}{Integer: maximal indegree for nodes.}
+  \item{gam}{Prior influence strength in sparsity prior.}
+  \item{it}{Number of iterations to generate background distribution in sparsity prior.}
+  \item{k}{Proportionality factor in sparsity prior}
 }
 \details{
 MCMC is still under development. Use it with care.

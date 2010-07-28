@@ -6,8 +6,12 @@
 
 mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		th=0.8, multicores=FALSE, pdf=NULL, maxiterations=10000,
-		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,maxiter=30,fanin=4) {
-	diag(B) <- 0
+		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,maxiter=30,fanin=4,
+		gam=NULL,it=NULL,K=NULL) {
+	if(!is.null(B))
+		diag(B) <- 0
+	laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
+	sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
 	# initialise
 	#dat[is.na(dat)] <- 0
 	antibodies <- rownames(dat)
@@ -34,10 +38,10 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	Linit <- sum(Linit)
 	aicinit <- get.aic(phi,Linit)
 	bicinit <- get.bic(phi,Linit, length(dat))
-	if(is.null(lambda)) {
-		posteriorinit <- NULL
+	if(laplace || sparsity) {
+		posteriorinit <- posterior(phi, sum(Linit), lambda, B, Z, gam, it, K)
 	} else {
-		posteriorinit <- posterior(phi, sum(Linit), lambda, B, Z)
+		posteriorinit <- NULL
 	}
 	#}
 	movetypes <- c("switchtype","delete","addactivation","addinhibition","revert") ## v1
@@ -46,7 +50,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	bestmodel <- list(phi=phi,L=Linit,aic=aicinit,bic=bicinit,posterior=posteriorinit,dat=dat,
 			theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
 			maxiter=maxiter, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1), lambda=lambda,
-			B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin)
+			B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,gam=gam,it=it,K=K)
 
 	it <- 1
 	stats <- matrix(0, nrow=maxiterations, ncol=11, dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp","lambda","acpt","lacpt","stmove")))
@@ -56,19 +60,28 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	eoccur[eoccur!=0] <- 0
 	while(it < maxiterations) {
 		cat("++ ", it, " ")
-		newlambda <- runif(1, bestmodel$lambda-1, bestmodel$lambda+1)
-		newlambda <- min(max(0.01,newlambda),30)
+		if(laplace) {
+			newlambda <- runif(1, bestmodel$lambda-1, bestmodel$lambda+1)
+			newlambda <- min(max(0.01,newlambda),30)
+		} else if(sparsity) {
+			newgam <- runif(1, bestmodel$gam-1, bestmodel$gam+1)
+			newgam <- min(max(0.01,newgam),30)
+		}
 		movetype <- sample(1:length(movetypes),1)
 		if(all(bestmodel$phi==0))
-			#movetype <- 1 # add, ## v2
 			movetype <- sample(c(3,4),1) ## v1
+			#movetype <- 1 # add, ## v2
 		if(all(bestmodel$phi!=0))
+			movetype <- sample(c(1,2,5),1)## v1
 			#movetype <- sample(c(2,3),1) # delete, revert, ## v2
 			#movetype <- sample(c(2,5),1)## v1
-			movetype <- sample(c(1,2,5),1)## v1
-		
+			
 		st <- system.time(b1 <- mcmc_move(bestmodel, movetypes[movetype]))
-		ret <- mcmc_accept(bestmodel, b1, newlambda)
+		if(laplace) {
+			ret <- mcmc_accept(bestmodel, b1, newlambda)
+		} else if (sparsity) {
+			ret <- mcmc_accept(bestmodel, b1, newgam)
+		}
 		bestmodel <- ret$bestproposal
 		## count how often any edge occurred at a given position
 		tmp <- bestmodel$phi
@@ -96,7 +109,11 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			comp <- rep(0,8)
 			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
 		}
-		stats[it,] <- as.matrix(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3]))
+		if(laplace) {
+			stats[it,] <- as.matrix(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3]))
+		} else if(sparsity) {
+			stats[it,] <- as.matrix(c(bestmodel$posterior, comp[1:6], bestmodel$gam, ret$acpt, ret$lacpt, st[3]))
+		}	
 		# some convergence statistic
 		#SSW <- sd(stats[,"MAP"],na.rm=T)
 		#SSB <- 

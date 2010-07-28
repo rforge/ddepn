@@ -2,17 +2,26 @@
 # Data matrix dat in the following format:
 # 	rows: antibodies/nodes of network
 #	cols: experiments, labeled by EXPLABEL_time
-# lambda: prior hyperparameter, try Wehrli/Husmeier sparsity prior, lambda is the same as beta in this
-#         paper
+# lambda: laplace prior hyperparameter
 # B     : prior weights matrix
+# gam   : sparsity prior hyperparameter
+# it    : sparsity prior hyperparameter
+# k     : sparsity prior hyperparameter
 # fan.in: maximum number of incoming edges, used for efficient computation of the 
 #         normalization factor for the prior distribution
+#
+#
+#  Priors: laplace: Fröhlich 2007 / Wehrli/Husmeier 2007
+#          sparsity: Kamimura 200??? F7 414, Lee 2005 etc., not sure about the correct citation
 # Author: benderc
 ###############################################################################
 
 ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=NULL,
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
-				  usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100, fanin=4) {
+				  usebics=TRUE, cores=2, 
+				  lambda=NULL, B=NULL,
+				  maxiter=100, fanin=4,
+				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations, if not provided
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
@@ -43,24 +52,42 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 	n <- nrow(dat)
 	phinames <- rownames(dat)
 	
-	## if information for prior is given then test if it is complete and
-	## compute the normalisation factor Z(lambda) as in Fröhlich2007 or Wehrli/Husmeier 2007
-	if(!is.null(lambda) || !is.null(B)) {
-		if(is.null(lambda) || is.null(B)) {
-			print("Prior information incomplete. Please provide arguments lambda and B.")
-			stop()
-		}
+	laplace <- !is.null(lambda) && !is.null(B)
+	sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
+	none <- is.null(lambda) && is.null(B) && is.null(gam) && is.null(it) && is.null(K)
+	
+	if(laplace) {
 		## get normalisation factor for the networks
 		print("Computing prior normalisation factor...")
 		Z <- zlambda(B, lambda)
 		print("done.")
-	} else {
+	} else if(sparsity || none) {
 		Z <- NULL
+	} else {
+		stop("Error in function arguments. Please specifiy either lambda/gamma for laplace prior, gam/it/K for sparsity prior or none if no prior distribution should be used.")
 	}
+#	## if information for prior is given then test if it is complete and
+#	## compute the normalisation factor Z(lambda) as in Fröhlich2007 or Wehrli/Husmeier 2007
+#	if(!is.null(lambda) || !is.null(B)) {
+#		if(is.null(lambda) || is.null(B)) {
+#			print("Prior information incomplete. Please provide arguments lambda and B.")
+#			stop()
+#		}
+#		## get normalisation factor for the networks
+#		print("Computing prior normalisation factor...")
+#		Z <- zlambda(B, lambda)
+#		print("done.")
+#	} else {
+#		Z <- NULL
+#	}
 	
 	if(inference=="netga") {
 		scorefile <- paste("score",sub("\\.pdf","",pdf),".pdf",sep="")
-        stime <- system.time(P <- netga(dat,stimuli,P=P,maxiterations=maxiterations,p=p,q=q,m=m,multicores=multicores,usebics=usebics,cores=cores,lambda=lambda,B=B,Z=Z,maxiter=maxiter,scorefile=scorefile,fanin=fanin))
+        stime <- system.time(P <- netga(dat,stimuli,P=P,maxiterations=maxiterations,
+						p=p,q=q,m=m,multicores=multicores,usebics=usebics,
+						cores=cores,lambda=lambda,B=B,Z=Z,maxiter=maxiter,
+						scorefile=scorefile,fanin=fanin,
+						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC))
         #if(is.null(phiorig)) {
         #	phiorig <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat)))
         #}
@@ -93,7 +120,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 			phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
 			ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
 						th=th, multicores=multicores, pdf=pdf, maxiterations=maxiterations,
-						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, maxiter=maxiter,fanin=fanin)
+						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z,
+						maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K)
 		}
 	}
 	ret

@@ -8,16 +8,19 @@
 netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, maxiter=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
-		Z=NULL, scorefile="score.pdf",fanin=4) {
+		Z=NULL, scorefile="score.pdf",fanin=4,
+		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5) {
   dat[is.na(dat)] <- 0
-  quantL <- 3
-  quantBIC <- 3
+  #quantL <- 3
+  #quantBIC <- 3
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
  # reps <- ((ncol(dat)/length(tps))/length(stimuli))
   reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
   phireference <- matrix(0,nrow=length(V), ncol=length(V), dimnames=list(V,V))
-
+  laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
+  sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
+  
   #####################################################################
   #  First create a population of networks if none is given           #
   #####################################################################
@@ -32,9 +35,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  	X[[2]] <- phireference
 	  }
 	  if(multicores) {
-		P <- mclapply(X, getfirstphi, dat=dat, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin, mc.preschedule=FALSE,mc.cores=cores)		
+		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,maxiter=maxiter,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K, mc.preschedule=FALSE,mc.cores=cores)		
 	  } else {
-		P <- lapply(X, getfirstphi, dat=dat, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
+		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,maxiter=maxiter,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
 	  }
   }
   if(any(sapply(P, class)!="list")) {
@@ -50,27 +53,25 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  browser()
 	  }	  
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
-		  P[[i]] <- getfirstphi(X[[i]], dat=dat, stimuli=stimuli, V=V, tps=tps, reps=reps, maxiter=maxiter, lambda=lambda, B=B, Z=Z, fanin=fanin)
+		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,maxiter=maxiter,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
 	  }
   }  
   if(usebics){
 	  wks <- sapply(P, function(x) x$bic)
-	  optwks <- quantile(wks)[quantBIC]
+	  optwks <- quantile(wks,na.rm=T,probs=quantBIC)
 	  oldoptwks <- -Inf
 	  wks2 <- wks - max(wks) -1
 	  probs <- wks2/sum(wks2)
-	  #optwks <- -Inf
   } else {
-	  if(is.null(lambda)) {
-		  wks <- sapply(P, function(x) x$L)
-	  } else {
+	  if(laplace || sparsity) {
 		  wks <- sapply(P, function(x) x$posterior)
+	  } else {
+		  wks <- sapply(P, function(x) x$L)
 	  }
-	  optwks <- quantile(wks)[quantL]
+	  optwks <- quantile(wks,na.rm=T,probs=quantL)
 	  oldoptwks <- Inf
 	  wks2 <- wks + abs(min(wks)) +1
 	  probs <- wks2/sum(wks2)
-	  #optwks <- Inf
   }
   
   #####################
@@ -173,10 +174,10 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	if(usebics) {
 		print(paste("Selected: ", length(Pprime), " models with bic < ", oldoptwks, ". New minbic: ", optwks))
 	} else {
-		if(is.null(lambda)) {
-			print(paste("Selected: ", length(Pprime), " models with L > ", oldoptwks, ". New maxL: ", optwks))
-		} else {
+		if(laplace || sparsity) {
 			print(paste("Selected: ", length(Pprime), " models with post > ", oldoptwks, ". New maxPosterior: ", optwks))
+		} else {
+			print(paste("Selected: ", length(Pprime), " models with L > ", oldoptwks, ". New maxL: ", optwks))
 		}
 	}
 	oldoptwks <- optwks
@@ -201,17 +202,17 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	counter <- 1
     for(k in 1:ncol(crossing)) {
       phicross <- crossover(P[[crossing[1,k]]]$phi, P[[crossing[2,k]]]$phi,fanin=fanin)
-  if(length(which(colSums(ifelse(phicross[[1]]==0,0,1))>fanin))>0 |
-		  any(phicross[[1]][,unique(names(unlist(stimuli)))]!=0)) {
-	  print("**********  CROSS1: fanin too big somewhere or edge leading to stimulus")
-	  browser()
-  }
- #browser()
-  if(length(which(colSums(ifelse(phicross[[2]]==0,0,1))>fanin))>0 ||
-  			any(phicross[[2]][,unique(names(unlist(stimuli)))]!=0)) {
-	  print("**********   CROSS2: fanin too big somewhere or edge leading to stimulus")
-	  browser()
-  }
+	  if(length(which(colSums(ifelse(phicross[[1]]==0,0,1))>fanin))>0 |
+			  any(phicross[[1]][,unique(names(unlist(stimuli)))]!=0)) {
+		  print("**********  CROSS1: fanin too big somewhere or edge leading to stimulus")
+		  browser()
+	  }
+	 #browser()
+	  if(length(which(colSums(ifelse(phicross[[2]]==0,0,1))>fanin))>0 ||
+	  			any(phicross[[2]][,unique(names(unlist(stimuli)))]!=0)) {
+		  print("**********   CROSS2: fanin too big somewhere or edge leading to stimulus")
+		  browser()
+	  }
   
 	  PP[[counter]] <- P[[crossing[1,k]]]
 	  PP[[counter]]$phi <- phicross[[1]]
@@ -243,10 +244,10 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		bestmodel$L <- L.res$Likl
 		bestmodel$bic <- L.res$bic
 		bestmodel$aic <- L.res$aic
-		if(is.null(lambda)) {
-			bestmodel$posterior <- NULL
+		if(laplace || sparsity) {
+			bestmodel$posterior <- posterior(bestmodel$phi, bestmodel$L, lambda, B, Z, gam, it, K)
 		} else {
-			bestmodel$posterior <- posterior(bestmodel$phi, bestmodel$L, lambda, B, Z)
+			bestmodel$posterior <- NULL
 		}
 		bestmodel$gammaposs <- L.res$gammaposs
 		Pprime <- c(Pprime, list(bestmodel))
@@ -264,18 +265,18 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		wks2 <- wks - max(wks) -1
 		probs <- wks2/sum(wks2)
 		#optwks <- quantile(wks,na.rm=T)[2] # 75% quantile
-		optwks <- quantile(wks,na.rm=T)[quantBIC] # median
+		optwks <- quantile(wks,na.rm=T,probs=quantBIC) # median
 	} else {
 		# maximize over posterior if prior is given
-		if(is.null(lambda)) {
-			wks <- sapply(Pprime, function(x) x$L)
-		} else {
+		if(laplace || sparsity) {
 			wks <- sapply(Pprime, function(x) x$posterior)
+		} else {
+			wks <- sapply(Pprime, function(x) x$L)
 		}
 		wks2 <- wks + abs(min(wks)) +1
 		probs <- wks2/sum(wks2)
 		#optwks <- quantile(wks,na.rm=T)[4] # 25% quantile
-		optwks <- quantile(wks,na.rm=T)[quantL] # median
+		optwks <- quantile(wks,na.rm=T,probs=quantL) # median
 	}
 	
     ##############
@@ -307,11 +308,11 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		oldedges <- c(oldedges, phi.n[position])
 		newedges <- c(newedges, type)
 		phi.n[position] <- type
-	if(length(which(colSums(ifelse(phi.n==0,0,1))>fanin))>0 ||
-			any(phi.n[,unique(names(unlist(stimuli)))]!=0)) {
-		print("********** MUTATION! fanin too big somewhere or edge leading to stimulus...")
-		browser()
-	}
+		if(length(which(colSums(ifelse(phi.n==0,0,1))>fanin))>0 ||
+				any(phi.n[,unique(names(unlist(stimuli)))]!=0)) {
+			print("********** MUTATION! fanin too big somewhere or edge leading to stimulus...")
+			browser()
+		}
 		Pprime[[k]]$phi <- phi.n
 		counter <- counter + 1
 	}
@@ -337,12 +338,12 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 			scorenew <- -L.res$bic
 			scoreold <- -optwks
 		} else {
-			if(is.null(lambda)) {
-				scorenew <- L.res$Likl
+			if(laplace || sparsity) {
+				posteriornew <- posterior(bestmodel$phi, L.res$Likl, lambda, B, Z, gam, it, K)
+				scorenew <- posteriornew
 				scoreold <- optwks
 			} else {
-				posteriornew <- posterior(bestmodel$phi, L.res$Likl, lambda, B, Z)
-				scorenew <- posteriornew
+				scorenew <- L.res$Likl
 				scoreold <- optwks
 			}
 		}
@@ -366,19 +367,17 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		wks <- sapply(Pprime, function(x) x$bic)
 		wks2 <- wks - max(wks) -1
 		probs <- wks2/sum(wks2)
-		#optwks <- quantile(wks,na.rm=T)[2] # 75%
-		optwks <- quantile(wks,na.rm=T)[quantBIC] # median
+		optwks <- quantile(wks,na.rm=T,probs=quantBIC)
 	} else {
 		# maximize over posterior if prior is given
-		if(is.null(lambda)) {
-			wks <- sapply(Pprime, function(x) x$L)
+		if(laplace || sparsity) {
+			wks <- sapply(Pprime, function(x) x$posterior)	
 		} else {
-			wks <- sapply(Pprime, function(x) x$posterior)
+			wks <- sapply(Pprime, function(x) x$L)
 		}
 		wks2 <- wks + abs(min(wks)) +1
 		probs <- wks2/sum(wks2)
-		#optwks <- quantile(wks,na.rm=T)[4] # 25%
-		optwks <- quantile(wks,na.rm=T)[quantL] # median
+		optwks <- quantile(wks,na.rm=T,probs=quantL)
 	}
     P <- Pprime
 	garbage <- gc(verbose=FALSE)

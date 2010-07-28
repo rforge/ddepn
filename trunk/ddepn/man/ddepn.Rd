@@ -11,7 +11,8 @@ and infers the most likely network structure underlying the data.
 \usage{
 ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=NULL,
       multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
-      usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100, fanin = 4)
+      usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100, fanin = 4,
+      gam=NULL,it=NULL,k=NULL,quantL=.5,quantBIC=.5)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -53,9 +54,18 @@ ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=
 	\item{usebics}{Use BIC statistic for model selection. (only for \code{\link{netga}})}
 	\item{cores}{Number of cores to use in case of \code{multicores}=TRUE}
 	\item{maxiter}{Maximum number of iterations in the HMM search.}
-	\item{lambda}{The Prior influence strength.}
-  	\item{B}{The Prior information matrix.}
-  	\item{fanin}{Integer: maximal indegree for nodes.}
+	\item{lambda}{The Prior influence strength in the laplace prior.}
+  \item{B}{The Prior information matrix. Corresponds to prior edge probabilities in the final network.}
+  \item{fanin}{Integer: maximal indegree for nodes.}
+  \item{gam}{Prior influence strength in sparsity prior.}
+  \item{it}{Number of iterations to generate background distribution in sparsity prior.}
+  \item{k}{Proportionality factor in sparsity prior}
+   \item{quantL}{Quantile of Population likelihood. Defines the selection threshold in \code{netga}.
+    Also used as posterior selection quantile. Note that the Likelihood or Posterior have to be 
+    maximised, so all networks with a likelihood/posterior \emph{greater} than the threshold are selected.}
+  \item{quantBIC}{Quantile of Population likelihood. Defines the selection threshold in \code{netga}.
+    Note that the BIC is minimised, so all networks with BIC \emph{less} than the threshold are
+    selected.}
 }
 \details{
   \describe{

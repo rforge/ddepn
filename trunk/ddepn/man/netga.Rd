@@ -14,7 +14,8 @@ of edges to sample the search space.
 netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, maxiter=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
-		Z=NULL, scorefile="score.pdf", fanin = 4)
+		Z=NULL, scorefile="score.pdf", fanin = 4,
+		gam=NULL,it=NULL,k=NULL,quantL=.5,quantBIC=.5)
 }
 \arguments{
   \item{dat}{
@@ -45,12 +46,19 @@ netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     Use BIC statistic for model selection.}
   \item{cores}{
     Number of cores to use in case of \code{multicores}=TRUE}
-  \item{lambda}{
-  	The Prior influence strength.}
-  \item{B}{
-  	The Prior information matrix.}
-  \item{Z}{
-  	The normalisation factor for the prior distribution.}
+  \item{lambda}{The Prior influence strength in the laplace prior.}
+  \item{B}{The Prior information matrix. Corresponds to prior edge probabilities in the final network.}
+  \item{Z}{The normalisation factor for the prior distribution.}
+  \item{fanin}{Integer: maximal indegree for nodes.}
+  \item{gam}{Prior influence strength in sparsity prior.}
+  \item{it}{Number of iterations to generate background distribution in sparsity prior.}
+  \item{k}{Proportionality factor in sparsity prior}
+  \item{quantL}{Quantile of Population likelihood. Defines the selection threshold in \code{netga}.
+    Also used as posterior selection quantile. Note that the Likelihood or Posterior have to be 
+    maximised, so all networks with a likelihood/posterior \emph{greater} than the threshold are selected.}
+  \item{quantBIC}{Quantile of Population likelihood. Defines the selection threshold in \code{netga}.
+    Note that the BIC is minimised, so all networks with BIC \emph{less} than the threshold are
+    selected.}
   \item{scorefile}{
   	Name of pdf-file where intermediate traces of the BIC, the differences of BICs in two succeeding 
   	generations and a comparison of optimum and average fitness are drawn.}

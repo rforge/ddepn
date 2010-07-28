@@ -11,9 +11,9 @@ Internal function.
 }
 \usage{
 samplephi(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
-		maxiter=5, phiasis=FALSE, lambda=NULL, B=B, Z=Z, fanin=4)
+		maxiter=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, k=NULL)
 initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
-		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL)
+		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, k=NULL)
 }
 \arguments{
   \item{dat}{The data matrix}
@@ -30,7 +30,13 @@ initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
   \item{antibodies}{Character vector of protein names in the network.}
   \item{searchstatespace}{Do statespacesearch in initial sampling?}
   \item{phiasis}{TRUE for taking a given phi matrix as sample}
+  \item{lambda}{The Prior influence strength in the laplace prior.}
+  \item{B}{The Prior information matrix. Corresponds to prior edge probabilities in the final network.}
+  \item{Z}{The normalisation factor for the prior distribution.}
   \item{fanin}{Integer: maximal indegree for nodes.}
+  \item{gam}{Prior influence strength in sparsity prior.}
+  \item{it}{Number of iterations to generate background distribution in sparsity prior.}
+  \item{k}{Proportionality factor in sparsity prior}
 }
 \details{
 Used for initializing random networks. Called internally.
