@@ -19,9 +19,10 @@
 ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=NULL,
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
 				  usebics=TRUE, cores=2, 
-				  lambda=NULL, B=NULL,
+				  lambda=NULL, B=NULL, samplelambda=TRUE,
 				  maxiter=100, fanin=4,
-				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5) {
+				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
+				  debug=FALSE) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations, if not provided
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
@@ -66,20 +67,6 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 	} else {
 		stop("Error in function arguments. Please specifiy either lambda/gamma for laplace prior, gam/it/K for sparsity prior or none if no prior distribution should be used.")
 	}
-#	## if information for prior is given then test if it is complete and
-#	## compute the normalisation factor Z(lambda) as in Fröhlich2007 or Wehrli/Husmeier 2007
-#	if(!is.null(lambda) || !is.null(B)) {
-#		if(is.null(lambda) || is.null(B)) {
-#			print("Prior information incomplete. Please provide arguments lambda and B.")
-#			stop()
-#		}
-#		## get normalisation factor for the networks
-#		print("Computing prior normalisation factor...")
-#		Z <- zlambda(B, lambda)
-#		print("done.")
-#	} else {
-#		Z <- NULL
-#	}
 	
 	if(inference=="netga") {
 		scorefile <- paste("score",sub("\\.pdf","",pdf),".pdf",sep="")
@@ -88,9 +75,6 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 						cores=cores,lambda=lambda,B=B,Z=Z,maxiter=maxiter,
 						scorefile=scorefile,fanin=fanin,
 						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC))
-        #if(is.null(phiorig)) {
-        #	phiorig <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat)))
-        #}
         phi.activation.count <- phi.inhibition.count <- weights.tc <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat))) 
 		# now compare all graphs to the original
         result <- NULL
@@ -116,12 +100,84 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
         ret[["P"]] <- P
 	} else {
 		if(inference=="mcmc") {
-			#phistart <- matrix(sample(c(0,1,2),n*n,replace=T), nrow=n, ncol=n, dimnames=list(phinames,phinames))
-			phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
-			ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
+			#browser()
+			if(multicores) {
+				# start an mcmc run for each core
+				# liste, die die dateinamen und die startnetze enthält
+				if(is.null(P)) {
+					P <- list()
+					phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
+					for(cr in 1:cores) {
+						P[[cr]] <- list(phi=phistart)
+					}
+				}
+				X <- list()
+				for(cr in 1:cores) {
+					filename <- paste(sub("\\.pdf","",pdf),"_",cr,".pdf",sep="")
+					X[[cr]] <- list(phi=P[[cr]]$phi, pdf=filename)
+				}
+				retlist <- mclapply(X, runmcmc, dat=dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
+						th=th, multicores=multicores, pdf=pdf, maxiterations=maxiterations,
+						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
+						maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K,
+						mc.preschedule=FALSE,mc.cores=cores)
+				#runmcmc(X[[1]],dat=dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
+				#		th=th, multicores=multicores, pdf=pdf, maxiterations=maxiterations,
+				#		usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
+				#		maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K)
+				### experimental
+				if(debug)
+					browser()
+				retlist <- get.phi.final.mcmc(retlist, maxiterations, prob=.3333, qu=.99999)
+				##### end experimental
+				## get the likelihood traces
+				ltraces <- sapply(retlist,function(x) x$stats[,"MAP"])
+				## make sure ltraces has less than 10000 rows
+				if(nrow(ltraces)>10000){
+					ss <- seq(1,nrow(ltraces),by=nrow(ltraces)/10000)
+					ltraces <-  ltraces[ss,]
+				}
+				colors <- rainbow(ncol(ltraces))
+				ret <- list(retlist=retlist,ltraces=ltraces)
+				## plot results
+				pdf(pdf,onefile=TRUE)
+				plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
+				if(ncol(ltraces)>1)
+					sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)
+				## get the final network from all cores inferences
+				#net <- retlist[[1]]$phi
+				#net <- retlist[[1]]
+				for(netnr in 2:cores) {
+					ret2 <- retlist[[netnr]]
+					plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
+					#net2 <- retlist[[netnr]]
+					#net$conf.act <- net$conf.act + net2$conf.act
+					#net$conf.inh <- net$conf.inh + net2$conf.inh					
+#					sel <- net$conf.act!=0 & net2$conf.act!=0
+#					net$conf.act[sel] <- colMeans(rbind(net$conf.act[sel],net2$conf.act[sel]))
+#					sel2 <- setdiff(1:length(net$phi),which(sel))
+#					net$conf.act[sel] <- net$conf.act[sel2] + net2$conf.act[sel2]				
+#					sel <- net$conf.inh!=0 & net2$conf.inh!=0
+#					net$conf.inh[sel] <- colMeans(rbind(net$conf.inh[sel],net2$conf.inh[sel]))
+#					sel2 <- setdiff(1:length(net$phi),which(sel))
+#					net$conf.inh[sel] <- net$conf.inh[sel2] + net2$conf.inh[sel2]
+				}
+				#net$conf.act <- net$conf.act/cores
+				#net$conf.inh <- net$conf.inh/cores
+				#ret2 <- get.phi.final(net,th=th)
+				#plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
+				dev.off()
+			} else {
+				#phistart <- matrix(sample(c(0,1,2),n*n,replace=T), nrow=n, ncol=n, dimnames=list(phinames,phinames))
+				if(is.null(phi))
+					phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
+				else
+					phistart <- phi
+				ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
 						th=th, multicores=multicores, pdf=pdf, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z,
 						maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K)
+			}
 		}
 	}
 	ret

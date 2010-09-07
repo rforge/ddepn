@@ -2,7 +2,37 @@
 # 
 # Author: benderc
 ###############################################################################
-
+get.phi.final.mcmc <- function(retlist,maxiterations,prob=.333,qu=.99999) {
+	## find significant edges
+	## get .9999 quantile for the number of successes x with P(x<=X) >= .9999, d.h. P(x>X)<.0001
+	## for p = 0.33. This corresponds to random drawing of activating/inhibiting edges. If a higher
+	## number of edges is found in the network, include the edge
+	#prob <- .3333
+	cutrng <- c(qbinom(qu,maxiterations,prob,lower.tail=TRUE),
+			qbinom(qu,maxiterations,prob,lower.tail=FALSE))
+	for(rtl in 1:length(retlist)) {
+		retX <- retlist[[rtl]]
+		acts <- which(retX$freqa>=cutrng[2])
+		inhs <- which(retX$freqi>=cutrng[2])
+		aimax <- apply(cbind(retX$freqa[intersect(acts,inhs)],retX$freqi[intersect(acts,inhs)]),1,function(x) which(x==max(x)))
+		intai <- intersect(acts,inhs)
+		acts <- acts[-match(intai[which(aimax==2)],acts)]
+		inhs <- inhs[-match(intai[which(aimax==1)],inhs)]
+		net <- retX$phi
+		net[net!=0] <- 0
+		weights <- net
+		net[acts] <- 1
+		weights[acts] <- retX$conf.a[acts]
+		net[inhs] <- 2
+		weights[inhs] <- retX$conf.i[inhs]
+		weights <- signif(weights,digits=3)
+		retX$phi <- net
+		retX$weights <- weights
+		retlist[[rtl]] <- retX
+		#plotdetailed(net)
+	}
+	retlist
+}
 
 # get the final network
 get.phi.final <- function(lst,th=0.8) {

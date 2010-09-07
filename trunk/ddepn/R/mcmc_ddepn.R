@@ -2,11 +2,19 @@
 # 
 # Author: benderc
 ###############################################################################
-
+runmcmc <- function(x,dat,phiorig,phi,stimuli,th,multicores,pdf,maxiterations,
+		usebics,cores,lambda,B,Z,samplelambda,maxiter,fanin,gam,it,K) {
+	ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=x$phi, stimuli=stimuli,
+			th=th, multicores=multicores, pdf=x$pdf, maxiterations=maxiterations,
+			usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
+			maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K)
+	ret
+}
 
 mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		th=0.8, multicores=FALSE, pdf=NULL, maxiterations=10000,
-		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,maxiter=30,fanin=4,
+		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,samplelambda=samplelambda,
+		maxiter=30,fanin=4,
 		gam=NULL,it=NULL,K=NULL) {
 	if(!is.null(B))
 		diag(B) <- 0
@@ -50,7 +58,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	bestmodel <- list(phi=phi,L=Linit,aic=aicinit,bic=bicinit,posterior=posteriorinit,dat=dat,
 			theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
 			maxiter=maxiter, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1), lambda=lambda,
-			B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,gam=gam,it=it,K=K)
+			B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,gam=gam,it=it,K=K)#,
+			#samplelambda=samplelambda)
 
 	it <- 1
 	stats <- matrix(0, nrow=maxiterations, ncol=11, dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp","lambda","acpt","lacpt","stmove")))
@@ -61,11 +70,16 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	while(it < maxiterations) {
 		cat("++ ", it, " ")
 		if(laplace) {
-			newlambda <- runif(1, bestmodel$lambda-1, bestmodel$lambda+1)
-			newlambda <- min(max(0.01,newlambda),30)
+			if(samplelambda) {
+				newlambda <- runif(1, bestmodel$lambda-1, bestmodel$lambda+1)
+				newlambda <- min(max(0.01,newlambda),30)
+			} else {
+				newlambda <- bestmodel$lambda
+			}
 		} else if(sparsity) {
-			newgam <- runif(1, bestmodel$gam-1, bestmodel$gam+1)
-			newgam <- min(max(0.01,newgam),30)
+			#newgam <- runif(1, bestmodel$gam-1, bestmodel$gam+1)
+			#newgam <- min(max(2,newgam),30) # gamma mustn't be smaller than 2
+			newgam <- bestmodel$gam
 		}
 		movetype <- sample(1:length(movetypes),1)
 		if(all(bestmodel$phi==0))
@@ -77,11 +91,16 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			#movetype <- sample(c(2,5),1)## v1
 			
 		st <- system.time(b1 <- mcmc_move(bestmodel, movetypes[movetype]))
+		if(b1[[1]]$posterior==Inf || b1[[1]]$posterior==-Inf)
+			browser()
 		if(laplace) {
 			ret <- mcmc_accept(bestmodel, b1, newlambda)
 		} else if (sparsity) {
 			ret <- mcmc_accept(bestmodel, b1, newgam)
 		}
+		if(ret$bestproposal$posterior==Inf || ret$bestproposal$posterior==-Inf)
+			browser()
+		
 		bestmodel <- ret$bestproposal
 		## count how often any edge occurred at a given position
 		tmp <- bestmodel$phi
@@ -120,7 +139,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		#Rhat <- ((nrow(stats)-1)/nrow(stats)) * SSW
 		#l <- maxiterations
 		l <- it #nrow(stats)
-		if(it%%100==1 && it>1){
+		if(it%%250==1 && it>1){
 			if(!is.null(pdf))
 				pdf(pdf)
 			par(mfrow=c(3,3),mar=c(3,4,1,1),oma=c(1,1,1,1))
@@ -140,7 +159,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 				plot.new()
 				text(0.5,0.5,labels="no origininal network given")
 			} else {
-				plotdetailed(phiorig,stimuli=bestmodel$stimuli,fontsize=15)
+				plotdetailed(phiorig,stimuli=bestmodel$stimuli,fontsize=25)
 			}
 			if(it>1000) {
 				boxplot(as.data.frame(stats[(1000:it),c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
@@ -158,12 +177,17 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			if(!is.null(pdf))
 				dev.off()
 		}
-		it <- it + 1
-		if(it%%500==0) {
-			if(!is.null(pdf)) {
-				save.image(file="MCMCimage.RData")	
-			}
+		if(it%%1000) {
+			#if(!is.null(pdf))
+			rdfile <- sub(".pdf$","_mcmcdata.RData",pdf)
+			save(bestmodel,stats,freqa,freqi,it,file=rdfile)
 		}
+		it <- it + 1
+#		if(it%%500==0) {
+#			if(!is.null(pdf)) {
+#				save.image(file="MCMCimage.RData")	
+#			}
+#		}
 	}
 	bestmodel[["stats"]] <- stats
 	bestmodel[["freqa"]] <- freqa

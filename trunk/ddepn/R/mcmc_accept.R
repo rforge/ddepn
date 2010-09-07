@@ -40,7 +40,7 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 	
 	# scale down the difference to get reasonable acceptance rates
 	diffpost <- sign(diffpost) * log10(abs(diffpost))
-	if(is.na(diffpost))# if equal posteriors, than take with p=0.5
+	if(is.na(diffpost))# if equal posteriors, then don't take
 		diffpost <- -1
 	diffproposal <- sign(diffproposal) * log10(abs(diffproposal))
 	if(is.na(diffproposal))
@@ -50,7 +50,7 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 	acpt <- min(2^(diffs),1)
 	#acpt <- min(bettermodels[[1]]$bic/bestmodel$bic, 1)
 	
-	if(acpt==Inf || bettermodels[[1]]$posterior==-Inf) {
+	if(acpt==Inf || bettermodels[[1]]$posterior==-Inf || bettermodels[[1]]$posterior==Inf) {
 		browser()
 	}
 	#acpt <- min((bestmodel$posterior/bettermodels[[1]]$posterior), 1)
@@ -83,7 +83,12 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 	#browser()
 	#pold <- posterior(bestproposal$phi, bestproposal$L, lambda, B, Z)
 	#pold <- bestmodel$posterior
-	pnew <- posterior(bestproposal$phi, bestproposal$L, newlambda, B, Z, gam, it, K) / scalefac
+	if(laplace) {
+		pnew <- posterior(bestproposal$phi, bestproposal$L, newlambda, B, Z, gam, it, K) / scalefac	
+	} else if(sparsity) {
+		pnew <- posterior(bestproposal$phi, bestproposal$L, NULL, B, Z, newlambda, it, K) / scalefac
+	}
+	
 	diffpost2 <- pnew - pold
 	diffpost2 <- sign(diffpost2) * log10(abs(diffpost2))
 	if(is.na(diffpost2))# if equal posteriors, than take with p=0.5

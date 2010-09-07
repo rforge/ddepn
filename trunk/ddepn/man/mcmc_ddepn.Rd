@@ -1,17 +1,22 @@
 \name{mcmc_ddepn}
 \alias{mcmc_ddepn}
+\alias{runmcmc}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 mcmc_ddepn - Perform MCMC sampling for DDEPN.
 }
 \description{
-MCMC sampling for DDEPN. Takes an initial network and samples from the posterior.
+MCMC sampling for DDEPN. Takes an initial network and samples from the posterior. \code{runmcmc}
+is a wrapper function for multiple calls of \code{mcmc_ddepn}, in case that multiple cores
+are used for parallel mcmc runs.
 }
 \usage{
 mcmc_ddepn(dat, phiorig = NULL, phi = NULL, stimuli = NULL, th = 0.8,
 		 multicores = FALSE, pdf = NULL, maxiterations = 10000, 
-		 usebics = FALSE, cores = 2, lambda = NULL, B = NULL, Z = NULL,
+		 usebics = FALSE, cores = 2, lambda = NULL, B = NULL, Z = NULL, samplelambda=TRUE,
 		 maxiter = 30, fanin = 4, gam = NULL, it = NULL, k = NULL)
+runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,pdf,maxiterations,
+		usebics,cores,lambda,B,Z,samplelambda,maxiter,fanin,gam,it,K)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -33,6 +38,8 @@ mcmc_ddepn(dat, phiorig = NULL, phi = NULL, stimuli = NULL, th = 0.8,
   \item{gam}{Prior influence strength in sparsity prior.}
   \item{it}{Number of iterations to generate background distribution in sparsity prior.}
   \item{k}{Proportionality factor in sparsity prior}
+  \item{samplelambda}{Boolean. TRUE if laplace prior hyperparameter \code{lambda} should be sampled.
+    FALSE if fixed \code{lambda} is to be used. Unused if \code{lambda} or \code{B} equal zero.}
 }
 \details{
 MCMC is still under development. Use it with care.

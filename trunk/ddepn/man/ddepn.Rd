@@ -11,7 +11,8 @@ and infers the most likely network structure underlying the data.
 \usage{
 ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=NULL,
       multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
-      usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100, fanin = 4,
+      usebics=TRUE, cores=2, lambda=NULL, B=NULL, samplelambda=TRUE,
+      maxiter=100, fanin = 4,
       gam=NULL,it=NULL,k=NULL,quantL=.5,quantBIC=.5)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -66,6 +67,8 @@ ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=
   \item{quantBIC}{Quantile of Population likelihood. Defines the selection threshold in \code{netga}.
     Note that the BIC is minimised, so all networks with BIC \emph{less} than the threshold are
     selected.}
+    \item{samplelambda}{Boolean. TRUE if laplace prior hyperparameter \code{lambda} should be sampled.
+      FALSE if fixed \code{lambda} is to be used. Unused if \code{lambda} or \code{B} equal zero.}
 }
 \details{
   \describe{

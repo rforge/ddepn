@@ -40,10 +40,6 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,maxiter=maxiter,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
 	  }
   }
-  if(any(sapply(P, class)!="list")) {
-	  print("netga.R, line 39: Some elements in the network list P seem to be empty.")
-	  browser()
-  }
   ## check if all individuals are set correctly
   ## is this a problem of mclapply/lapply? sometimes, returnvalues in the list P are null...
   for(i in 1:length(P)) {
@@ -56,6 +52,10 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,maxiter=maxiter,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
 	  }
   }  
+  if(any(sapply(P, class)!="list")) {
+	  print("netga.R, line 56: Some elements in the network list P seem to be empty.")
+	  browser()
+  }
   if(usebics){
 	  wks <- sapply(P, function(x) x$bic)
 	  optwks <- quantile(wks,na.rm=T,probs=quantBIC)
