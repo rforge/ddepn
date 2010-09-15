@@ -9,7 +9,7 @@ Main function for DDEPN modelling. Takes a data matrix containing longitudinal m
 and infers a network structure underlying the data using either a genetic algorithm or MCMC sampling.
 }
 \usage{
-ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", outfile=NULL,
+ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
           multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
           usebics=TRUE, cores=2, 
           lambda=NULL, B=NULL, samplelambda=TRUE,
@@ -31,9 +31,6 @@ ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", outf
 		Adjacency matrix. Seed network to start the search. Entries
     	can be either 0, 1 or 2, for \emph{no edge}, \emph{activation} or \emph{inhibition},
     	respectively. NULL if no start network should be given, but initialised automatically.}	
-	\item{stimuli}{
-		List containing the different perturbations in the system. See section Details for an
-		example. }
 	\item{th}{Threshold for inclusion of an edge in the final network (for \code{netga}. If an edge occurs 
     	more than \eqn{th*p} times in all individuals, it is included in the 
     	resulting network.}
@@ -93,15 +90,6 @@ ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", outf
          ERK \tab 1.33 \tab 1.7 \tab  1.57 \tab 1.3  \tab 0.68 \tab 0.34 \tab 0.62 \tab 0.47 \cr
          MEK \tab 0.45 \tab 0.8 \tab  0.99 \tab 0.6  \tab 0.78 \tab 0.8  \tab 0.56 \tab 0.58 \cr  
       }
-    }
-    \item{stimuli}{
-      A list of stimuli that describes the input perturbations. For the inputs, the activity states are
-      fixed to be active. For the above example data matrix, stimuli would be
-      \code{list(list(EGF=1),list(HRG=2))}. Also combinations of input stimuli are allowed, 
-      e.g.  \code{list(list(EGF=1),list(HRG=2), list(EGF=1,HRG=2))} for a data set containing
-      two distinct stimuli for EGF and HRG, and one stimulus EGF+HRG together. The combined stimulus 
-      must be indicated in the data matrix \code{dat} by concatenating the input stimuli with '&' as
-      separator, e.g. \emph{EGF&HRG_1} for EGF+HRG stimulation at time point 1.
     }
   }
 }
@@ -176,24 +164,24 @@ dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.s
 B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
 
 ## Genetic algorithm
-ret1 <- ddepn(dataset$datx, phiorig=phit, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
-              outfile=NULL, multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
-              usebics=TRUE, cores=10, lambda=NULL, B=NULL, hmmiterations=100,fanin=2)	
+ret1 <- ddepn(dataset$datx, phiorig=phit, th=0.5, inference="netga",
+              multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8,
+              usebics=TRUE)	
 x11()
 plotdetailed(ret1$phi,stimuli=ret1$stimuli)
               
 ## mcmc
-ret2 <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
-      th=0.5, inference="mcmc", outfile=NULL, usebics=FALSE, multicores=FALSE,
-      maxiterations=300, lambda=5, B=B, hmmiterations=100)
+ret2 <- ddepn(dataset$datx,phiorig=phit,
+      th=0.5, inference="mcmc", usebics=FALSE, multicores=FALSE,
+      maxiterations=300, lambda=5, B=B)
 x11()
 plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
 
 ## use mcmc with multiple cores, i.e. perform two independent runs
 ## requires package multicore and, of course multiple cores in the hardware
- ret3 <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
-        th=0.5, inference="mcmc", outfile=NULL, usebics=FALSE, multicores=TRUE, cores=2,
-        maxiterations=300, lambda=5, B=B, hmmiterations=100)
+ ret3 <- ddepn(dataset$datx,phiorig=phit,
+        th=0.5, inference="mcmc", usebics=FALSE, multicores=TRUE, cores=2,
+        maxiterations=300, lambda=5, B=B)
 
 }
 }

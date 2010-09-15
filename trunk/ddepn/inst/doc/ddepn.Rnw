@@ -144,13 +144,13 @@ on the machine, just set \emph{multicores=FALSE} to perform sampling for a singl
 <<MCMCsampling, echo=TRUE, results=hide, eval=FALSE>>=
 # construct a prior matrix with uniform probabilities for each edge
 B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
-maxiterations <- 5000
+mi <- 5000
 burnin <- 1000
 library(multicore)
 ret <- ddepn(data, phiorig=net, inference="mcmc",
-		maxiterations=maxiterations, burnin=burnin,
+		maxiterations=mi, burnin=burnin,
 		usebics=FALSE, lambda=5, B=B,
-		multicores=TRUE,cores=2)
+		multicores=TRUE, cores=2)
 
 @
 After the sampling one can examine the sampling run:
@@ -176,8 +176,8 @@ figure \ref{fig:mcmcoutput} for some example plots.
 
 <<MCMC output, echo=TRUE, results=hide, eval=FALSE>>=
 library(coda)
-mcmc1 <- mcmc(data=ret$ltraces[-c(1:burnin,maxiterations),1])
-mcmc2 <- mcmc(data=ret$ltraces[-c(1:burnin,maxiterations),2])
+mcmc1 <- mcmc(data=ret$ltraces[-c(1:burnin,mi),1])
+mcmc2 <- mcmc(data=ret$ltraces[-c(1:burnin,mi),2])
 mcmcl <- mcmc.list(mcmc1,mcmc2)
 plot(mcmcl)
 gelman.plot(mcmcl)
@@ -194,7 +194,7 @@ Distributionplot of the sampling; C: gelman.plot of two MCMC samplings}
 \section{Notes on formatting constraints for the arguments of \emph{ddepn}}
 \label{sec:formatdata}
 There is only one neccessary argument to the function call of \emph{ddepn}: The data 
-matrix \emph{dat}. Optionally, the stimuli list \emph{stimuli}, a reference 
+matrix \emph{dat}. Optionally,  a reference 
 network \emph{phiorig} and seed networks \emph{phi} can be passed to \emph{ddepn}.
 Each of these arguments is described briefly below.
 
@@ -236,28 +236,28 @@ automatically, only requiring the correct labeling of the columns.
 \end{tiny}
 %\end{scriptsize}
 
-\subsection*{\emph{stimuli}} 
- The user might pass an argument stimuli directly, describing the structure of the treatments,
- i.e. which treatments were done simultaneously. This is usually generated automatically using the 
- properly labeled column names of the data matrix and will be removed soon. However a short example
- exemplifies the use of \emph{stimuli}:\\
- Consider two experimental conditions, first stimulation by \emph{EGF}, second 
- simultaneous stimulation by \emph{EGF} and inhibition by \emph{X}. The \emph{stimuli} list holds 
- two elements:\\
- 
-\begin{verbatim}
- > stimuli
-[[1]]
-EGF 
- 1 
-
-[[2]]
-EGF  X 
- 1   2
-\end{verbatim}
-  
-Each element is a named numeric vector, holding the row numbers of the treatments in the data table 
-labeled by the names of the treatments.
+%\subsection*{\emph{stimuli}} 
+% The user might pass an argument stimuli directly, describing the structure of the treatments,
+% i.e. which treatments were done simultaneously. This is usually generated automatically using the 
+% properly labeled column names of the data matrix and will be removed soon. However a short example
+% exemplifies the use of \emph{stimuli}:\\
+% Consider two experimental conditions, first stimulation by \emph{EGF}, second 
+% simultaneous stimulation by \emph{EGF} and inhibition by \emph{X}. The \emph{stimuli} list holds 
+% two elements:\\
+% 
+%\begin{verbatim}
+% > stimuli
+%[[1]]
+%EGF 
+% 1 
+%
+%[[2]]
+%EGF  X 
+% 1   2
+%\end{verbatim}
+%  
+%Each element is a named numeric vector, holding the row numbers of the treatments in the data table 
+%labeled by the names of the treatments.
 
 
 \subsection*{Reference network \emph{phiorig}} 
@@ -423,29 +423,29 @@ data <- dataset$datx
 
 \subsection*{GA, use BICs optimisation and no prior}
 <<GA BIC,echo=TRUE,eval=FALSE>>=
-maxiterations=15
+mi=15
 p=30
 q=0.3
 m=0.8
-ret <- ddepn(data, phiorig=net,inference="netga",
-             maxiterations=maxiterations,p=p,q=q,m=m,
+ret <- ddepn(data, phiorig=net, inference="netga",
+             maxiterations=mi, p=p, q=q, m=m,
              usebics=TRUE)
 @
 \subsection*{GA, use laplace prior}
 <<GA Laplace,echo=TRUE,eval=FALSE>>=
-maxiterations=15
+mi=15
 p=30
 q=0.3
 m=0.8
 B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
 lambda <- 5
-ret <- ddepn(data, phiorig=net,inference="netga",
-		maxiterations=maxiterations,p=p,q=q,m=m,
-		usebics=FALSE,lambda=lambda,B=B)
+ret <- ddepn(data, phiorig=net, inference="netga",
+		maxiterations=mi, p=p, q=q, m=m,
+		usebics=FALSE, lambda=lambda, B=B)
 @
 \subsection*{GA, use scalefree prior}
 <<GA ScaleFree,echo=TRUE,eval=FALSE>>=
-maxiterations=15
+mi=15
 p=30
 q=0.3
 m=0.8
@@ -453,18 +453,18 @@ B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
 gam <- 2.2
 it <- 500
 K <- 0.8
-ret <- ddepn(data, phiorig=net,inference="netga",
-		maxiterations=maxiterations,p=p,q=q,m=m,
-		usebics=FALSE,gam=gam,it=it,K=K)
+ret <- ddepn(data, phiorig=net, inference="netga",
+		maxiterations=mi, p=p, q=q, m=m,
+		usebics=FALSE, gam=gam, it=it, K=K)
 @
 \subsection*{MCMC, use laplace prior}
 <<MCMC Laplace,echo=TRUE,eval=FALSE>>=
-maxiterations <- 1000
+mi <- 1000
 burnin <- 100
 B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
 lambda <- 5
-ret <- ddepn(data,phiorig=net, inference="mcmc",
-		maxiterations=maxiterations, burnin=burnin,
+ret <- ddepn(data, phiorig=net, inference="mcmc",
+		maxiterations=mi, burnin=burnin,
 		usebics=FALSE, lambda=lambda, B=B)
 @
 \subsection*{MCMC, use scalefree prior}
@@ -474,7 +474,7 @@ gam <- 2.2
 it <- 500
 K <- 0.8
 ret <- ddepn(data,phiorig=net, inference="mcmc",
-		maxiterations=maxiterations, burnin=burnin,
+		maxiterations=mi, burnin=burnin,
 		usebics=FALSE, gam=gam, it=it, K=K)
 @
 

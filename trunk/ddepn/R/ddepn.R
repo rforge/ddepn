@@ -16,7 +16,7 @@
 # Author: benderc
 ###############################################################################
 
-ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", outfile=NULL,
+ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
 				  usebics=TRUE, cores=2, 
 				  lambda=NULL, B=NULL, samplelambda=TRUE,
@@ -26,31 +26,29 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 	# get the experiments, i.e. the stimuli/inhibitor combinations, if not provided
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
-	#if(is.null(stimuli)) {
-		cols <- colnames(dat)
-		tmp <- sapply(cols, function(x) strsplit(x,"_")[[1]])
-		exps <- unique(tmp[1,])
-		stims <- sapply(exps, function(x) strsplit(x,"&")[[1]])
-		allstim <- unique(unlist(stims))
-		stimuli <- list()
-		for(i in 1:length(stims)) {
-			el <- stims[[i]]
-			x <- match(el,rownames(dat))
-			if(is.na(x))
-				x <- match(el,allstim)
-			names(x) <- el
-			stimuli[[i]] <- x
-		}
-		if(any(is.na(match(names(unlist(stimuli)),rownames(dat))))) {
-			xx <- unlist(stimuli)
-			xxmat <- unique(cbind(xx,names(xx)))
-			xxmat <- xxmat[order(xxmat[,2]),]
-			toattach <- matrix(0.0,nrow=nrow(xxmat),ncol=ncol(dat),dimnames=list(xxmat[,2],colnames(dat)))
-			dat <- rbind(toattach,dat)
-		}
-	#} else {
-	#	allstim <- unique(names(unlist(stimuli)))	
-	#}
+	cols <- colnames(dat)
+	tmp <- sapply(cols, function(x) strsplit(x,"_")[[1]])
+	exps <- unique(tmp[1,])
+	stims <- sapply(exps, function(x) strsplit(x,"&")[[1]])
+	allstim <- unique(unlist(stims))
+	stimuli <- list()
+	for(i in 1:length(stims)) {
+		el <- stims[[i]]
+		# find the row in which the stimulus is in the data matrix
+		x <- match(el,rownames(dat))
+		# or define a number 
+		if(is.na(x))
+			x <- match(el,allstim)
+		names(x) <- el
+		stimuli[[i]] <- x
+	}
+	# add the stimuli as dummy data rows, if they are missing
+	if(any(is.na(match(names(unlist(stimuli)),rownames(dat))))) {
+		xx <- unlist(stimuli)
+		xxmat <- unique(cbind(xx,names(xx)))
+		toattach <- matrix(0.0,nrow=nrow(xxmat),ncol=ncol(dat),dimnames=list(xxmat[,2],colnames(dat)))
+		dat <- rbind(toattach,dat)
+	}
 	n <- nrow(dat)
 	phinames <- rownames(dat)
 	
@@ -151,7 +149,6 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
         ret[["P"]] <- P
 	} else {
 		if(inference=="mcmc") {
-	#browser()
 			if(multicores) {
 				# start an mcmc run for each core
 				# liste, die die dateinamen und die startnetze enthaelt
@@ -175,11 +172,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
 						mc.preschedule=FALSE,mc.cores=cores)
-			#	runmcmc(X[[1]],dat=dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
-			#			th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
-			#			usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
-			#			hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin)
-		#browser()		### experimental
+				### experimental
 				if(debug)
 					browser()
 				retlist <- get.phi.final.mcmc(retlist, maxiterations, prob=.3333, qu=.99999)
