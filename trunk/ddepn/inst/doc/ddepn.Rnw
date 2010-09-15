@@ -77,16 +77,18 @@ approach.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Using DDEPN for network inference on simulated data sets}
-This document shows an exemplary workflow to reconstruct a signalling network from 
-simulated data. An analysis on real data can be performed analogously.
+\section{QuickStart: using DDEPN for network inference on simulated data sets}
+This section shows an exemplary workflow to reconstruct a signalling network from 
+simulated data. An analysis on real data can be performed analogously. Details on 
+formatting the input data matrix as well as arguments for the function calls can 
+be found in subsequent sections.
 
 %% chunk 1
 <<label=Load_package,echo=FALSE, eval=FALSE>>=
 library(ddepn)
 @
 
-\section{Simulating data}
+\subsection{Simulating data}
 In this section we show how to generate artificial networks and data. A reference
 signalling network is simulated and used to sample measurements that incorporate
 the network structure.
@@ -108,36 +110,379 @@ Second get intensities for each protein that are based on the network structure 
 #plotdetailed(net,weights=weights,stimuli=stimuli,fontsize=15)
 ## sample data
 dataset <- makedata(net, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
+data <- dataset$datx
 @
 
 
-\section{Running the genetic algorithm}
-Now run the genetic algorithm to reconstruct the network from above. Alternatively, if real
-are used, reconstruct the unknown network structure, based on the measurements alone.
+\subsection{Running the Genetic Algorithm (GA)}
+Now run the genetic algorithm to reconstruct the network from the data generated above and 
+compare it to the originally sampled network \emph{net}.
 
 <<RunGA, results=hide, eval=FALSE>>=
-ret <- ddepn(dataset$datx, phiorig=net, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
-              pdf=NULL, multicores=TRUE, maxiterations=50, p=100, q=0.3, m=0.8, P=NULL,
-              usebics=TRUE, cores=2, lambda=NULL, B=NULL, maxiter=100)
+ret <- ddepn(data, phiorig=net, inference="netga",
+              maxiterations=15, p=30, q=0.3, m=0.8,
+              usebics=TRUE)
 @
-
-
-%\section{Experimental: MCMC sampling}
-%<<MCMCsampling, echo=FALSE, results=hide, eval=FALSE>>=
-%B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
-%ret <- ddepn(dataset$datx,phiorig=net,phi=NULL,stimuli=stimuli,
-%      th=0.5, inference="mcmc", pdf=NULL, usebics=FALSE, multicores=FALSE,
-%      maxiterations=25, lambda=5, B=B, maxiter=100)
-%@
-
-\section{Examining the results}
 After the reconstruction, the generated network can be viewed as follows:
 <<PlotTheResults, eval=FALSE>>=
 plotrepresult(ret)
 @
-\begin{figure}
-\includegraphics[width=10cm,height=10cm]{netresult}
+\begin{figure}[htp]
+\centering
+\includegraphics[width=12cm,height=4cm]{netgaresult}
+\caption{Result plot of the genetic algorithm. Upper left: the given graph; upper right: the inferred graph; lower left: transitive reduction of the inferred
+	graph; lower right: sensitivity/specificity plot for comparing the original and inferred graphs}
+\label{fig:resultga}
 \end{figure}
+
+
+\subsection{Running Markov Chain Monte Carlo Sampling (MCMC)}
+An example run for MCMC sampling follows. Here, the package \emph{multicore} is needed, 
+since two parallel and independent MCMC runs are performed. If \emph{multicore} is not available
+on the machine, just set \emph{multicores=FALSE} to perform sampling for a single chain.
+
+<<MCMCsampling, echo=TRUE, results=hide, eval=FALSE>>=
+# construct a prior matrix with uniform probabilities for each edge
+B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
+maxiterations <- 5000
+burnin <- 1000
+library(multicore)
+ret <- ddepn(data, phiorig=net, inference="mcmc",
+		maxiterations=maxiterations, burnin=burnin,
+		usebics=FALSE, lambda=5, B=B,
+		multicores=TRUE,cores=2)
+
+@
+After the sampling one can examine the sampling run:
+
+<<Examine MCMC sampling, echo=TRUE, results=hide, eval=FALSE>>=
+plotrepresult(ret$samplings[[1]])
+@
+\begin{figure}[htp]
+\centering
+\includegraphics[width=12cm,height=4cm]{netmcmcresult}
+\caption{Result plot of MCMC sampling, analogous to figure \ref{fig:resultga}.}
+\label{fig:resultmcmc}
+\end{figure}
+
+The returned list \emph{ret} contains two elements,
+another list with name samplings (\emph{ret\$samplings}), which holds the different runs
+for the MCMC. In case of \emph{multicores=FALSE}, only one run is performed and \emph{ret\$samplings}
+holds only one element. Otherwise \emph{cores} runs are performed independently in parallel, 
+and \emph{ret\$samplings} holds \emph{cores} elements. The second element in \emph{ret} with 
+name \emph{ltraces} is a matrix and holds the score traces of all runs, where each column
+corresponds to one trace. Output diagnostics can be produced using the R-package \emph{coda}. See
+figure \ref{fig:mcmcoutput} for some example plots.
+
+<<MCMC output, echo=TRUE, results=hide, eval=FALSE>>=
+library(coda)
+mcmc1 <- mcmc(data=ret$ltraces[-c(1:burnin,maxiterations),1])
+mcmc2 <- mcmc(data=ret$ltraces[-c(1:burnin,maxiterations),2])
+mcmcl <- mcmc.list(mcmc1,mcmc2)
+plot(mcmcl)
+gelman.plot(mcmcl)
+@
+\begin{figure}[h]
+\centering
+\includegraphics[width=10cm,height=10cm]{mcmcoutput}
+\caption{Using package coda for some MCMC output analysis. A: Traces for 2 MCMC runs; B: 
+Distributionplot of the sampling; C: gelman.plot of two MCMC samplings}
+\label{fig:mcmcoutput}
+\end{figure}
+
+
+\section{Notes on formatting constraints for the arguments of \emph{ddepn}}
+\label{sec:formatdata}
+There is only one neccessary argument to the function call of \emph{ddepn}: The data 
+matrix \emph{dat}. Optionally, the stimuli list \emph{stimuli}, a reference 
+network \emph{phiorig} and seed networks \emph{phi} can be passed to \emph{ddepn}.
+Each of these arguments is described briefly below.
+
+\subsection*{Input data matrix \emph{dat}}
+The data matrix contains all measurements for the nodes in the rows (e.g. proteins or genes), 
+and the experiments and time points in the columns. There are some special needs on how to name
+the columns. We allow several treatments to be included in the data matrix. Examples for these
+treatments are stimulation by growth factors or inhibition by application of a drug. We
+refer generally to each of these as 'treatment'.
+
+Each of the treatments will be included in the final network as a node, e.g. stimulation
+by the growth hormone \emph{EGF} is added to the data matrix as row with name \emph{EGF} (and thus
+appears as node \emph{EGF} in the final network). The expression values for the stimuli nodes are 
+set to $0$ in each column of the data matrix, but are never used in the algorithm and regarded as
+dummy values. Effects originating in these nodes are estimated in the
+reconstruction process.
+
+To distinguish the different experimental conditions in the matrix, the
+columns of the data matrix have to be named in the format \emph{treatment\_time}, where treatment
+also can be a combination of several treatments, e.g. stimulation by \emph{EGF} and simultaneous
+inhibition by a drug \emph{X}. In this case, each stimulus has to be separated by an ampersand
+(\emph{$\&$}). The time point is separated from the stimuli via an underscore character
+(\emph{$\_$}), and can be on whatever scale (minutes, hours etc.). An example data matrix is
+shown below. In this table, the dummy rows for the treatments are already included (rows EGF and X).
+However, they are not mandatory as input to \emph{ddepn} and, if missing, will be generated 
+automatically, only requiring the correct labeling of the columns.
+
+%\begin{scriptsize}
+\begin{tiny}
+\begin{tabular}{l|cccccccc}
+	& EGF\_1& EGF\_1 & EGF\_2 & EGF\_2 & EGF\&X\_1 & EGF\&X\_1 & EGF\&X\_2 & EGF\&X\_2\\
+	\hline
+	EGF & 0 &  0 &  0  & 0 &  0 &  0  & 0 &  0 \\
+	X   & 0 &  0 &  0  & 0  & 0 & 0 &  0  & 0 \\
+	AKT & 1.45 & 1.8 &  0.99 & 1.6 & 1.78 & 1.8  & 1.56 & 1.58 \\
+	ERK & 1.33 & 1.7 &  1.57 & 1.3  & 0.68 & 0.34 & 0.62 & 0.47 \\
+	MEK & 0.45 & 0.8 &  0.99 & 0.6  & 0.78 & 0.8  & 0.56 & 0.58
+\end{tabular}
+\end{tiny}
+%\end{scriptsize}
+
+\subsection*{\emph{stimuli}} 
+ The user might pass an argument stimuli directly, describing the structure of the treatments,
+ i.e. which treatments were done simultaneously. This is usually generated automatically using the 
+ properly labeled column names of the data matrix and will be removed soon. However a short example
+ exemplifies the use of \emph{stimuli}:\\
+ Consider two experimental conditions, first stimulation by \emph{EGF}, second 
+ simultaneous stimulation by \emph{EGF} and inhibition by \emph{X}. The \emph{stimuli} list holds 
+ two elements:\\
+ 
+\begin{verbatim}
+ > stimuli
+[[1]]
+EGF 
+ 1 
+
+[[2]]
+EGF  X 
+ 1   2
+\end{verbatim}
+  
+Each element is a named numeric vector, holding the row numbers of the treatments in the data table 
+labeled by the names of the treatments.
+
+
+\subsection*{Reference network \emph{phiorig}} 
+
+If desired, a reference network \emph{phiorig} can be given, used to compare the edges of the 
+inferred network to it. The user \textbf{must} ensure that all treatments are included as nodes,
+since the inference will estimate effects from these.\\
+The format of the network must be an adjacency matrix, where each entry corresponds to an edge
+from the node specified by the rowname to the node specified by the column name. Two types of
+edges are allowed: $1$ for activation, $2$ for inhibition. $0$ means no edge between the pair of
+nodes. An example network and corresponding adjacency matrix are shown in figure \ref{fig:examplenet}.
+
+<<ExampleNet, echo=FALSE, eval=FALSE>>=
+phi <- matrix(0,nrow=5,ncol=5,dimnames=list(c("EGF","X","AKT","MEK","ERK"),c("EGF","X","AKT","MEK","ERK")))
+phi[1,c(3,4,5)] <- 1
+phi[2,4] <- 2
+phi[4,5] <- 1
+layout(t(matrix(c(1,2))),widths=c(1,2))
+plotdetailed(phi,stimuli=list(c(EGF=1,X=2)))
+plotmatrix(phi,"phi")
+@
+
+\begin{figure}
+\centering
+%\includegraphics[width=8cm,height=5cm]{examplenet}
+\includegraphics{examplenet}
+\caption{Example network. Left: graph representation, Right: adjacency matrix}
+\label{fig:examplenet}
+\end{figure}
+
+%\begin{verbatim}
+%> phi
+%    EGF X  AKT MEK ERK
+%EGF  0  0   1   0   0
+%X    2  0   1   0   0
+%AKT  0  0   0   0   0
+%MEK  0  0   1   0   0
+%ERK  1  1   0   0   0
+%\end{verbatim}
+
+\subsection*{Seed networks \emph{phi}}
+
+Both the GA and MCMC sampler require single or multiple seed networks. If not given, an 
+unconnected network is used as seed for each individual in the GA population or the start 
+networks for each MCMC run, respectively. However, the user can provide own seed networks using 
+the argument \emph{phi}. This can either be an adjacency matrix or a list of adjacency matrices.
+Again, the treatments \textbf{must} be included as nodes. If given a single adjacency matrix, it
+is used as seed network for each of the individuals in the population of networks during the
+genetic algorithm, or as independent seeds for parallel MCMC samplings. If given as list,
+its length must equal the number of individuals in the population in the GA (specified by the 
+function argument \emph{p}), or the number of independent runs in the MCMC sampler (specified by
+the argument \emph{cores}). The format of the adjacency matrices is the same as for \emph{phiorig}.
+
+
+\section{Prior knowledge inclusion}
+\label{sec:prior}
+
+Currently, two methods for using biological prior knowledge are implemented. We refer to the 
+first as \emph{Laplace} prior (\cite{Froehlich2007,Werhli2007}), and to the second as
+\emph{ScaleFree} prior (\cite{Kamimura}).
+
+\subsection*{Laplace prior}
+\label{sec:laplace}
+The laplace prior penalises deviations of edges in the inferred network from prior edge
+probabilities, aquired from network databases (e.g. KEGG \cite{Kanehisa2008KEGG}). The
+package includes a snapshot of the KEGG database, downloaded in August 2009.
+
+<<kegggraphs, echo=TRUE, results=hide, eval=FALSE>>=
+data(kegggraphs)
+length(kegggraphs)
+@
+
+The list \emph{kegggraphs} includes 195 elements, each of which has 3 members, a string \emph{name} 
+specifying the name of the pathway, a graphNEL object \emph{g} and an igraph object \emph{ig}, 
+which for the time being is not used:
+
+<<kegggraphs element, echo=TRUE, results=hide, eval=FALSE>>=
+kegggraphs[[1]]
+@
+\begin{verbatim}
+$name
+[1] "Glycolysis / Gluconeogenesis"
+
+$g
+A graphNEL graph with directed edges
+Number of Nodes = 64 
+Number of Edges = 256 
+
+$ig
+NULL
+\end{verbatim}
+
+Similar to the set of reference networks from KEGG, one can download other reference networks 
+from different sources (e.g. Reactome, Transpath) and compile the prior distribution from them.
+Each graphNEL object can be converted to a detailed adjacency list (including inhibitions as entries
+with value 2):
+
+<<Convert graphNEL to detailed adjacency matrix, echo=TRUE, results=hide, eval=FALSE>>=
+kegggraph.to.detailed.adjacency(gR=kegggraphs[[1]]$g)
+@
+
+To obtain prior probabilites for each edge between all pairs of nodes present in \emph{kegggraphs}, 
+we follow the approach suggested by \cite{Werhli2007}. We count the total number of node pairs $M$
+occurring in all reference networks as well as the number of node pairs $m$ that are connected 
+via an edge in all reference networks. The prior probability matrix $\mathcal{B}$ is defined as:
+
+\[ \mathcal{B} = \frac{m}{M} \]
+
+We compute a normalising factor $Z$ as described in \cite{Werhli2007} for a given hyperparameter 
+$\lambda$. The prior probability density for each edge between node $i$ and $j$ is calculated
+as laplace type distribution:
+
+\[
+P(\Phi_{ij}|\lambda) = \frac{1}{2\lambda}exp(\frac{-|\Phi_{ij} - \mathcal{B}_{ij}|}{\lambda})
+\]
+
+In the function call to \emph{ddepn}, just pass arguments \emph{B} and \emph{lambda} and
+set \emph{usebics=FALSE} to use the laplace prior for inference.
+
+<<Use Laplace prior, echo=TRUE, results=hide, eval=FALSE>>=
+ddepn(data, lambda=2, B=B, usebics=FALSE)
+@
+
+
+\subsection*{ScaleFree prior}
+\label{sec:scalefree}
+
+According to \cite{Kamimura} we set up a prior distribution that penalises high node degrees
+in the inferred network. The assumption is that for biological networks the degree of a 
+node follows a power law distribution, i.e. the probability of seeing $k$ nodes follows 
+
+\[P(k) \propto k^{-\gamma}.\]
+
+We set up the prior distribution as described in \cite{Kamimura}. To use the ScaleFree prior,
+just pass the arguments \emph{gam} (the exponent $\gamma$), \emph{it} (the number of 
+permutations) and factor \emph{K} to the function call of \emph{ddepn}, and again set 
+argument \emph{usebics=FALSE}.
+
+<<Use ScaleFree prior, echo=TRUE, results=hide, eval=FALSE>>=
+ddepn(data, gam=2.2, it=500, K=0.8, usebics=FALSE)
+@
+ 
+
+\section{Use cases for GA and MCMC inference}
+\label{sec:usecases}
+
+This section shows the various types of calls to \emph{ddepn} with all of the different settings
+(inference type, prior type).\\
+
+\subsection*{Data generation:}
+<<Data generation,echo=TRUE, eval=FALSE>>=
+library(ddepn)
+set.seed(12345)
+n <- 6
+signet <- signalnetwork(n=n, nstim=2, cstim=0, prop.inh=0.2)
+net <- signet$phi
+stimuli <- signet$stimuli
+weights <- signet$weights
+dataset <- makedata(net, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
+data <- dataset$datx
+@
+
+
+\subsection*{GA, use BICs optimisation and no prior}
+<<GA BIC,echo=TRUE,eval=FALSE>>=
+maxiterations=15
+p=30
+q=0.3
+m=0.8
+ret <- ddepn(data, phiorig=net,inference="netga",
+             maxiterations=maxiterations,p=p,q=q,m=m,
+             usebics=TRUE)
+@
+\subsection*{GA, use laplace prior}
+<<GA Laplace,echo=TRUE,eval=FALSE>>=
+maxiterations=15
+p=30
+q=0.3
+m=0.8
+B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
+lambda <- 5
+ret <- ddepn(data, phiorig=net,inference="netga",
+		maxiterations=maxiterations,p=p,q=q,m=m,
+		usebics=FALSE,lambda=lambda,B=B)
+@
+\subsection*{GA, use scalefree prior}
+<<GA ScaleFree,echo=TRUE,eval=FALSE>>=
+maxiterations=15
+p=30
+q=0.3
+m=0.8
+B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
+gam <- 2.2
+it <- 500
+K <- 0.8
+ret <- ddepn(data, phiorig=net,inference="netga",
+		maxiterations=maxiterations,p=p,q=q,m=m,
+		usebics=FALSE,gam=gam,it=it,K=K)
+@
+\subsection*{MCMC, use laplace prior}
+<<MCMC Laplace,echo=TRUE,eval=FALSE>>=
+maxiterations <- 1000
+burnin <- 100
+B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
+lambda <- 5
+ret <- ddepn(data,phiorig=net, inference="mcmc",
+		maxiterations=maxiterations, burnin=burnin,
+		usebics=FALSE, lambda=lambda, B=B)
+@
+\subsection*{MCMC, use scalefree prior}
+<<MCMC ScaleFree,echo=TRUE,eval=FALSE>>=
+B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
+gam <- 2.2
+it <- 500
+K <- 0.8
+ret <- ddepn(data,phiorig=net, inference="mcmc",
+		maxiterations=maxiterations, burnin=burnin,
+		usebics=FALSE, gam=gam, it=it, K=K)
+@
+
+
+
+%If desired, a reference network \emph{phiorig} can be given. This is used to compare edges to the inferred
+%network in the algorithm and calculate sensitivity and specificity statistics. A seed network \emph{phi} can
+%also be provided, which is used as starting point for inference by the genetic algorithm  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\clearpage
@@ -155,7 +500,8 @@ The version number of R and packages loaded for generating the vignette were:
 toLatex(sessionInfo())
 @
 
-
+\bibliographystyle{plain}  % Style BST file
+\bibliography{references}     % Bibliography file (usually '*.bib' ) 
 \end{document}
 
 %

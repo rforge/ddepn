@@ -8,15 +8,15 @@ trapezoid <- function(sp,sn) {
 
 mcmc_performance <- function(lst) {
 	thlim <- seq(0,1,by=0.01)
-	O <- lst$phiorig
+	phiorig <- lst$phiorig
 	stats <- NULL
 	for(th in thlim) {
 		lst <- get.phi.final(lst,th=th)
-		if(is.null(O)) {
+		if(is.null(phiorig)) {
 			comp <- rep(0,8)
 			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
 		} else {
-			comp <- compare.graphs.tc(O=O,M=lst$phi)
+			comp <- compare.graphs.tc(phiorig=phiorig,phi=lst$phi)
 		}
 		stats <- rbind(stats,comp[1:6])
 	}

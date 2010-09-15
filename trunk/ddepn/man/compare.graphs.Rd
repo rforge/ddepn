@@ -10,18 +10,20 @@ Given an original and inferred network, count number of true/false positives and
 Calculate sensitivity and specificity measures.
 }
 \usage{
-compare.graphs.tc(O,M)
+compare.graphs.tc(phiorig,phi,ignore.type=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{O}{Original graph. Stored as adjacency matrix.}
-  \item{M}{Inferred graph. Stored as adjaceny matrix.}
+  \item{phiorig}{Original graph. Stored as adjacency matrix.}
+  \item{phi}{Inferred graph. Stored as adjaceny matrix.}
+  \item{ignore.type}{Boolean. If TRUE, only compare edge abundance, if FALSE, also take into account
+    the type of the edge for counting numbers of true and false edges.}
 }
 \details{
-Counts the number of \eqn{tp} as: activations in \eqn{M} and \eqn{O} + inhibitions in \eqn{M} and \eqn{O}
-Counts the number of \eqn{fp} as: activations or inhibitions in \eqn{M} and no edge in \eqn{O}
-Counts the number of \eqn{tn} as: no edge in \eqn{M} and no edge in \eqn{O}
-Counts the number of \eqn{fn} as: no edge in \eqn{M} and activation or inhibition in \eqn{O}
+Counts the number of \eqn{tp} as: activations in \eqn{phi} and \eqn{phiorig} + inhibitions in \eqn{phi} and \eqn{phiorig}
+Counts the number of \eqn{fp} as: activations or inhibitions in \eqn{phi} and no edge in \eqn{phiorig}
+Counts the number of \eqn{tn} as: no edge in \eqn{phi} and no edge in \eqn{phiorig}
+Counts the number of \eqn{fn} as: no edge in \eqn{phi} and activation or inhibition in \eqn{phiorig}
 }
 \value{
 Vector of comparison measures:
@@ -39,9 +41,9 @@ Christian Bender
 }
 \examples{
 \dontrun{
-  M <- matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,ncol=3)
-  O <- matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,ncol=3)
-  compare.graphs.tc(M,O)
+  phi <- matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,ncol=3)
+  phiorig <- matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,ncol=3)
+  compare.graphs.tc(phi,phiorig)
 }
 }
 

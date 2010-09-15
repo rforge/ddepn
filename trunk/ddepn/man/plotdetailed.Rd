@@ -17,7 +17,7 @@ adjacency matrix with activation edge represented by a 1, inhibition by a 2.
 }
 \usage{
 plotdetailed(phi,weights=NULL,main="",stimuli=NULL,
-			layoutType = "dot", fontsize=40)
+			layoutType = "dot", fontsize=20)
 get.labels(phi)
 get.arrowhead(phi)
 get.arrowtail(phi)
@@ -42,9 +42,11 @@ none
 Christian Bender
 }
 \examples{
+\dontrun{
 mat <- matrix(sample(c(0,1,2),25,replace=TRUE), nrow=5,ncol=5, dimnames=list(LETTERS[1:5],LETTERS[1:5]))
 weights <- matrix(sample(c(1:25),25,replace=TRUE), nrow=5,ncol=5, dimnames=list(LETTERS[1:5],LETTERS[1:5]))
 stimuli <- list(list(A=1))
 plotdetailed(mat,weights,"Some random graph",stimuli,layoutType="dot")
 plotdetailed(mat,weights,"Some random graph",stimuli,layoutType="neato")
+}
 }

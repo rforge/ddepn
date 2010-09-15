@@ -58,7 +58,7 @@ get.arrowtail <- function(phi) {
 	names(arrowtail) <- l.names
 	arrowtail
 }
-plotdetailed <- function(phi, weights=NULL,main="",stimuli=NULL, layoutType="dot", fontsize=40) {
+plotdetailed <- function(phi, weights=NULL,main="",stimuli=NULL, layoutType="dot", fontsize=20) {
 	phix <- phi
 	phix[which(phix==2)] <- 1
 	g1 <- as(phix,"graphNEL")

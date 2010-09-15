@@ -3,9 +3,8 @@
 \alias{getE}
 \alias{replicatecolumns}
 
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-perform.hmmsearch - Do system state optimisation. Usually not called directly.
+perform.hmmsearch - Do system state optimisation using a Hidden Markov Model. Usually not called directly.
 }
 \description{
 Use an HMM to perform search for optimal system state sequence. \code{getE} and
@@ -17,7 +16,6 @@ perform.hmmsearch(phi.n, bestmodel)
 getE(x, datx, thetaprime)
 replicatecolumns(mat, replicates=4)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{phi.n}{Adjacency matrix describing the candidate network.
   }

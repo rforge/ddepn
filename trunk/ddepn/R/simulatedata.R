@@ -24,7 +24,7 @@ simulatedata <- function(phi, mu.bg=0, sd.bg=0.1,
 	if(plot) {
 		datx.m <- tp.median(datx)
 		par(mfrow=c(2,2))
-		plotdetailed(phi)
+		plotdetailed(phi,fontsize=15)
 		plotmatrix(phi,"phi")
 		plotmatrix(uniquegamma(gammax),"gamma")
 		cols <- rainbow(nrow(datx.m))

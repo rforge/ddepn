@@ -24,22 +24,6 @@ posterior <- function(phi, L, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=
 	post
 }
 
-## laplace prior as suggested by Froehlich et. al. 2007
-#posterior2 <- function(phi, L, lambda, B, Z) {
-#	# B has same dimensions as phi, reduce phi to network with only one edge type
-#	EG <- sum(abs(B - detailed.to.simple.regulations(phi)))
-#	#PGlambda <- log2(exp(-lambda * EG)) - Z
-#	#PGlambda <- log2(2^(-lambda * EG)) - Z
-#	PGlambda <- (-lambda * EG) - Z
-#	post <- L + PGlambda
-#	post
-#}
-
-# sparsity prior
-#posterior3 <- function(phi, L, lambda, B=NULL, Z=NULL, gam=2.2, it=500, K=0.8) {
-#	post <- L + log2(pgs(phi,gam,K,it))
-#	post
-#}
 
 pi <- function(i,gam,N) {
 	(1-(1/(1-gam)))/(N^(1-(1/(1-gam)))) * i^(-(1/(gam-1)))
@@ -61,15 +45,6 @@ pgs <- function(phi,gam,K=0.8,it=500) {
 		piNp <- piN[perm]
 		res <- res + prod(exp(2*N*K*piNp[ind[,1]]*piNp[ind[,2]]-1)) * fixe
 	}
-#	for(b in 1:B) {
-#		perm <- cbind(sample(1:5),1:5)
-#		ind2 <- ind
-#		ind2[,1] <- perm[match(ind[,1],perm[,2]),1]
-#		ind2[,2] <- perm[match(ind[,2],perm[,2]),1]
-#
-#		piind <- pi(ind2,gam,N)
-#		res <- res + prod(exp(2*N*K*piind[,1]*piind[,2]-1)) * fixe
-#	}
 	res <- res/it
 	res
 }

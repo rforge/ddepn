@@ -10,7 +10,6 @@ For \eqn{n} nodes, sample a network with \eqn{nstim} stimuli and \eqn{cstim} com
 \usage{
 signalnetwork(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=NULL)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{n}{Integer. Number of nodes.}
   \item{nstim}{Integer. Number of stimuli.}
@@ -43,9 +42,6 @@ Christian Bender
 \examples{
 \dontrun{
 signalnetwork(n=10, nstim=4, cstim=4, prop.inh=.4, plot=TRUE)
-# creates an error since only 11 combinatorial stimuli are possible
-# for nstim=4 stimuli.
-# signalnetwork(n=10, nstim=4, cstim=11, prop.inh=.4, plot=TRUE)
 }
 
 }

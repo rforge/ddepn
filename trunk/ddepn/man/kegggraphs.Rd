@@ -6,7 +6,7 @@
 kegggraphs
 }
 \description{
-Contains the KEGG Hierarchy. Downloaded sometime between August 2009.
+Contains the KEGG Hierarchy. Downloaded around August 2009.
 }
 %\usage{data(kegggraphs)}
 \format{List of 195, each Element is one KEGG pathway.}
@@ -22,7 +22,9 @@ http://www.genome.jp/kegg/
 Kanehisa: Kyoto Encyclopaedia of Genes and Genomes
 }
 \examples{
+\dontrun{
 data(kegggraphs)
 names(kegggraphs)
+}
 }
 \keyword{datasets}

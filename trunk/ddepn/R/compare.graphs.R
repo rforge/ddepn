@@ -4,18 +4,14 @@
 ###############################################################################
 
 
-compare.graphs.tc <- function(O,M,ignore.type=TRUE) {
+compare.graphs.tc <- function(phiorig,phi,ignore.type=TRUE) {
 	if(ignore.type) {
-		originalnc <- detailed.to.simple.regulations(O)
-		#originalc <- transitive.closure(detailed.to.simple.regulations(O),mat=T)
-		matnc <- detailed.to.simple.regulations(M)
-		#matc <- transitive.closure(detailed.to.simple.regulations(M),mat=T)
+		originalnc <- detailed.to.simple.regulations(phiorig)
+		matnc <- detailed.to.simple.regulations(phi)
 	} else {
-		originalnc <- O
-		matnc <- M
+		originalnc <- phiorig
+		matnc <- phi
 	}
-	#diag(matc) <- 0
-	#diag(originalc) <- 0
 	diag(matnc) <- 0
 	diag(originalnc) <- 0
 

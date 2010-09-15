@@ -11,15 +11,15 @@ Internal function.
 }
 \usage{
 samplephi(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
-		maxiter=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, k=NULL)
+		hmmiterations=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL)
 initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
-		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, k=NULL)
+		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL)
 }
 \arguments{
   \item{dat}{The data matrix}
   \item{phi}{The initial network. Can be NULL.}
   \item{stimuli}{The stimuli list.}
-  \item{maxiter}{Integer specifying the maximum number of iterations in the statespacesearch}
+  \item{hmmiterations}{Integer specifying the maximum number of iterations in the statespacesearch}
   \item{multicores}{TRUE for using multiple cores.}
   \item{Lmax}{Likelihood score}
   \item{thetax}{Parameter matrix}
@@ -36,7 +36,7 @@ initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
   \item{fanin}{Integer: maximal indegree for nodes.}
   \item{gam}{Prior influence strength in sparsity prior.}
   \item{it}{Number of iterations to generate background distribution in sparsity prior.}
-  \item{k}{Proportionality factor in sparsity prior}
+  \item{k}{Scaling factor in sparsity prior}
 }
 \details{
 Used for initializing random networks. Called internally.

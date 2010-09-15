@@ -7,11 +7,11 @@ Plot result of reconstruction.
 Summary plot of the result of a network reconstruction.
 }
 \usage{
-plotrepresult(lst, pdf, fontsize=15)
+plotrepresult(lst, outfile, fontsize=15)
 }
 \arguments{
   \item{lst}{Return list of \code{\link{netga}}}
-  \item{pdf}{Path to pdf file where to plot.}
+  \item{outfile}{Path to pdf file where to plot.}
   \item{fontsize}{Font size of text in the plot.}
 }
 \details{

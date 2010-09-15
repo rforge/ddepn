@@ -1,15 +1,14 @@
-# TODO: Add comment
+# Sample random networks.
 # 
 # Author: benderc
 ###############################################################################
 
 
 samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
-		maxiter=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL) {
+		hmmiterations=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL) {
 	if(phiasis) {
 		phi.n <- phi
 	} else {
-		#phi <- matrix(0, nrow=length(antibodies), ncol=length(antibodies), dimnames=list(antibodies,antibodies))
 		out <- match(unique(names(unlist(stimuli))),colnames(phi))
 		nostimmat <- phi[,-out]
 		proplength <- length(antibodies)-length(unique(unlist(stimuli)))
@@ -39,8 +38,6 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 		gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps[sti])
 		gammax <- cbind(gammax, gx)
 	}
-	#gammax <- replicatecolumns(gammaposs[,sort(sample(ncol(gammaposs),length(tps),replace=TRUE))],reps)
-	#gammax <- propagate.effect.set(phi.n,tps,stimuli,reps=reps)
 	Ltmplist <- likl(dat,gammax)
 	Ltmp <- Ltmplist$L
 	thetax <- Ltmplist$theta
@@ -52,7 +49,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 	if(searchstatespace) {
 		bestmodel <- list(phi=phi.n,L=Lnew,aic=aicnew,bic=bicnew,dat=dat,
 				theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
-				maxiter=maxiter, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1),fanin=fanin)
+				hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1),fanin=fanin)
 		L.res <- perform.hmmsearch(phi.n, bestmodel)	
 		gammax <- matrix(L.res$gammax,nrow=nrow(bestmodel$gamma),ncol=ncol(bestmodel$gamma),dimnames=dimnames(bestmodel$gamma))
 		thetax <- matrix(L.res$thetax,nrow=nrow(bestmodel$theta),ncol=ncol(bestmodel$theta),dimnames=dimnames(bestmodel$theta))
@@ -73,7 +70,8 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 
 
 initialphi <- function(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
-		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL) {
+		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL,
+		gam=NULL, it=NULL, K=NULL) {
 	phimax <- phi
 	thetamax <- thetax
 	gammamax <- gammax

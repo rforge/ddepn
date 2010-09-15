@@ -30,9 +30,11 @@ Christian Bender
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \examples{
+\dontrun{
 mat <- matrix(0, nrow=5,ncol=10)
 k <- 14
 coord(k,mat)
+}
 }
 
 \keyword{ internal }

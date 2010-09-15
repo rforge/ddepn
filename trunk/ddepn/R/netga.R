@@ -4,18 +4,14 @@
 # m: mutation rate
 # nodes: names of the nodes in the network
 
-
 netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
-		q=0.3, m=0.8, maxiter=30, multicores=FALSE, usebics=FALSE, cores=2,
+		q=0.3, m=0.8, hmmiterations=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
-		Z=NULL, scorefile="score.pdf",fanin=4,
+		Z=NULL, scorefile=NULL,fanin=4,
 		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5) {
   dat[is.na(dat)] <- 0
-  #quantL <- 3
-  #quantBIC <- 3
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
- # reps <- ((ncol(dat)/length(tps))/length(stimuli))
   reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
   phireference <- matrix(0,nrow=length(V), ncol=length(V), dimnames=list(V,V))
   laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
@@ -30,14 +26,14 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  X[[1]] <- phireference
 	  if(fanin>=nrow(phireference)) {
 	  	notstim <- setdiff(1:nrow(dat),unlist(stimuli))
-	  	phireference[,notstim] <- phireference[,notstim] + 1
-	  	diag(phireference) <- 0
+	  	phireference[,notstim] <- phireference[,notstim] + 1 # set all zeros to 1, i.e. make a completely connected network with only activations
+	  	diag(phireference) <- 0 ## no self activations
 	  	X[[2]] <- phireference
 	  }
 	  if(multicores) {
-		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,maxiter=maxiter,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K, mc.preschedule=FALSE,mc.cores=cores)		
+		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K, mc.preschedule=FALSE,mc.cores=cores)		
 	  } else {
-		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,maxiter=maxiter,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
+		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
 	  }
   }
   ## check if all individuals are set correctly
@@ -49,11 +45,11 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  browser()
 	  }	  
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
-		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,maxiter=maxiter,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
+		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
 	  }
   }  
   if(any(sapply(P, class)!="list")) {
-	  print("netga.R, line 56: Some elements in the network list P seem to be empty.")
+	  print("netga.R, line 53: Some elements in the network list P seem to be empty.")
 	  browser()
   }
   if(usebics){
@@ -81,40 +77,15 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   diffpercent <- opts <- NULL
   numequalscore <- 0
   autoc <- list(acf=rep(0,5),n.used=10)
-  for(i in 1:maxiterations) {
-#   #### doesn't seem to be sufficient for convergence, complaint by a reviewer from ismb
-#	## test if the mean of the last 20 differences of the average fitness values are 
-#	## equal to 0: assume it to be normally distributed, therefore perform a t-test
-#	## if H0 cannot be rejected anymore, then we reached convergence
-#	if(i>20) {
-#		pdiff <- t.test(diff(opts[(length(opts)-20):length(opts)]))$p.value	  
-#	} else {
-#		pdiff <- 0
-#	}
-#	if(pdiff>0.1) {
-#		for(ii in 1:length(P)) {
-#			P[[ii]][["iterations"]] <- i
-#		}
-#		break
-#	}
+  for(iter in 1:maxiterations) {
 	pdiff <- "x"
-	# terminate criterion: autocorrelation ???
-	# if all autocorrelation values for all lags are bigger than 7*sqrt(n)/n, then 
-	# stop calculation
-	###if(all(autoc$acf > 7*sqrt(autoc$n.used)/autoc$n.used)) {
-	###	print("autocor: found stop criterion.")
-	###	for(ii in 1:length(P)) {
-	###		P[[ii]][["iterations"]] <- i
-	###	}
-	###	break
-	###}
 	# terminate criterion: 50x equal optimal score, then return
 	if(oldoptwks==optwks) {
 		numequalscore <- numequalscore + 1
 		print(paste("No improvement in optimal score for ", numequalscore, " times."))
 		if(numequalscore==50) {
 			for(ii in 1:length(P)) {
-				P[[ii]][["iterations"]] <- i
+				P[[ii]][["iterations"]] <- iter
 			}
 			break
 		}
@@ -123,21 +94,18 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	}
 	##new generation
     Pprime <- list()
-	#browser()
     ################
     # selection    #
     ################
-	#browser()
 	diffpercent <- c(diffpercent,abs(round(((min(wks) - mean(wks))/min(wks)*100), digits=3)))
 	opts <- c(opts, optwks)
-    print(paste("selection ",i, "diff(opt,avg): ", diffpercent[length(diffpercent)], " Diffs in Opts==0? ", pdiff))
-	if(i %% 10 == 0) {
-		if(!is.null(pdf)) {
+    print(paste("selection ",iter, "diff(opt,avg): ", diffpercent[length(diffpercent)], " Diffs in Opts==0? ", pdiff))
+	if(iter %% 10 == 0) {
+		if(!is.null(scorefile)) {
 			pdf(scorefile,width=8,height=10)			
 		}
-		#browser()
-		par(mfrow=c(5,1))
-		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("min: ", round(min(opts),3), " max: ", round(max(opts),3)))
+		layout(matrix(c(1,1,2,3,4,5), 3, 2, byrow = TRUE))
+		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Score trace: min: ", round(min(opts),3), " max: ", round(max(opts),3)))
 		autoc <- acf(opts, main="Autocorrelation of median scores",ci.type="ma")
 		abline(h=-2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
 		abline(h=2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
@@ -146,11 +114,10 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		abline(h=2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
 		plot(diff(opts), type='b', ylab="differences avg scores (t-1 -> t)",xlab="generation i+1", pch="*")
 		plot(diffpercent, type='l', ylab="percent optimumscore - avgscore", xlab="generation",main=paste("optimum(minimum difference): ",min(diffpercent)))
-		if(!is.null(pdf)) {
+		if(!is.null(scorefile)) {
 			dev.off()	
 		}
 	}
-	#write.table(cbind(diffpercent, opts), file="diffsopts.txt")
     # select only the better models, i.e. maximise the likelihoods
 	# or minimize bics
 	if(usebics) {
@@ -190,12 +157,11 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     ##############
     # crossover  #
     ##############
-    print(paste("crossover",i))
+    print(paste("crossover",iter))
 	# sample randomly number of crossings individuals, i.e. numcrossings/2 pairs
 	# take preferrably the most fit individuals for crossingover
     crossing <- matrix(sample(1:p, numcrossings, prob=probs, replace=FALSE), nrow=2)
 	# sampling with uniform prob
-	#crossing <- matrix(sample(1:p, numcrossings, replace=FALSE), nrow=2)
 	phicrosses <- list()
 	PP <- list()
 	# do all crossovers
@@ -207,7 +173,6 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  print("**********  CROSS1: fanin too big somewhere or edge leading to stimulus")
 		  browser()
 	  }
-	 #browser()
 	  if(length(which(colSums(ifelse(phicross[[2]]==0,0,1))>fanin))>0 ||
 	  			any(phicross[[2]][,unique(names(unlist(stimuli)))]!=0)) {
 		  print("**********   CROSS2: fanin too big somewhere or edge leading to stimulus")
@@ -220,11 +185,6 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  PP[[(counter+1)]]$phi <- phicross[[2]]
 	  counter <- counter+2
 	}
-#browser()
-#	if(any(sapply(PP, class)!="list")) {
-#		browser()
-#	}
-
 	if(multicores) {
 		ret <- mclapply(PP, function(x) perform.hmmsearch(x$phi, x), mc.preschedule=FALSE,mc.cores=cores)	
   	} else {
@@ -264,8 +224,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		wks <- sapply(Pprime, function(x) x$bic)
 		wks2 <- wks - max(wks) -1
 		probs <- wks2/sum(wks2)
-		#optwks <- quantile(wks,na.rm=T)[2] # 75% quantile
-		optwks <- quantile(wks,na.rm=T,probs=quantBIC) # median
+		optwks <- quantile(wks,na.rm=T,probs=quantBIC)
 	} else {
 		# maximize over posterior if prior is given
 		if(laplace || sparsity) {
@@ -275,8 +234,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		}
 		wks2 <- wks + abs(min(wks)) +1
 		probs <- wks2/sum(wks2)
-		#optwks <- quantile(wks,na.rm=T)[4] # 25% quantile
-		optwks <- quantile(wks,na.rm=T,probs=quantL) # median
+		optwks <- quantile(wks,na.rm=T,probs=quantL)
 	}
 	
     ##############
@@ -286,8 +244,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     # select the individuals proportional to their likelihood?
     #mutation <- sample(1:p, (p*m), prob=(1-probs)) ## mutate the worst ones
 	mutation <- sample(1:p, (p*m), prob=probs) ## mutate the best ones
-	#mutation <- sample(1:p, (p*m), prob=(1-probs)) ## mutate with uniform probability
-    print(paste("mutation",i))
+    print(paste("mutation",iter))
 	counter <- 1
 	oldphis <- list()
 	oldedges <- newedges <- NULL
@@ -297,7 +254,6 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		# take care of fanin
 		out <- which(colSums(ifelse(phitmp==0,0,1))>=fanin)
 		diag(phitmp) <- -1	
-		#phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(dat),ncol=length(unlist(stimuli)))
 		phitmp[,unique(names(unlist(stimuli)))] <- matrix(-1,nrow=nrow(dat),ncol=length(unique(unlist(stimuli))))
 		fout <- which(which(phitmp==0,arr.ind=TRUE)[,2]%in%out)
 		phitmp[which(phitmp==0)[fout]] <- -1
@@ -322,7 +278,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	} else {
 			ret <- lapply(Pprime[mutation], function(x) perform.hmmsearch(x$phi, x))	
 	}
-#	## fang ab, dass manchmal leere Werte zur�ckgegeben werden, warum???
+	## fang ab, dass manchmal leere Werte zurueckgegeben werden, warum???
 	for(k in 1:length(ret)) {
 		if(is.null(ret[[k]])){
 			cat("*!*")

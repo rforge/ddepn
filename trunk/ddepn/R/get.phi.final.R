@@ -14,7 +14,7 @@ get.phi.final.mcmc <- function(retlist,maxiterations,prob=.333,qu=.99999) {
 		retX <- retlist[[rtl]]
 		acts <- which(retX$freqa>=cutrng[2])
 		inhs <- which(retX$freqi>=cutrng[2])
-		aimax <- apply(cbind(retX$freqa[intersect(acts,inhs)],retX$freqi[intersect(acts,inhs)]),1,function(x) which(x==max(x)))
+		aimax <- apply(cbind(retX$freqa[intersect(acts,inhs)],retX$freqi[intersect(acts,inhs)]),1,function(x) which(x==max(x))[1]) ## when the same number of inhs and acts, take act
 		intai <- intersect(acts,inhs)
 		acts <- acts[-match(intai[which(aimax==2)],acts)]
 		inhs <- inhs[-match(intai[which(aimax==1)],inhs)]
@@ -40,9 +40,6 @@ get.phi.final <- function(lst,th=0.8) {
 	rn <- rownames(lst$dat)
 	phi.final <- matrix(0,nrow=n,ncol=n,dimnames=list(rn,rn))
 	weights <- matrix(0,nrow=n,ncol=n,dimnames=list(rn,rn))
-	#weights.tc <- lst$weights.tc
-	#phi.activation.count <- lst$phi.activation.count
-	#phi.inhibition.count <- lst$phi.inhibition.count
 	ca <- signif(lst$conf.act,digits=3)
 	ci <- signif(lst$conf.inh,digits=3)
 	for(i in 1:nrow(phi.final)) {
@@ -54,7 +51,6 @@ get.phi.final <- function(lst,th=0.8) {
 				if(ca[i,j]>=th || ci[i,j]>=th) {
 					if(ca[i,j]==ci[i,j]) {
 						phi.final[i,j] <- 1
-						#weights[i,j] <- paste(ca[i,j],"??")
 						weights[i,j] <- "undisting"
 					}
 					if(ca[i,j]>ci[i,j]) {

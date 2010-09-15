@@ -52,12 +52,9 @@ A list containing the dataset:
 Christian Bender
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
+\dontrun{
 dataset <- makedata(matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,dimnames=list(LETTERS[1:3],LETTERS[1:3])), list(A=1))
-
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

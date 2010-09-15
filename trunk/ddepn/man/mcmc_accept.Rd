@@ -12,12 +12,9 @@ mcmc_accept(bestmodel, bettermodels, newlambda)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{bestmodel}{The current model.
-  }
-  \item{bettermodels}{The proposed model
-  }
-  \item{newlambda}{The proposed prior strength.
-  }
+  \item{bestmodel}{The current model. }
+  \item{bettermodels}{The proposed model. }
+  \item{newlambda}{The proposed prior strength. }
 }
 \details{
 TODO

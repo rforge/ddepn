@@ -14,8 +14,8 @@ uniquegamma(gammax)
 uniquegammaposs(gammaposs.tmp)
 }
 \arguments{
-  \item{gammax}{}
-  \item{gammaposs.tmp}{}
+  \item{gammax}{Optimised state matrix.}
+  \item{gammaposs.tmp}{Theoretical state matrix.}
 }
 \details{
 TODO
@@ -36,8 +36,6 @@ TODO
 TODO
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+##TODO
 }
 \keyword{ internal }

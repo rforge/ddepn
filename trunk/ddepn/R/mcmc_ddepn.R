@@ -2,20 +2,21 @@
 # 
 # Author: benderc
 ###############################################################################
-runmcmc <- function(x,dat,phiorig,phi,stimuli,th,multicores,pdf,maxiterations,
-		usebics,cores,lambda,B,Z,samplelambda,maxiter,fanin,gam,it,K) {
+runmcmc <- function(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
+		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin) {
 	ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=x$phi, stimuli=stimuli,
-			th=th, multicores=multicores, pdf=x$pdf, maxiterations=maxiterations,
+			th=th, multicores=multicores, outfile=x$outfile, maxiterations=maxiterations,
 			usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
-			maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K)
+			hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K,
+			burnin=burnin)
 	ret
 }
 
 mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
-		th=0.8, multicores=FALSE, pdf=NULL, maxiterations=10000,
-		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,samplelambda=samplelambda,
-		maxiter=30,fanin=4,
-		gam=NULL,it=NULL,K=NULL) {
+		th=0.8, multicores=FALSE, outfile=NULL, maxiterations=10000,
+		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
+		samplelambda=TRUE, hmmiterations=30, fanin=4,
+		gam=NULL, it=NULL, K=NULL, burnin=1000) {
 	if(!is.null(B))
 		diag(B) <- 0
 	laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
@@ -24,7 +25,6 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	#dat[is.na(dat)] <- 0
 	antibodies <- rownames(dat)
 	tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
-	#reps <- ((ncol(dat)/length(tps))/length(stimuli))
 	reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
 	longprop <- 1:max(length(tps),(nrow(phi)*100))
 	gammaposs <- propagate.effect.set(phi,longprop,stimuli,reps=reps)
@@ -57,8 +57,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	
 	bestmodel <- list(phi=phi,L=Linit,aic=aicinit,bic=bicinit,posterior=posteriorinit,dat=dat,
 			theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
-			maxiter=maxiter, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1), lambda=lambda,
-			B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,gam=gam,it=it,K=K)#,
+			hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1), lambda=lambda,
+			B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,gam=gam,it=it,K=K,phi.orig=phiorig, burnin=burnin)#,
 			#samplelambda=samplelambda)
 
 	it <- 1
@@ -102,92 +102,89 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			browser()
 		
 		bestmodel <- ret$bestproposal
-		## count how often any edge occurred at a given position
-		tmp <- bestmodel$phi
-		tmp[bestmodel$phi==2] <- 0
-		freqa <- freqa + tmp
-		tmp <- bestmodel$phi
-		tmp[bestmodel$phi==1] <- 0
-		freqi <- freqi + (tmp/2)
-		### get a 'final' network
-		eoccur <- freqi + freqa
-		lst <- bestmodel
-		conf.act <- freqa/eoccur
-		conf.act[is.na(conf.act)] <- 0
-		conf.inh <- freqi/eoccur
-		conf.inh[is.na(conf.inh)] <- 0
-		bestmodel[["conf.act"]] <- conf.act 
-		bestmodel[["conf.inh"]] <- conf.inh
-		bestmodel[["eoccur"]] <- eoccur
-		bestmodel[["phiorig"]] <- phiorig
-		lst <- get.phi.final(bestmodel,th=0.5)
+		if(it>=burnin) {
+			## count how often any edge occurred at a given position
+			tmp <- bestmodel$phi
+			tmp[bestmodel$phi==2] <- 0
+			freqa <- freqa + tmp
+			tmp <- bestmodel$phi
+			tmp[bestmodel$phi==1] <- 0
+			freqi <- freqi + (tmp/2)
+			### get a 'final' network
+			eoccur <- freqi + freqa
+			lst <- bestmodel
+			conf.act <- freqa/eoccur
+			conf.act[is.na(conf.act)] <- 0
+			conf.inh <- freqi/eoccur
+			conf.inh[is.na(conf.inh)] <- 0
+			bestmodel[["freqa"]] <- freqa
+			bestmodel[["freqi"]] <- freqi
+			bestmodel[["conf.act"]] <- conf.act 
+			bestmodel[["conf.inh"]] <- conf.inh
+			bestmodel[["eoccur"]] <- eoccur
+			bestmodel[["phi.orig"]] <- phiorig
+			bestmodel[["burnin"]] <- burnin
 		
-		if(!is.null(phiorig)) {
-			comp <- compare.graphs.tc(O=phiorig,M=lst$phi)
-		} else {
-			comp <- rep(0,8)
-			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
-		}
-		if(laplace) {
-			stats[it,] <- as.matrix(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3]))
-		} else if(sparsity) {
-			stats[it,] <- as.matrix(c(bestmodel$posterior, comp[1:6], bestmodel$gam, ret$acpt, ret$lacpt, st[3]))
-		}	
+			#lst <- get.phi.final(bestmodel,th=th)
+			lst <- get.phi.final.mcmc(list(bestmodel), it, prob=.333, qu=.99999)[[1]]	
+			if(!is.null(phiorig)) {
+				comp <- compare.graphs.tc(phiorig=phiorig,phi=lst$phi)
+			} else {
+				comp <- rep(0,8)
+				names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
+			}
+			if(laplace) {
+				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3])))
+			} else if(sparsity) {
+				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$gam, ret$acpt, ret$lacpt, st[3])))
+			}
+			if(nrow(replace)!=1)
+				replace <- t(replace)
+			stats[it,] <- replace
+		}		
 		# some convergence statistic
 		#SSW <- sd(stats[,"MAP"],na.rm=T)
 		#SSB <- 
 		#Rhat <- ((nrow(stats)-1)/nrow(stats)) * SSW
 		#l <- maxiterations
 		l <- it #nrow(stats)
-		if(it%%250==1 && it>1){
-			if(!is.null(pdf))
-				pdf(pdf)
+		if(it%%250==1 && it >= burnin){
+			if(!is.null(outfile))
+				pdf(outfile)
 			par(mfrow=c(3,3),mar=c(3,4,1,1),oma=c(1,1,1,1))
 			plot(1:l, stats[1:l,"MAP"], type='l',ylab="",xlab="iteration",main="log posterior")
 			perf <- mcmc_performance(bestmodel)
-			#plot(1:l, stats[1:l,"sn"], type='l',ylim=c(0,1),ylab="",xlab="iteration",col="blue",main="SN/SP plot")
-			#lines(1:l, stats[1:l,"sp"], lty=2,col="violet")
-			#legend("topleft", c("sn","sp"), lty=c(1,2),col=c("blue","violet")) #,"red","orange"))
 			hist(stats[1:l,"acpt"],breaks=100,main="acpt")
 			hist(stats[1:l,"lacpt"],breaks=100,main="lacpt")
 			hist(stats[1:l,"lambda"],breaks=100,main="lambda")
-			#plot(1:l, stats[1:l,"acpt"], lty=1, col="#222222",main="acpt",pch=".")
-			#plot(1:l, stats[1:l,"lacpt"], lty=1, col="#222222",main="lacpt",pch=".")
-			#plot(1:l, stats[1:l,"lambda"], type='l',ylim=c(0,30),ylab="lambda",xlab="iteration")			
-			#boxplot(as.data.frame(stats[,"stmove"]),ylab="time")
 			if(is.null(phiorig)) {
 				plot.new()
 				text(0.5,0.5,labels="no origininal network given")
 			} else {
 				plotdetailed(phiorig,stimuli=bestmodel$stimuli,fontsize=25)
 			}
-			if(it>1000) {
-				boxplot(as.data.frame(stats[(1000:it),c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
-						main=paste("avgSN: ", signif(median(stats[(1000:it),"sn"]),digits=4), "avgSP: ", signif(median(stats[(1000:it),"sp"]),digits=4)))
-			} else {
-				boxplot(as.data.frame(stats[1:it,c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
-						main=paste("BURNIN avgSN: ", signif(median(stats[,"sn"]),digits=4), "avgSP: ", signif(median(stats[,"sp"]),digits=4)))
-			}
+			#if(it>burnin) {
+				boxplot(as.data.frame(stats[(burnin:it),c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
+						main=paste("avgSN: ", signif(median(stats[(burnin:it),"sn"]),digits=4), "avgSP: ", signif(median(stats[(burnin:it),"sp"]),digits=4)))
+			#} else {
+			#	boxplot(as.data.frame(stats[1:it,c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
+			#			main=paste("BURNIN avgSN: ", signif(median(stats[,"sn"]),digits=4), "avgSP: ", signif(median(stats[,"sp"]),digits=4)))
+			#}
 			# partial autocorrelation function:
 			R <- acf(stats[1:l,"MAP"])
 			weights <- bestmodel$phi
 			weights[bestmodel$phi==1] <- freqa[bestmodel$phi==1]
 			weights[bestmodel$phi==2] <- freqi[bestmodel$phi==2]
 			plotdetailed(bestmodel$phi,stimuli=bestmodel$stimuli,weights=bestmodel$weights,fontsize=15)
-			if(!is.null(pdf))
+			if(!is.null(outfile))
 				dev.off()
 		}
-		if(it%%1000) {
-			#if(!is.null(pdf))
-			rdfile <- sub(".pdf$","_mcmcdata.RData",pdf)
+		if(it%%1000==1 && !is.null(outfile)) {
+			rdfile <- sub(".pdf$","_mcmcdata.RData",outfile)
 			save(bestmodel,stats,freqa,freqi,it,file=rdfile)
 		}
 		it <- it + 1
-#		if(it%%500==0) {
-#			if(!is.null(pdf)) {
-#				save.image(file="MCMCimage.RData")	
-#			}
-#		}
+
 	}
 	bestmodel[["stats"]] <- stats
 	bestmodel[["freqa"]] <- freqa

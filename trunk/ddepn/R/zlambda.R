@@ -8,9 +8,7 @@
 ###############################################################################
 
 zlambda <- function(B, lambda) {
-	#ind <- 1
 	V <- 1:nrow(B) #rownames(B)
-	#v <- 1 #V[ind]
 	Z <- 0
 	for(v in 1:nrow(B)) {
 		print(v)
@@ -21,7 +19,6 @@ zlambda <- function(B, lambda) {
 		for(i in 1:length(Vp)) {
 			# parents of v
 			pa <- Vp[i]
-			#                  sum(1-B_pav) + sum(B_~pav)
 			summand <- exp(-lambda * (sum(1-B[pa,v]) + sum(B[setdiff(Vp,pa),v])))
 			summe <- summe + summand
 		}

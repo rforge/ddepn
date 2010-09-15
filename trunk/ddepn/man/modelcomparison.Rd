@@ -13,10 +13,9 @@ Model comparison scores incorporating the complexity of the model.
 get.aic(phi,L)
 get.bic(phi,L,n)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{phi}{Network}
-  \item{L}{Likelihood}
+  \item{phi}{Adjacency matrix.}
+  \item{L}{Likelihood.}
   \item{n}{Number of data points.}
 }
 \details{

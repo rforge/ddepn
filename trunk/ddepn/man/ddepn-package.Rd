@@ -3,22 +3,24 @@
 \alias{ddepn-package}
 \docType{package}
 \title{
-Dynamic Deterministic Effects Propagation Networks: Infer signalling networks from RPPA-Data.
+Dynamic Deterministic Effects Propagation Networks: Infer signalling networks from high througput array data.
 }
 \description{
-Uses reverse phase protein array data to infer the signalling patterns among the measured proteins
-under different stimuli/inhibitions. Each stimulus/inhibition is included as a separate node 
-and edges to the measured proteins are inferred. Models the signal flow through the network and 
-defines a set of system state transitions that can be reached in the given network. Searches for
-the optimal path through these possible system states using an HMM. Estimation of Gaussian distributions
-for active and passive states for each node depending on the activity state of the protein is done. Network search
-is performed in a genetic algorithm.
+Uses high throughput array data (e.g. from Reverse Phase Protein arrays or mRNA microarrays)
+to infer regulatory or signalling relationships among the measured proteins after different stimuli/inhibitions.
+Each stimulus/inhibition is included as a separate node and edges to the measured proteins are
+inferred. The signal flow through the network is modelled in a boolean fashion and a set of reachable system states
+is created. Afterwards, the optimal path through the possible system states is searched for using an HMM.
+Estimation of Gaussian distributions for active and passive states for each node depending on the activity state of
+the protein is done and a likelihood based score is calculated for a network. Network structure search is performed
+in either a genetic algorithm that optimises a population of candidate networks or via a markov chain monte carlo sampling
+that summarises the distribution over the network structures via sampling.
 }
 \details{
 \tabular{ll}{
 Package: \tab ddepn\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
+Version: \tab 1.0.3\cr
 Date: \tab 2010-01-08\cr
 License: \tab GPL\cr
 LazyLoad: \tab yes\cr
@@ -53,11 +55,35 @@ dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.s
 ## uniform prior matrix
 B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
 
-## Genetic algorithm
-ret <- ddepn(dataset$datx, phiorig=phit, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
-              pdf=NULL, multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
-              usebics=TRUE, cores=10, lambda=NULL, B=NULL, maxiter=100)	
+## Genetic algorithm, using BIC score as optimisation criterion
+ret1 <- ddepn(dataset$datx, phiorig=phit, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
+              outfile=NULL, multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
+              usebics=TRUE, cores=10, lambda=NULL, B=NULL, hmmiterations=100)	
 x11()
-plotdetailed(ret$phi)
+plotdetailed(ret1$phi,stimuli=stimuli,fontsize=20)
+
+## Genetic algorithm, using a laplace prior and the posterior probabilities as optimisation criterion
+B <- matrix(0.5,nrow=n,ncol=n,dimnames=dimnames(phit))
+ret2 <- ddepn(dataset$datx, phiorig=phit, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
+              outfile=NULL, multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
+              usebics=FALSE, cores=10, lambda=2.2, B=B, hmmiterations=100) 
+x11()
+plotdetailed(ret2$phi,stimuli=stimuli,fontsize=20)
+
+## MCMC sampling using a laplace prior
+ret3 <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
+      th=0.5, inference="mcmc", outfile=NULL, usebics=FALSE, multicores=FALSE,
+      maxiterations=300, lambda=2, B=B, hmmiterations=100)
+x11()
+plotdetailed(ret3$samplings[[1]]$phi,stimuli=ret3$samplings[[1]]$stimuli)
+
+## MCMC sampling using a sparsity prior
+ret4 <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
+      th=0.5, inference="mcmc", outfile=NULL, usebics=FALSE, multicores=FALSE,
+      maxiterations=300, gam = 2.2, it = 500, K = 0.8, hmmiterations=100)
+x11()
+plotdetailed(ret4$samplings[[1]]$phi,stimuli=ret4$samplings[[1]]$stimuli)
+
+
 }
 }

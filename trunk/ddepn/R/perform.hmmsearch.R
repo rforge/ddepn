@@ -31,8 +31,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	tps <- bestmodel$tps
 	stimuli <- bestmodel$stimuli
 	dat <- bestmodel$dat
-	maxiter <- bestmodel$maxiter
-	#R <- bestmodel$reps
+	hmmiterations <- bestmodel$hmmiterations
 	gamprimetotal <- NULL
 	gamposstotal <- NULL
 	# separates HMM für jedes experiment, also jeden stimulus
@@ -42,25 +41,20 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		datx <- dat[,exind]
 		longprop <- 1:max(length(tps),(nrow(phi.n)*100)) # set high maximum number of propagation steps
 		gammaposs <- uniquegammaposs(propagate.effect.set(phi.n,longprop,list(s),reps=R))
-	#print(paste("*************#################***************"))
-	#print(paste("Diff longprop/ncol(gammaposs): ", max(longprop), " / ", ncol(gammaposs)))
-	#print(paste("*************#################***************"))
 		V <- rownames(datx)
 		TC <- unique(colnames(datx))
 		M <- ncol(gammaposs)
 		N <- nrow(datx)
-		T <- length(tps)	
+		T <- length(tps)
+		
 		## initial transition matrix, all transitions equally likely
 		Adimn <- colnames(gammaposs) #c(colnames(gamposs),"X0")
 		A <- matrix((1/(M*M)),nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
-		#A <- matrix(0,nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
-		#A <- apply(A, c(1,2), function(x,A) 1/(ncol(A)^2 - sum(1:(ncol(A)-1))), A=A)
-		#A[lower.tri(A)] <- 0
 		pseudocount <- 1
 		pseudocountsum <- M
 		A <- log2(A)
-		## pseudocounts brauch ich die??? 
-		rkl <- matrix(1,nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
+		### pseudocounts brauch ich die??? 
+		###rkl <- matrix(1,nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
 		## initial gamprime: dimensions: 
 		#gamprime <- array(rep(gammaposs[,sort(sample(M,T,replace=TRUE))],R), dim=c(N, T, R), dimnames=list(V, TC, 1:R))
 		gamprime <- replicatecolumns(gammaposs[,sort(sample(M,T,replace=TRUE))],R)
@@ -70,9 +64,8 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		equally <- 0
 		it <- 0
 		restarts <- 0		
-		while(it <= maxiter) {
+		while(it <= hmmiterations) {
 			it <- it + 1
-			#print(paste("####################   ",it))
 			## total likelihood
 			Lold <- sum(Lik,na.rm=T)
 			Liktmp <- likl(datx,gamprime)
@@ -140,19 +133,19 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			## get new gamma suggestion and estimate parameters
 			gamprime <- gammaposs[,maxima.ind]
 			colnames(gamprime) <- colnames(datx)
+
 			## M-step
 			## maximize the transition matrices parameters
 			sel <- cbind(1:length(maxima.ind),2:(length(maxima.ind)+1))
 			## transitions hold the switchings from state i to state j in the state sequence
 			transitions <- matrix(maxima.ind[sel],ncol=2)
-			## hier ändere ich nur die übergangswahrscheinlichkeiten, die auch gesehen wurden
+			## hier aendere ich nur die übergangswahrscheinlichkeiten, die auch gesehen wurden
 			trans <- table(transitions[-nrow(transitions),1])
 			transall <- table(paste(transitions[-nrow(transitions),1], transitions[-nrow(transitions),2], sep="_"))		
 			ind <- match(as.numeric(sapply(names(transall), function(x) strsplit(x, split="_")[[1]][1])),as.numeric(names(trans)))	
 			transprob <- log2((transall+pseudocount)) - log2(trans[ind]+pseudocountsum)
 			indices <- sapply(names(transprob), function(x,rows) (as.numeric(strsplit(x, "_")[[1]])-c(0,1)) %*% c(1,rows),rows=nrow(A))
-			A[indices] <- transprob
-			#A[lower.tri(A)] <- -Inf	
+			A[indices] <- transprob	
 			A <- A - log2(sum(2^A))	
 		} # end outer for loop
 		# now we have an A, an E and a gammaprime for the first experiment
@@ -171,7 +164,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	L.res <- list(datx=dat, phix=phi.n, stimx=stimuli,
 			gammax=gamprimetotal, thetax=thetaprime,
 			replicates=R, Likl=Lik,aic=aic,bic=bic,
-			statespace_maxiterations=maxiter, 
+			statespace_maxiterations=hmmiterations, 
 			gammaposs=gamposstotal)
 	return(L.res)
 }

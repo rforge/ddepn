@@ -11,22 +11,22 @@
 #         normalization factor for the prior distribution
 #
 #
-#  Priors: laplace: Fröhlich 2007 / Wehrli/Husmeier 2007
+#  Priors: laplace: Frï¿½hlich 2007 / Wehrli/Husmeier 2007
 #          sparsity: Kamimura 200??? F7 414, Lee 2005 etc., not sure about the correct citation
 # Author: benderc
 ###############################################################################
 
-ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", pdf=NULL,
+ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="netga", outfile=NULL,
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
 				  usebics=TRUE, cores=2, 
 				  lambda=NULL, B=NULL, samplelambda=TRUE,
-				  maxiter=100, fanin=4,
+				  hmmiterations=100, fanin=4,
 				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-				  debug=FALSE) {
+				  debug=FALSE,burnin=1000) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations, if not provided
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
-	if(is.null(stimuli)) {
+	#if(is.null(stimuli)) {
 		cols <- colnames(dat)
 		tmp <- sapply(cols, function(x) strsplit(x,"_")[[1]])
 		exps <- unique(tmp[1,])
@@ -35,24 +35,71 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 		stimuli <- list()
 		for(i in 1:length(stims)) {
 			el <- stims[[i]]
-			x <- match(el,allstim)
+			x <- match(el,rownames(dat))
+			if(is.na(x))
+				x <- match(el,allstim)
 			names(x) <- el
 			stimuli[[i]] <- x
 		}
-	} else {
-		allstim <- unique(names(unlist(stimuli)))	
-	}
-	# test if the stimuli are included as nodes, if not, add them
-	test <- which(is.na(match(allstim,rownames(dat))))
-	if(length(test)>0) {
-		for(tt in test) {
-			dat <- rbind(rep(0.0,ncol(dat)), dat)
-			rownames(dat) <- c(allstim[tt],rownames(dat))
+		if(any(is.na(match(names(unlist(stimuli)),rownames(dat))))) {
+			xx <- unlist(stimuli)
+			xxmat <- unique(cbind(xx,names(xx)))
+			xxmat <- xxmat[order(xxmat[,2]),]
+			toattach <- matrix(0.0,nrow=nrow(xxmat),ncol=ncol(dat),dimnames=list(xxmat[,2],colnames(dat)))
+			dat <- rbind(toattach,dat)
 		}
-	}
+	#} else {
+	#	allstim <- unique(names(unlist(stimuli)))	
+	#}
 	n <- nrow(dat)
 	phinames <- rownames(dat)
 	
+	## check if seeds are provided properly
+	if(!is.null(phi)) {
+		# set up the seed population for netga
+		if(inference=="netga") {
+			if(class(phi)=="list" && length(phi)!=p) {
+				stop(paste("Error: length of seed network list must be the same as p =",p))
+			}
+			if(class(phi)=="matrix") {
+				if(dim(phi)!=c(nrow(dat),nrow(dat))) {
+					stop(paste("Error: dimension of seed network must be",nrow(dat),"x",nrow(dat),"."))
+				}
+				tmp <- vector("list",p)
+				for(i in 1:p)
+					tmp[[i]] <- phi
+				phi <- tmp
+				rm(tmp)
+			}
+			V <- rownames(dat)
+			tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
+			reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
+			X <- vector("list",p)
+			for(i in 1:p) {
+				X[[i]] <- phi[[i]]
+			}
+			if(multicores) {
+				P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K, mc.preschedule=FALSE,mc.cores=cores)		
+			} else {
+				P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
+			}
+		} else if(inference=="mcmc") {
+			if(class(phi)=="list" && length(phi)!=cores) {
+				stop(paste("Error: length of seed network list must be the same as cores =",cores))
+			}
+			if(class(phi)=="matrix") {
+				if(dim(phi)!=c(nrow(dat),nrow(dat))) {
+					stop(paste("Error: dimension of seed network must be",nrow(dat),"x",nrow(dat),"."))
+				}
+				if(multicores==TRUE) {
+					P <- vector("list",cores)
+					for(i in 1:cores)
+						P[[i]] <- list(phi=phi)
+					rm(tmp)
+				}
+			}
+		}
+	}
 	laplace <- !is.null(lambda) && !is.null(B)
 	sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
 	none <- is.null(lambda) && is.null(B) && is.null(gam) && is.null(it) && is.null(K)
@@ -69,10 +116,14 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 	}
 	
 	if(inference=="netga") {
-		scorefile <- paste("score",sub("\\.pdf","",pdf),".pdf",sep="")
+		if(!is.null(outfile)) {
+			scorefile <- paste("score",sub("\\.pdf","",outfile),".pdf",sep="")
+		} else {
+			scorefile <- NULL
+		}
         stime <- system.time(P <- netga(dat,stimuli,P=P,maxiterations=maxiterations,
 						p=p,q=q,m=m,multicores=multicores,usebics=usebics,
-						cores=cores,lambda=lambda,B=B,Z=Z,maxiter=maxiter,
+						cores=cores,lambda=lambda,B=B,Z=Z,hmmiterations=hmmiterations,
 						scorefile=scorefile,fanin=fanin,
 						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC))
         phi.activation.count <- phi.inhibition.count <- weights.tc <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat))) 
@@ -93,17 +144,17 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
         ret <- list(dat=dat, phi.activation.count=phi.activation.count,
 					phi.inhibition.count=phi.inhibition.count,
 					phi.orig=phiorig, phi=NULL, weights=NULL,
-					weights.tc=weights.tc, result=result, conf.act=conf.act,conf.inh=conf.inh,
+					weights.tc=weights.tc, stats=result, conf.act=conf.act,conf.inh=conf.inh,
 					stimuli=stimuli) #, resultep=resultep)
         ret <- get.phi.final(ret,th)
-        plotrepresult(ret,pdf)
+        plotrepresult(ret,outfile)
         ret[["P"]] <- P
 	} else {
 		if(inference=="mcmc") {
-			#browser()
+	#browser()
 			if(multicores) {
 				# start an mcmc run for each core
-				# liste, die die dateinamen und die startnetze enthält
+				# liste, die die dateinamen und die startnetze enthaelt
 				if(is.null(P)) {
 					P <- list()
 					phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
@@ -113,71 +164,69 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL, th=0.5, inference="
 				}
 				X <- list()
 				for(cr in 1:cores) {
-					filename <- paste(sub("\\.pdf","",pdf),"_",cr,".pdf",sep="")
-					X[[cr]] <- list(phi=P[[cr]]$phi, pdf=filename)
+					if(!is.null(outfile))
+						filename <- paste(sub("\\.pdf","",outfile),"_",cr,".pdf",sep="")
+					else
+						filename <- NULL
+					X[[cr]] <- list(phi=P[[cr]]$phi, outfile=filename)
 				}
 				retlist <- mclapply(X, runmcmc, dat=dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
-						th=th, multicores=multicores, pdf=pdf, maxiterations=maxiterations,
+						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
-						maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K,
+						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
 						mc.preschedule=FALSE,mc.cores=cores)
-				#runmcmc(X[[1]],dat=dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
-				#		th=th, multicores=multicores, pdf=pdf, maxiterations=maxiterations,
-				#		usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
-				#		maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K)
-				### experimental
+			#	runmcmc(X[[1]],dat=dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
+			#			th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
+			#			usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
+			#			hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin)
+		#browser()		### experimental
 				if(debug)
 					browser()
 				retlist <- get.phi.final.mcmc(retlist, maxiterations, prob=.3333, qu=.99999)
 				##### end experimental
-				## get the likelihood traces
-				ltraces <- sapply(retlist,function(x) x$stats[,"MAP"])
-				## make sure ltraces has less than 10000 rows
-				if(nrow(ltraces)>10000){
-					ss <- seq(1,nrow(ltraces),by=nrow(ltraces)/10000)
-					ltraces <-  ltraces[ss,]
-				}
-				colors <- rainbow(ncol(ltraces))
-				ret <- list(retlist=retlist,ltraces=ltraces)
-				## plot results
-				pdf(pdf,onefile=TRUE)
-				plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
-				if(ncol(ltraces)>1)
-					sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)
-				## get the final network from all cores inferences
-				#net <- retlist[[1]]$phi
-				#net <- retlist[[1]]
-				for(netnr in 2:cores) {
-					ret2 <- retlist[[netnr]]
-					plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
-					#net2 <- retlist[[netnr]]
-					#net$conf.act <- net$conf.act + net2$conf.act
-					#net$conf.inh <- net$conf.inh + net2$conf.inh					
-#					sel <- net$conf.act!=0 & net2$conf.act!=0
-#					net$conf.act[sel] <- colMeans(rbind(net$conf.act[sel],net2$conf.act[sel]))
-#					sel2 <- setdiff(1:length(net$phi),which(sel))
-#					net$conf.act[sel] <- net$conf.act[sel2] + net2$conf.act[sel2]				
-#					sel <- net$conf.inh!=0 & net2$conf.inh!=0
-#					net$conf.inh[sel] <- colMeans(rbind(net$conf.inh[sel],net2$conf.inh[sel]))
-#					sel2 <- setdiff(1:length(net$phi),which(sel))
-#					net$conf.inh[sel] <- net$conf.inh[sel2] + net2$conf.inh[sel2]
-				}
-				#net$conf.act <- net$conf.act/cores
-				#net$conf.inh <- net$conf.inh/cores
-				#ret2 <- get.phi.final(net,th=th)
-				#plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
-				dev.off()
 			} else {
 				#phistart <- matrix(sample(c(0,1,2),n*n,replace=T), nrow=n, ncol=n, dimnames=list(phinames,phinames))
-				if(is.null(phi))
+				if(is.null(phi)) {
 					phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
-				else
-					phistart <- phi
+				} else {
+					if(class(phi)=="list")
+						phistart <- phi[[1]]
+					else
+						phistart <- phi
+				}
 				ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
-						th=th, multicores=multicores, pdf=pdf, maxiterations=maxiterations,
+						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z,
-						maxiter=maxiter,fanin=fanin, gam=gam, it=it, K=K)
+						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin)
+				retlist <- list()
+				retlist[[1]] <- ret
 			}
+			## get the likelihood traces
+			ltraces <- sapply(retlist,function(x) x$stats[,"MAP"])
+			## make sure ltraces has less than 10000 rows
+			if(nrow(ltraces)>10000){
+				ss <- seq(1,nrow(ltraces),by=nrow(ltraces)/10000)
+				ltraces <-  ltraces[ss,]
+			}
+			colors <- rainbow(ncol(ltraces))
+			ret <- list(samplings=retlist,ltraces=ltraces)
+			## plot results
+			if(!is.null(outfile)) {
+				pdf(outfile,onefile=TRUE)
+			} else {
+				x11()
+				par(mfrow=c(1,2))
+			}
+			plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
+			if(ncol(ltraces)>1)
+				sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)
+			## get the final network from all cores inferences
+			for(netnr in 1:length(retlist)) {
+				ret2 <- retlist[[netnr]]
+				plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
+			}
+			if(!is.null(outfile))
+				dev.off()
 		}
 	}
 	ret

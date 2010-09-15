@@ -19,7 +19,7 @@ trapezoid(sp,sn)
   }
 }
 \details{
-\code{trapezoid} calculates the area under curve (AUC) of two vectors of SN and SP values.
+\code{trapezoid} calculates the (approximate) area under curve (AUC) of two vectors of SN and SP values.
 }
 \value{
 TODO

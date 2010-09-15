@@ -18,11 +18,13 @@ uniquegamma <- function(gammax) {
 uniquegammaposs <- function(gammaposs.tmp) {
 	gammaposs <- gammaposs.tmp[,1,drop=F]
 	cols <- colnames(gammaposs.tmp)[1]
-	for(i in 2:ncol(gammaposs.tmp)) {
-		if(all(gammaposs.tmp[,i]==gammaposs.tmp[,i-1]))
-			next
-		gammaposs <- cbind(gammaposs,gammaposs.tmp[,i])
-		cols <- c(cols, colnames(gammaposs.tmp)[i])
+	if(ncol(gammaposs.tmp)>1) {
+		for(i in 2:ncol(gammaposs.tmp)) {
+			if(all(gammaposs.tmp[,i]==gammaposs.tmp[,i-1]))
+				next
+			gammaposs <- cbind(gammaposs,gammaposs.tmp[,i])
+			cols <- c(cols, colnames(gammaposs.tmp)[i])
+		}
 	}
 	colnames(gammaposs) <- cols
 	return(gammaposs)

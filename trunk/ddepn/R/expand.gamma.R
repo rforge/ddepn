@@ -3,10 +3,10 @@
 # Author: benderc
 ###############################################################################
 
-expand.gamma <- function(e.gamma, reps=4, order=TRUE) {
+expand.gamma <- function(gammaposs, reps=4, order=TRUE) {
 	gamma.ex <- NULL
 	for(i in 1:reps) {
-		gamma.ex <- cbind(gamma.ex, e.gamma)
+		gamma.ex <- cbind(gamma.ex, gammaposs)
 	}
 	if(order) {
 		ord <- order(as.numeric(colnames(gamma.ex)))
