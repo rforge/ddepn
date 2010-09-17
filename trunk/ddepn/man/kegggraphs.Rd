@@ -23,6 +23,7 @@ Kanehisa: Kyoto Encyclopaedia of Genes and Genomes
 }
 \examples{
 \dontrun{
+library(ddepn)
 data(kegggraphs)
 names(kegggraphs)
 }

@@ -53,6 +53,7 @@ Christian Bender
 }
 \examples{
 \dontrun{
+library(ddepn)
 dataset <- makedata(matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,dimnames=list(LETTERS[1:3],LETTERS[1:3])), list(A=1))
 }
 }

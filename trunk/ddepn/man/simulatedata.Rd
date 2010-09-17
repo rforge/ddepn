@@ -41,6 +41,7 @@ Christian Bender
 
 \examples{
 \dontrun{
+library(ddepn)
 n <- 8
 phi <- matrix(sample(c(0,1,2),n*n,replace=TRUE),nrow=n,dimnames=list(LETTERS[1:n],LETTERS[1:n]))
 simulatedata(phi, mu.bg=0, sd.bg=0.1,

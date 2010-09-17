@@ -164,24 +164,26 @@ dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.s
 B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
 
 ## Genetic algorithm
-ret1 <- ddepn(dataset$datx, phiorig=phit, th=0.5, inference="netga",
-              multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8,
+ret1 <- ddepn(dataset$datx, phiorig=phit, inference="netga",
+              maxiterations=30, p=15, q=0.3, m=0.8,
               usebics=TRUE)	
 x11()
 plotdetailed(ret1$phi,stimuli=ret1$stimuli)
               
 ## mcmc
-ret2 <- ddepn(dataset$datx,phiorig=phit,
-      th=0.5, inference="mcmc", usebics=FALSE, multicores=FALSE,
-      maxiterations=300, lambda=5, B=B)
+ret2 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
+              maxiterations=300, burnin=100,
+              usebics=FALSE, lambda=5, B=B) 
+      
 x11()
 plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
 
 ## use mcmc with multiple cores, i.e. perform two independent runs
 ## requires package multicore and, of course multiple cores in the hardware
- ret3 <- ddepn(dataset$datx,phiorig=phit,
-        th=0.5, inference="mcmc", usebics=FALSE, multicores=TRUE, cores=2,
-        maxiterations=300, lambda=5, B=B)
+ ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
+                multicores=TRUE, cores=2,
+                maxiterations=300, burnin=100,
+                usebics=FALSE, lambda=5, B=B)
 
 }
 }

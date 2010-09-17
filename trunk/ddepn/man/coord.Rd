@@ -31,6 +31,7 @@ Christian Bender
 
 \examples{
 \dontrun{
+library(ddepn)
 mat <- matrix(0, nrow=5,ncol=10)
 k <- 14
 coord(k,mat)

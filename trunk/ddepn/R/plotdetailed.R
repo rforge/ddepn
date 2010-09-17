@@ -60,14 +60,21 @@ get.arrowtail <- function(phi) {
 }
 plotdetailed <- function(phi, weights=NULL,main="",stimuli=NULL, layoutType="dot", fontsize=20) {
 	phix <- phi
+	if(all(phix==0)) {
+		phix[1,1] <- 1
+		emptygraph <- TRUE
+	} else {
+		emptygraph <- FALSE
+	}
 	phix[which(phix==2)] <- 1
 	g1 <- as(phix,"graphNEL")
 	if(!is.null(weights)) {
 		labels <- get.labels(weights)
 	} 
 	arrowhead <- get.arrowhead(phi)
-	graph.par(list(graph = list(main = main))) #, sub = "... and a subtitle",cex.main = 1.8, cex.sub = 1.4, col.sub = "gray")))
-
+	graph.par(list(graph = list(main = main)), edges = list(lwd = 1)) #, sub = "... and a subtitle",cex.main = 1.8, cex.sub = 1.4, col.sub = "gray")))
+	if(emptygraph)
+		graph.par(list(edges = list(lwd = 0)))
 	## something with the edgeRenderInfo function doesn't work, so pass edgeAttrs directly
 	## to layoutGraph
 	## In stead, passing nodeAttrs directly to layoutGraph doesn't seem to work, so
@@ -82,11 +89,17 @@ plotdetailed <- function(phi, weights=NULL,main="",stimuli=NULL, layoutType="dot
 		nodeRenderInfo(g1) <- list(shape = "box", fill=fills, fontsize=fontsize)
 	}
 	if(!is.null(weights)) {
-		g1 <- layoutGraph(g1, recipEdges = "distinct", edgeAttrs = list(label = labels, 
-						arrowhead = arrowhead), layoutType=layoutType)
+		if(emptygraph) {
+			g1 <- layoutGraph(g1, layoutType=layoutType) #, recipEdges = "distinct", layoutType=layoutType)
+		} else {
+			g1 <- layoutGraph(g1, recipEdges = "distinct", edgeAttrs = list(label = labels, 
+							arrowhead = arrowhead), layoutType=layoutType)
+		}
 	} else {
 		g1 <- layoutGraph(g1, recipEdges = "distinct", edgeAttrs = list(arrowhead = arrowhead),
 						layoutType=layoutType)
 	}
-	renderGraph(g1)	
+	renderGraph(g1)
+	if(emptygraph)
+		graph.par(list(edges = list(lwd = 1)))
 }

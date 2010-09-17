@@ -33,7 +33,21 @@ get.arrowtail(phi)
 }
 \details{
 \code{get.labels}, \code{get.arrowhead} and \code{get.arrowtail} are helper functions for
-the plot construction and usually not called directly. 
+the plot construction and usually not called directly.
+
+The \code{stimuli} list describes the input stimuli or inhibitions. Each of these external treatment
+nodes are drawn as red nodes in the graph. The format of the list should be:\\
+Example: Assume two treatments \code{EGF} and \code{X}, a data matrix data:
+      \tabular{lcccccccc}{
+         \tab EGF_1\tab EGF_1 \tab EGF_2 \tab EGF_2 \tab EGF&X_1 \tab _1 EGF&X_2 \tab EGF&X_2 \tab EGF&X_2\cr
+         EGF \tab 0 \tab  0 \tab  0  \tab 0 \tab  0 \tab  0  \tab 0 \tab  0 \cr
+         X   \tab 0 \tab  0 \tab  0  \tab 0  \tab 0 \tab 0 \tab  0  \tab 0 \cr
+         AKT \tab 1.45 \tab 1.8 \tab  0.99 \tab 1.6 \tab 1.78 \tab 1.8  \tab 1.56 \tab 1.58 \cr  
+      }
+The stimuli list should be in the format:
+\code{stimuli <- list(c(EGF=1),c(EGF=1,X=2))},
+i.e. each element in the list corresponds to a treatment. Each treatment is a named numeric vector 
+describing the row indices of the treatments in the data matrices. 
 }
 \value{
 none
@@ -43,6 +57,7 @@ Christian Bender
 }
 \examples{
 \dontrun{
+library(ddepn)
 mat <- matrix(sample(c(0,1,2),25,replace=TRUE), nrow=5,ncol=5, dimnames=list(LETTERS[1:5],LETTERS[1:5]))
 weights <- matrix(sample(c(1:25),25,replace=TRUE), nrow=5,ncol=5, dimnames=list(LETTERS[1:5],LETTERS[1:5]))
 stimuli <- list(list(A=1))

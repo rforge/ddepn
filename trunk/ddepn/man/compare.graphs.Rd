@@ -41,6 +41,7 @@ Christian Bender
 }
 \examples{
 \dontrun{
+  library(ddepn)
   phi <- matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,ncol=3)
   phiorig <- matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,ncol=3)
   compare.graphs.tc(phi,phiorig)

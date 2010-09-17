@@ -57,12 +57,10 @@ phit <- signet$phi
 stimuli <- signet$stimuli
 ## sample data
 dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
-## uniform prior matrix
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
 ## Genetic algorithm
-ret1 <- ddepn(dataset$datx, phiorig=phit, phi=NULL, stimuli=NULL, th=0.01, inference="netga",
-              outfile=NULL, multicores=TRUE, maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
-              usebics=TRUE, cores=10, lambda=NULL, B=NULL, hmmiterations=100) 
+ret1 <- ddepn(dataset$datx, phiorig=phit, inference="netga",
+              maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
+              usebics=TRUE) 
 
 plotrepresult(ret1,outfile=NULL)
 ret2 <- get.phi.final(ret1, th=0.9)
@@ -70,9 +68,11 @@ plotrepresult(ret2,outfile=NULL)
 
 ## mcmc
 maxiterations <- 300
-ret3 <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
-      th=0.5, inference="mcmc", outfile=NULL, usebics=FALSE, multicores=FALSE,
-      maxiterations=maxiterations, lambda=5, B=B, hmmiterations=100)
+## uniform prior matrix
+B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
+ret3 <- ddepn(dataset$datx,phiorig=phit,
+      inference="mcmc", usebics=FALSE,
+      maxiterations=maxiterations, burnin=100, lambda=5, B=B)
 
 plotrepresult(ret3$samplings[[1]],outfile=NULL)
 ret4 <- ret3

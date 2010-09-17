@@ -39,6 +39,7 @@ TODO
 }
 \examples{
 \dontrun{
+library(ddepn)
 B <- matrix(runif(16),nrow=4,ncol=4,dimnames=list(LETTERS[1:4],LETTERS[1:4]))
 zlambda(B,2.2)
 }

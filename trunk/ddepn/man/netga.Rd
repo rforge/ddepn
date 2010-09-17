@@ -65,7 +65,7 @@ netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   	on the standard device for plotting.}
 }
 \details{
-TODO
+Usually this function is called internally by \code{\link{ddepn}}.
 }
 \value{
 A list containing the model objects for each candidate network in the population. Each 
@@ -109,7 +109,7 @@ TODO
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-TODO
+\code{\link{ddepn}}
 }
 \examples{
 \dontrun{
@@ -126,7 +126,7 @@ stimuli <- signet$stimuli
 dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
 
 ## now the GA
-ret <- netga(dataset$dat, stimuli, P=NULL, maxiterations=50, p=10,
+ret <- netga(dataset$dat, stimuli, P=NULL, maxiterations=30, p=15,
     q=0.3, m=0.8, hmmiterations=100, multicores=FALSE, usebics=TRUE, cores=1,
     lambda=NULL, B=NULL, Z=NULL, scorefile=NULL)
 

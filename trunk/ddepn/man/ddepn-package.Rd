@@ -20,7 +20,7 @@ that summarises the distribution over the network structures via sampling.
 \tabular{ll}{
 Package: \tab ddepn\cr
 Type: \tab Package\cr
-Version: \tab 1.0.3\cr
+Version: \tab 1.1\cr
 Date: \tab 2010-01-08\cr
 License: \tab GPL\cr
 LazyLoad: \tab yes\cr
@@ -56,31 +56,32 @@ dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.s
 B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
 
 ## Genetic algorithm, using BIC score as optimisation criterion
-ret1 <- ddepn(dataset$datx, phiorig=phit, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
-              outfile=NULL, multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
-              usebics=TRUE, cores=10, lambda=NULL, B=NULL, hmmiterations=100)	
+ret1 <- ddepn(dataset$datx, phiorig=phit,inference="netga",
+              maxiterations=30, p=15, q=0.3, m=0.8,
+              usebics=TRUE)	
 x11()
 plotdetailed(ret1$phi,stimuli=stimuli,fontsize=20)
 
 ## Genetic algorithm, using a laplace prior and the posterior probabilities as optimisation criterion
 B <- matrix(0.5,nrow=n,ncol=n,dimnames=dimnames(phit))
-ret2 <- ddepn(dataset$datx, phiorig=phit, phi=NULL, stimuli=NULL, th=0.5, inference="netga",
-              outfile=NULL, multicores=FALSE, maxiterations=30, p=15, q=0.3, m=0.8, P=NULL,
-              usebics=FALSE, cores=10, lambda=2.2, B=B, hmmiterations=100) 
+ret2 <- ddepn(dataset$datx, phiorig=phit, inference="netga",
+              maxiterations=30, p=15, q=0.3, m=0.8,
+              usebics=FALSE, lambda=5, B=B) 
 x11()
-plotdetailed(ret2$phi,stimuli=stimuli,fontsize=20)
+plotdetailed(ret2$phi,stimuli=ret2$stimuli,fontsize=20)
 
 ## MCMC sampling using a laplace prior
-ret3 <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
-      th=0.5, inference="mcmc", outfile=NULL, usebics=FALSE, multicores=FALSE,
-      maxiterations=300, lambda=2, B=B, hmmiterations=100)
+ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
+              maxiterations=300, burnin=100,
+              usebics=FALSE, lambda=2, B=B)
+
 x11()
 plotdetailed(ret3$samplings[[1]]$phi,stimuli=ret3$samplings[[1]]$stimuli)
 
-## MCMC sampling using a sparsity prior
-ret4 <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
-      th=0.5, inference="mcmc", outfile=NULL, usebics=FALSE, multicores=FALSE,
-      maxiterations=300, gam = 2.2, it = 500, K = 0.8, hmmiterations=100)
+## MCMC sampling using a scale free prior
+ret4 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
+              maxiterations=300, burnin=100,
+              usebics=FALSE, gam = 2.2, it = 500, K = 0.8)
 x11()
 plotdetailed(ret4$samplings[[1]]$phi,stimuli=ret4$samplings[[1]]$stimuli)
 

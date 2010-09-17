@@ -48,7 +48,7 @@ runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
    \code{\link{mcmc_ddepn}}.}
 }
 \details{
-MCMC is still under development. Use it with care.
+Usually this function is called internally by \code{\link{ddepn}}.
 }
 \value{
   A list of the following elements:
@@ -100,7 +100,7 @@ TODO
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-TODO
+\code{\link{ddepn}}
 }
 \examples{
 \dontrun{
@@ -128,13 +128,12 @@ V <- rownames(dataset$datx)
 phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(V,V))
 
 ## now the sampling
+
 ret <- mcmc_ddepn(dataset$datx, phiorig=phit, phi=phistart, stimuli=stimuli,
-				th=0.5, multicores=FALSE, maxiterations=300,
-				usebics=usebics, lambda=5, B=B, Z=Z, hmmiterations=100)
+            th=th, multicores=FALSE, outfile=NULL, maxiterations=300,
+            usebics=FALSE, cores=1, lambda=lambda, B=B, Z=Z,
+            hmmiterations=100, fanin=4, burnin=100)
 }
-%ret <- ddepn(dataset$datx,phiorig=phit,phi=NULL,stimuli=stimuli,
-%			th=th, inference="mcmc", outfile=NULL, usebics=FALSE,
-%			maxiterations=maxiterations, lambda=lambda, B=B, hmmiterations=30)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

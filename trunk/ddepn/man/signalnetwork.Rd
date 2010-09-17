@@ -41,6 +41,7 @@ Christian Bender
 }
 \examples{
 \dontrun{
+library(ddepn)
 signalnetwork(n=10, nstim=4, cstim=4, prop.inh=.4, plot=TRUE)
 }
 
