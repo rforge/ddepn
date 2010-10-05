@@ -5,7 +5,7 @@
 Compute normalisation factor for prior information.
 }
 \description{
-Compute normalisation factor for sparsity prior as defined in Wehrli/Husmeier 2007.
+Compute normalisation factor for prior as defined in Wehrli/Husmeier 2007.
 }
 \usage{
 zlambda(B, lambda)
@@ -15,9 +15,7 @@ zlambda(B, lambda)
   \item{lambda}{The strength of prior influence.  }
 }
 \details{
- Compute normalisation factor for Laplace prior as defined in Wehrli/Husmeier 2007.
- models prior knowledge as network energy that includes a boundary for maximal incoming 
- edges (fan.in).\cr 
+ Compute normalisation factor for Laplace prior as defined in Wehrli/Husmeier 2007.\cr 
  \eqn{Z = prod_v ( sum_pa(v) ( exp(-lambda * (sum_minpa(v)(1-B[v,m]) + sum_mnotinpa(v)(B[v,m])) ) ) )
    =                                           B[-v,pa(v)]}
 }

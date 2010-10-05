@@ -44,7 +44,7 @@ transitive.closure(g, mat = FALSE, loops = TRUE)
 
 tp.median(dat)
 
-detailed.to.simple.regulations(phi, inhibition="2")
+detailed.to.simple.regulations(phi)
 
 reverse.direction(phi, i)
 }
@@ -64,7 +64,6 @@ Functions are usually not called directly.
 \item{loops}{todo}
 \item{dat}{todo}
 \item{phi}{todo}
-\item{inhibition}{todo}
 \item{i}{todo}
  }
 \details{

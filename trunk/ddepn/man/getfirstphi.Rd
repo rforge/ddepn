@@ -10,7 +10,7 @@
 }
 \usage{
 getfirstphi(x, dat, stimuli, V, tps, reps, hmmiterations,
- lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL)
+ lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL, priortype="none")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,9 +25,10 @@ getfirstphi(x, dat, stimuli, V, tps, reps, hmmiterations,
   \item{B}{The Prior information matrix. Corresponds to prior edge probabilities in the final network.}
   \item{Z}{The normalisation factor for the prior distribution.}
   \item{fanin}{Integer: maximal indegree for nodes.}
-  \item{gam}{Prior influence strength in sparsity prior.}
-  \item{it}{Number of iterations to generate background distribution in sparsity prior.}
-  \item{k}{Proportionality factor in sparsity prior}
+  \item{gam}{Prior influence strength in scalefree prior.}
+  \item{it}{Number of iterations to generate background distribution in scalefree prior.}
+  \item{k}{Proportionality factor in scalefree prior}
+  \item{priortype}{Character. Type of prior to be used.} 
 }
 \details{
 Usually called internally.
@@ -48,7 +49,7 @@ TODO
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-TODO
+\code{\link{ddepn}}
 }
 %\examples{
 %## lala

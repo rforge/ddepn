@@ -11,9 +11,11 @@ Internal function.
 }
 \usage{
 samplephi(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
-		hmmiterations=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL)
+		hmmiterations=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4,
+		gam=NULL, it=NULL, K=NULL, priortype="none")
 initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
-		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL)
+		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL,
+		gam=NULL, it=NULL, K=NULL, priortype="none")
 }
 \arguments{
   \item{dat}{The data matrix}
@@ -34,9 +36,10 @@ initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
   \item{B}{The Prior information matrix. Corresponds to prior edge probabilities in the final network.}
   \item{Z}{The normalisation factor for the prior distribution.}
   \item{fanin}{Integer: maximal indegree for nodes.}
-  \item{gam}{Prior influence strength in sparsity prior.}
-  \item{it}{Number of iterations to generate background distribution in sparsity prior.}
-  \item{k}{Scaling factor in sparsity prior}
+  \item{gam}{Prior influence strength in scalefree prior.}
+  \item{it}{Number of iterations to generate background distribution in scalefree prior.}
+  \item{k}{Scaling factor in scalefree prior}
+  \item{priortype}{Character. Type of prior to be used.} 
 }
 \details{
 Used for initializing random networks. Called internally.

@@ -130,8 +130,8 @@ plotrepresult(ret)
 \begin{figure}[htp]
 \centering
 \includegraphics[width=12cm,height=4cm]{netgaresult}
-\caption{Result plot of the genetic algorithm. Upper left: the given graph; upper right: the inferred graph; lower left: transitive reduction of the inferred
-	graph; lower right: sensitivity/specificity plot for comparing the original and inferred graphs}
+\caption{Result plot of the genetic algorithm. Left: the given graph; Middle: the inferred graph; 
+	     Right: sensitivity/specificity plot for comparing the original and inferred graphs}
 \label{fig:resultga}
 \end{figure}
 

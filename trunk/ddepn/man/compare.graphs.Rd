@@ -20,10 +20,11 @@ compare.graphs.tc(phiorig,phi,ignore.type=TRUE)
     the type of the edge for counting numbers of true and false edges.}
 }
 \details{
-Counts the number of \eqn{tp} as: activations in \eqn{phi} and \eqn{phiorig} + inhibitions in \eqn{phi} and \eqn{phiorig}
-Counts the number of \eqn{fp} as: activations or inhibitions in \eqn{phi} and no edge in \eqn{phiorig}
-Counts the number of \eqn{tn} as: no edge in \eqn{phi} and no edge in \eqn{phiorig}
-Counts the number of \eqn{fn} as: no edge in \eqn{phi} and activation or inhibition in \eqn{phiorig}
+Counts the number of \eqn{tp} as: activations in \eqn{phi} and \eqn{phiorig} + inhibitions
+ in \eqn{phi} and \eqn{phiorig}.\cr
+Counts the number of \eqn{fp} as: activations or inhibitions in \eqn{phi} and no edge in \eqn{phiorig}.\cr
+Counts the number of \eqn{tn} as: no edge in \eqn{phi} and no edge in \eqn{phiorig}.\cr
+Counts the number of \eqn{fn} as: no edge in \eqn{phi} and activation or inhibition in \eqn{phiorig}.\cr
 }
 \value{
 Vector of comparison measures:

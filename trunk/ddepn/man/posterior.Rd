@@ -9,7 +9,7 @@ Posterior probability calculation.
 Posterior probability calculation. Usually called internally.
 }
 \usage{
-posterior(phi, L, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL)
+posterior(phi, L, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, priortype="laplaceinhib")
 pi(i,gam,N)
 pgs(phi,gam,K=0.8,it=500)
 }
@@ -23,6 +23,8 @@ pgs(phi,gam,K=0.8,it=500)
   \item{N}{  	Number of nodes  }
   \item{K}{  	Scale-free prior scaling factor/Strength  }
   \item{it}{  Scale-free prior number of iterations for prior sampling.  }
+  \item{priortype}{Character. One of \code{none}, \code{laplaceinhib}, \code{laplace} or
+    \code{scalefree} for use of the respective prior type.} 
 }
 \details{
 Computes the posterior density from the likelihood and the prior information lambda, B and Z.

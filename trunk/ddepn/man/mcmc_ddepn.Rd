@@ -15,10 +15,10 @@ mcmc_ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
     th=0.8, multicores=FALSE, outfile=NULL, maxiterations=10000,
     usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
     samplelambda=TRUE, hmmiterations=30, fanin=4,
-    gam=NULL, it=NULL, K=NULL, burnin=1000)
+    gam=NULL, it=NULL, K=NULL, burnin=1000, priortype="laplaceinhib")
     
 runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
-		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin)
+		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,priortype)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -37,15 +37,19 @@ runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
   \item{Z}{Normalisation factor for prior.}
   \item{hmmiterations}{Maximum iterations in the HMM.}
   \item{fanin}{Integer: maximal indegree for nodes.}
-  \item{gam}{Prior influence strength in sparsity prior.}
-  \item{it}{Number of iterations to generate background distribution in sparsity prior.}
-  \item{K}{Proportionality factor in sparsity prior}
+  \item{gam}{Prior influence strength in scalefree prior.}
+  \item{it}{Number of iterations to generate background distribution in scalefree prior.}
+  \item{K}{Proportionality factor in scalefree prior}
   \item{samplelambda}{Boolean. TRUE if laplace prior hyperparameter \code{lambda} should be sampled.
     FALSE if fixed \code{lambda} is to be used. Unused if \code{lambda} or \code{B} equal zero.}
   \item{x}{List containing two items: An adjacency matrix \code{phi} and a string \code{outfile} describing
     a path.}
   \item{burnin}{Integer. Specifies the number of iterations used as burnin phase for
    \code{\link{mcmc_ddepn}}.}
+  \item{priortype}{Character. One of \code{none}, \code{laplaceinhib}, \code{laplace} or
+   \code{scalefree} for use of the respective prior type. Ignored if \code{usebics=TRUE}. For 
+   \code{netga}, \code{usebics=FALSE, priortype="none"} means optimising the likelihood 
+   directly, for \code{mcmc_ddepn}, \code{none} is not allowed.} 
 }
 \details{
 Usually this function is called internally by \code{\link{ddepn}}.

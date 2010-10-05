@@ -1,7 +1,5 @@
-# Compute normalisation factor for sparsity prior as defined in Wehrli/Husmeier 2007.
-# models prior knowledge as network energy that includes a boundary for maximal incoming 
-# edges (fan.in)
-# 
+# Compute normalisation factor for prior as defined in Wehrli/Husmeier 2007.
+
 # Z = prod_v ( sum_pa(v) ( exp(-lambda * (sum_minpa(v)(1-B[v,m]) + sum_mnotinpa(v)(B[v,m])) ) ) )
 #   =                                           B[-v,pa(v)]
 # Author: benderc

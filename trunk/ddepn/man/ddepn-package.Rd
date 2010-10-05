@@ -20,8 +20,6 @@ that summarises the distribution over the network structures via sampling.
 \tabular{ll}{
 Package: \tab ddepn\cr
 Type: \tab Package\cr
-Version: \tab 1.1\cr
-Date: \tab 2010-01-08\cr
 License: \tab GPL\cr
 LazyLoad: \tab yes\cr
 }
@@ -62,18 +60,18 @@ ret1 <- ddepn(dataset$datx, phiorig=phit,inference="netga",
 x11()
 plotdetailed(ret1$phi,stimuli=stimuli,fontsize=20)
 
-## Genetic algorithm, using a laplace prior and the posterior probabilities as optimisation criterion
+## Genetic algorithm, using a laplaceinhib prior and the posterior probabilities as optimisation criterion
 B <- matrix(0.5,nrow=n,ncol=n,dimnames=dimnames(phit))
 ret2 <- ddepn(dataset$datx, phiorig=phit, inference="netga",
               maxiterations=30, p=15, q=0.3, m=0.8,
-              usebics=FALSE, lambda=5, B=B) 
+              usebics=FALSE, lambda=5, B=B, priortype="laplaceinhib") 
 x11()
 plotdetailed(ret2$phi,stimuli=ret2$stimuli,fontsize=20)
 
-## MCMC sampling using a laplace prior
+## MCMC sampling using a laplaceinhib prior
 ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
               maxiterations=300, burnin=100,
-              usebics=FALSE, lambda=2, B=B)
+              usebics=FALSE, lambda=2, B=B, priortype="laplaceinhib")
 
 x11()
 plotdetailed(ret3$samplings[[1]]$phi,stimuli=ret3$samplings[[1]]$stimuli)
@@ -81,7 +79,7 @@ plotdetailed(ret3$samplings[[1]]$phi,stimuli=ret3$samplings[[1]]$stimuli)
 ## MCMC sampling using a scale free prior
 ret4 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
               maxiterations=300, burnin=100,
-              usebics=FALSE, gam = 2.2, it = 500, K = 0.8)
+              usebics=FALSE, gam = 2.2, it = 500, K = 0.8, priortype="scalefree")
 x11()
 plotdetailed(ret4$samplings[[1]]$phi,stimuli=ret4$samplings[[1]]$stimuli)
 

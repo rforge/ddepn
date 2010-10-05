@@ -203,9 +203,7 @@ tp.median <- function(dat) {
 }
 
 # transform multiple edge types to only one edge type
-detailed.to.simple.regulations <- function(phi,inhibition="2") {
+detailed.to.simple.regulations <- function(phi) {
 	phi[phi==2] <- 1
-	phi[phi==3] <- 1
-	#phi[phi==inhibition] <- 1
 	phi
 }

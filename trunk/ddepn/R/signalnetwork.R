@@ -58,7 +58,8 @@ signalnetwork <- function(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=N
 				}
 			}
 			lstim <- length(stimuli)
-			tuples <- apply(newtuples, 1, paste, collapse="")
+			#tuples <- apply(newtuples, 1, paste, collapse="")
+			tuples <- apply(newtuples, 1, paste, collapse="-")
 		}
 	}
 	# simulate the network now

@@ -14,7 +14,7 @@ makedata <- function(phi, stimuli, R.t=3, R.b=3, TT=10,
 		datx <- simulatedata(phi, mu.bg=mu.bg, sd.bg=sd.bg,
 				mu.signal.a=mu.signal.a, sd.signal.a=sd.signal.a,
 				mu.signal.i=mu.signal.i, sd.signal.i=sd.signal.i,
-				stimulus=stimulus,TT=TT,R.t=R.t,R.b=R.b,plot=F)
+				stimulus=stimulus,TT=TT,R.t=R.t,R.b=R.b,plot=F,stimuli=stimuli)
 		gamt <- datx$gammax
 		datt <- datx$datx
 		for(j in unique(unlist(stimuli))) {

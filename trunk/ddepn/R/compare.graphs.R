@@ -15,7 +15,7 @@ compare.graphs.tc <- function(phiorig,phi,ignore.type=TRUE) {
 	diag(matnc) <- 0
 	diag(originalnc) <- 0
 
-	## inhibitionen/aktivierungen richtig z�hlen
+	## count inhibitions/activations
 	tp <- length(which(originalnc==matnc & (originalnc==1 | originalnc==2)))
 	tn <- length(which(originalnc==matnc & originalnc==0))
 	fn <- length(which(originalnc!=matnc & (originalnc==1 | originalnc==2)))

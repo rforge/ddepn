@@ -11,7 +11,7 @@ and infers a network structure underlying the data using either a genetic algori
 \usage{
 ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
           multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
-          usebics=TRUE, cores=2, 
+          usebics=TRUE, cores=2, priortype="laplaceinhib",
           lambda=NULL, B=NULL, samplelambda=TRUE,
           hmmiterations=100, fanin=4,
           gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
@@ -31,10 +31,10 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
 		Adjacency matrix. Seed network to start the search. Entries
     	can be either 0, 1 or 2, for \emph{no edge}, \emph{activation} or \emph{inhibition},
     	respectively. NULL if no start network should be given, but initialised automatically.}	
-	\item{th}{Threshold for inclusion of an edge in the final network (for \code{netga}. If an edge occurs 
+	\item{th}{Threshold for inclusion of an edge in the final network (for \code{netga}). If an edge occurs 
     	more than \eqn{th*p} times in all individuals, it is included in the 
     	resulting network.}
-	\item{inference}{String giving the type of network search. 
+	\item{inference}{String. Giving the type of network search.\cr 
 		\code{netga} Uses a genetic algorithm for network inference.
 		\code{mcmc} MCMC sampling for network inference.}
 	\item{outfile}{String. Output path for plotting. NULL if plotting should be done to the display.}
@@ -50,7 +50,7 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
 	\item{m}{Double \eqn{\in [0;1]}, mutation rate in \code{\link{netga}}.}
 	\item{P}{List containing an initial population of networks
 		  for \code{\link{netga}}. Set to NULL if start population should be generated automatically.}
-	\item{usebics}{Use BIC statistic for model selection. (only for \code{\link{netga}}).}
+	\item{usebics}{Use BIC statistic for model selection (only for \code{\link{netga}}).}
 	\item{cores}{Number of cores to use in case of \code{multicores}=TRUE. For \code{netga}, the parallel
 	 calculations of the HMMs are distributed on \code{cores} cores, for \code{mcmc} \code{cores}
 	 independent MCMC runs are started.}
@@ -59,9 +59,9 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
   \item{B}{The Prior information matrix. Corresponds to prior edge probabilities for edges between
     all nodes.}
   \item{fanin}{Integer: maximal indegree for each node.}
-  \item{gam}{Prior influence strength for sparsity prior.}
-  \item{it}{Number of iterations to generate the background distribution for sparsity prior.}
-  \item{K}{Proportionality factor for sparsity prior.}
+  \item{gam}{Prior influence strength for scalefree prior.}
+  \item{it}{Number of iterations to generate the background distribution for scalefree prior.}
+  \item{K}{Proportionality factor for scalefree prior.}
    \item{quantL}{Quantile of Population Likelihood/Posterior, used as selection threshold in \code{netga}.
     Note that the Likelihood or Posterior have to be maximised, so all networks with a likelihood/posterior
     \emph{greater} than this threshold are selected.}
@@ -73,6 +73,10 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
   \item{debug}{Boolean. If TRUE, print extra informational messages.}
   \item{burnin}{Integer. Specifies the number of iterations used as burnin phase for
    \code{\link{mcmc_ddepn}}.}
+  \item{priortype}{Character. One of \code{none}, \code{laplaceinhib}, \code{laplace} or
+   \code{scalefree} for use of the respective prior type. Ignored if \code{usebics=TRUE}. For 
+   \code{netga}, \code{usebics=FALSE, priortype="none"} means optimising the likelihood 
+   directly, for \code{mcmc_ddepn}, \code{none} is not allowed.} 
 }
 \details{
   \describe{
@@ -173,7 +177,7 @@ plotdetailed(ret1$phi,stimuli=ret1$stimuli)
 ## mcmc
 ret2 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
               maxiterations=300, burnin=100,
-              usebics=FALSE, lambda=5, B=B) 
+              usebics=FALSE, lambda=5, B=B, priortype="laplaceinhib") 
       
 x11()
 plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
@@ -183,7 +187,7 @@ plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
  ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
                 multicores=TRUE, cores=2,
                 maxiterations=300, burnin=100,
-                usebics=FALSE, lambda=5, B=B)
+                usebics=FALSE, lambda=5, B=B, priortype="laplaceinhib")
 
 }
 }

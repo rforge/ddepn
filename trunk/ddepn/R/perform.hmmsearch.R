@@ -39,8 +39,11 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
 		R <- length(exind)/length(tps)
 		datx <- dat[,exind]
-		longprop <- 1:max(length(tps),(nrow(phi.n)*100)) # set high maximum number of propagation steps
-		gammaposs <- uniquegammaposs(propagate.effect.set(phi.n,longprop,list(s),reps=R))
+		#longprop <- 1:max(length(tps),(nrow(phi.n)*100)) # set high maximum number of propagation steps
+		#gammaposs <- uniquegammaposs(propagate.effect.set(phi.n,longprop,list(s),reps=R))
+		#gammaposs <- propagate.effect.set(phi.n,stimuli)
+		gammaposs <- propagate.effect.simple(phi.n,stimulus=s,stimuli=stimuli)
+		colnames(gammaposs) <- paste(paste(names(s),collapse="&"), colnames(gammaposs), sep="_")
 		V <- rownames(datx)
 		TC <- unique(colnames(datx))
 		M <- ncol(gammaposs)
@@ -133,7 +136,6 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			## get new gamma suggestion and estimate parameters
 			gamprime <- gammaposs[,maxima.ind]
 			colnames(gamprime) <- colnames(datx)
-
 			## M-step
 			## maximize the transition matrices parameters
 			sel <- cbind(1:length(maxima.ind),2:(length(maxima.ind)+1))
@@ -153,6 +155,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		gamprimetotal <- cbind(gamprimetotal, gamprime)
 		gamposstotal <- cbind(gamposstotal, gammaposs)
 	}
+	browser()
 	Liktmp <- likl(dat,gamprimetotal)
 	Lik <- Liktmp$L
 	thetaprime <- Liktmp$theta

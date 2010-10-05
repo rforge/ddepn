@@ -1,27 +1,23 @@
 # genetic algorithm for network search
-# n: initial population size
+# p: initial population size
 # q: selection rate
 # m: mutation rate
-# nodes: names of the nodes in the network
 
 netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, hmmiterations=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile=NULL,fanin=4,
-		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5) {
+		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5, priortype="none") {
   dat[is.na(dat)] <- 0
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
   reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
   phireference <- matrix(0,nrow=length(V), ncol=length(V), dimnames=list(V,V))
-  laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
-  sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
-  
+
   #####################################################################
   #  First create a population of networks if none is given           #
   #####################################################################
   if(is.null(P)) {
-	  phireference <- matrix(0,nrow=length(V), ncol=length(V), dimnames=list(V,V))
 	  X <- vector("list",p)
 	  X[[1]] <- phireference
 	  if(fanin>=nrow(phireference)) {
@@ -31,9 +27,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  	X[[2]] <- phireference
 	  }
 	  if(multicores) {
-		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K, mc.preschedule=FALSE,mc.cores=cores)		
+		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype, mc.preschedule=FALSE,mc.cores=cores)		
 	  } else {
-		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
+		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype)
 	  }
   }
   ## check if all individuals are set correctly
@@ -45,27 +41,27 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  browser()
 	  }	  
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
-		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
+		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype)
 	  }
   }  
   if(any(sapply(P, class)!="list")) {
-	  print("netga.R, line 53: Some elements in the network list P seem to be empty.")
+	  print("netga.R: Some elements in the network list P seem to be empty.")
 	  browser()
   }
   if(usebics){
 	  wks <- sapply(P, function(x) x$bic)
-	  optwks <- quantile(wks,na.rm=T,probs=quantBIC)
-	  oldoptwks <- -Inf
+	  score_quantile <- quantile(wks,na.rm=T,probs=quantBIC)
+	  old_score_quantile <- -Inf
 	  wks2 <- wks - max(wks) -1
 	  probs <- wks2/sum(wks2)
   } else {
-	  if(laplace || sparsity) {
+	  if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
 		  wks <- sapply(P, function(x) x$posterior)
 	  } else {
 		  wks <- sapply(P, function(x) x$L)
 	  }
-	  optwks <- quantile(wks,na.rm=T,probs=quantL)
-	  oldoptwks <- Inf
+	  score_quantile <- quantile(wks,na.rm=T,probs=quantL)
+	  old_score_quantile <- Inf
 	  wks2 <- wks + abs(min(wks)) +1
 	  probs <- wks2/sum(wks2)
   }
@@ -80,7 +76,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   for(iter in 1:maxiterations) {
 	pdiff <- "x"
 	# terminate criterion: 50x equal optimal score, then return
-	if(oldoptwks==optwks) {
+	if(old_score_quantile==score_quantile) {
 		numequalscore <- numequalscore + 1
 		print(paste("No improvement in optimal score for ", numequalscore, " times."))
 		if(numequalscore==50) {
@@ -98,8 +94,10 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     # selection    #
     ################
 	diffpercent <- c(diffpercent,abs(round(((min(wks) - mean(wks))/min(wks)*100), digits=3)))
-	opts <- c(opts, optwks)
+	opts <- c(opts, score_quantile)
     print(paste("selection ",iter, "diff(opt,avg): ", diffpercent[length(diffpercent)], " Diffs in Opts==0? ", pdiff))
+	#########################
+	### plot some diagnostics
 	if(iter %% 10 == 0) {
 		if(!is.null(scorefile)) {
 			pdf(scorefile,width=8,height=10)			
@@ -121,11 +119,13 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     # select only the better models, i.e. maximise the likelihoods
 	# or minimize bics
 	if(usebics) {
-		selection <- which(wks < optwks) # minimise the bic
+		selection <- which(wks < score_quantile) # minimise the bic
+		# don't stop if no score is less than the median score
 		if(length(selection)==0)
 			selection <- sample(which(wks==min(wks)),1)
 	} else {
-		selection <- which(wks > optwks) # maximise the L or posterior
+		selection <- which(wks > score_quantile) # maximise the L or posterior
+		# don't stop if no score is less than the median score
 		if(length(selection)==0)
 			selection <- sample(which(wks==max(wks)),1)
 	}
@@ -139,15 +139,16 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     # define barrier that must be exceeded in the next run
 	# optimum before crossover and mutation
 	if(usebics) {
-		print(paste("Selected: ", length(Pprime), " models with bic < ", oldoptwks, ". New minbic: ", optwks))
+		print(paste("Selected: ", length(Pprime), " models with bic < ", old_score_quantile, ". New minbic: ", score_quantile))
 	} else {
-		if(laplace || sparsity) {
-			print(paste("Selected: ", length(Pprime), " models with post > ", oldoptwks, ". New maxPosterior: ", optwks))
+		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+		#if(laplace || scalefree) {
+			print(paste("Selected: ", length(Pprime), " models with post > ", old_score_quantile, ". New maxPosterior: ", score_quantile))
 		} else {
-			print(paste("Selected: ", length(Pprime), " models with L > ", oldoptwks, ". New maxL: ", optwks))
+			print(paste("Selected: ", length(Pprime), " models with L > ", old_score_quantile, ". New maxL: ", score_quantile))
 		}
 	}
-	oldoptwks <- optwks
+	old_score_quantile <- score_quantile
 	# get the number of crossovers
     # size of population - already selected individuals
     # i.e. perform crossover for all not selected individuals
@@ -204,9 +205,13 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		bestmodel$L <- L.res$Likl
 		bestmodel$bic <- L.res$bic
 		bestmodel$aic <- L.res$aic
-		if(laplace || sparsity) {
-			bestmodel$posterior <- posterior(bestmodel$phi, bestmodel$L, lambda, B, Z, gam, it, K)
+		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+		#if(laplace || scalefree) {
+			bestmodel$pr <- prior(bestmodel$phi, lambda, B, Z, gam, it, K, priortype)
+			bestmodel$posterior <- bestmodel$L + bestmodel$pr
+			#bestmodel$posterior <- posterior(bestmodel$phi, bestmodel$L, lambda, B, Z, gam, it, K)
 		} else {
+			bestmodel$pr <- NULL
 			bestmodel$posterior <- NULL
 		}
 		bestmodel$gammaposs <- L.res$gammaposs
@@ -224,17 +229,18 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		wks <- sapply(Pprime, function(x) x$bic)
 		wks2 <- wks - max(wks) -1
 		probs <- wks2/sum(wks2)
-		optwks <- quantile(wks,na.rm=T,probs=quantBIC)
+		score_quantile <- quantile(wks,na.rm=T,probs=quantBIC)
 	} else {
 		# maximize over posterior if prior is given
-		if(laplace || sparsity) {
+		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {	
+		#if(laplace || scalefree) {
 			wks <- sapply(Pprime, function(x) x$posterior)
 		} else {
 			wks <- sapply(Pprime, function(x) x$L)
 		}
 		wks2 <- wks + abs(min(wks)) +1
 		probs <- wks2/sum(wks2)
-		optwks <- quantile(wks,na.rm=T,probs=quantL)
+		score_quantile <- quantile(wks,na.rm=T,probs=quantL)
 	}
 	
     ##############
@@ -292,15 +298,19 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		posteriornew <- NULL
 		if(usebics) {
 			scorenew <- -L.res$bic
-			scoreold <- -optwks
+			scoreold <- -score_quantile
 		} else {
-			if(laplace || sparsity) {
-				posteriornew <- posterior(bestmodel$phi, L.res$Likl, lambda, B, Z, gam, it, K)
+			if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+			#if(laplace || scalefree) {
+				prnew <- prior(bestmodel$phi, lambda, B, Z, gam, it, K, priortype )
+				posteriornew <- L.res$Likl + prnew
+				#posteriornew <- posterior(bestmodel$phi, L.res$Likl, lambda, B, Z, gam, it, K)
 				scorenew <- posteriornew
-				scoreold <- optwks
+				scoreold <- score_quantile
 			} else {
+				prnew <- NULL
 				scorenew <- L.res$Likl
-				scoreold <- optwks
+				scoreold <- score_quantile
 			}
 		}
 		# if score is better, than accept the new parameters, state matrix etc.
@@ -312,6 +322,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 			bestmodel$bic <- L.res$bic
 			bestmodel$aic <- L.res$aic
 			bestmodel$posterior <- posteriornew
+			bestmodel$pr <- prnew
 			bestmodel$gammaposs <- L.res$gammaposs
 		} else {
 			# else restore the old network; parameters and matrices are still the old ones
@@ -323,17 +334,18 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		wks <- sapply(Pprime, function(x) x$bic)
 		wks2 <- wks - max(wks) -1
 		probs <- wks2/sum(wks2)
-		optwks <- quantile(wks,na.rm=T,probs=quantBIC)
+		score_quantile <- quantile(wks,na.rm=T,probs=quantBIC)
 	} else {
 		# maximize over posterior if prior is given
-		if(laplace || sparsity) {
+		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {		
+		#if(laplace || scalefree) {
 			wks <- sapply(Pprime, function(x) x$posterior)	
 		} else {
 			wks <- sapply(Pprime, function(x) x$L)
 		}
 		wks2 <- wks + abs(min(wks)) +1
 		probs <- wks2/sum(wks2)
-		optwks <- quantile(wks,na.rm=T,probs=quantL)
+		score_quantile <- quantile(wks,na.rm=T,probs=quantL)
 	}
     P <- Pprime
 	garbage <- gc(verbose=FALSE)

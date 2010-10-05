@@ -3,12 +3,13 @@
 # Author: benderc
 ###############################################################################
 runmcmc <- function(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
-		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin) {
+		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,
+		priortype) {
 	ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=x$phi, stimuli=stimuli,
 			th=th, multicores=multicores, outfile=x$outfile, maxiterations=maxiterations,
 			usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 			hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K,
-			burnin=burnin)
+			burnin=burnin,priortype=priortype)
 	ret
 }
 
@@ -16,19 +17,29 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		th=0.8, multicores=FALSE, outfile=NULL, maxiterations=10000,
 		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
 		samplelambda=TRUE, hmmiterations=30, fanin=4,
-		gam=NULL, it=NULL, K=NULL, burnin=1000) {
+		gam=NULL, it=NULL, K=NULL, burnin=1000,priortype="laplaceinhib") {
 	if(!is.null(B))
 		diag(B) <- 0
-	laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
-	sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
+	if(!priortype %in% c("laplaceinhib","laplace","scalefree"))
+		stop("Error, priortype must be one of 'laplaceinhib', 'laplace' or 'scalefree'.")
+#	laplaceinhib <- laplace <- scalefree <- none <- FALSE
+#	switch(priortype,
+#			laplaceinhib = laplaceinhib<-TRUE,
+#			laplace = laplace<-TRUE,
+#			scalefree = scalefree<-TRUE,
+#			none<-TRUE)
+	#browser()
+	#laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
+	#scalefree <- !is.null(gam) && !is.null(it) && !is.null(K)
 	# initialise
 	#dat[is.na(dat)] <- 0
 	antibodies <- rownames(dat)
 	tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
 	reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
-	longprop <- 1:max(length(tps),(nrow(phi)*100))
-	gammaposs <- propagate.effect.set(phi,longprop,stimuli,reps=reps)
-	gammaposs <- uniquegammaposs(gammaposs)
+	gammaposs <- propagate.effect.set(phi,stimuli)
+#	longprop <- 1:max(length(tps),(nrow(phi)*100))
+#	gammaposs <- propagate.effect.set(phi,longprop,stimuli,reps=reps)
+#	gammaposs <- uniquegammaposs(gammaposs)
 	# now get an initial gamma matrix
 	gammax <- NULL
 	for(sti in 1:length(stimuli)) {
@@ -46,8 +57,11 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	Linit <- sum(Linit)
 	aicinit <- get.aic(phi,Linit)
 	bicinit <- get.bic(phi,Linit, length(dat))
-	if(laplace || sparsity) {
-		posteriorinit <- posterior(phi, sum(Linit), lambda, B, Z, gam, it, K)
+	prinit <- prior(phi, lambda, B, Z, gam, it, K, priortype)
+	#if(laplace || scalefree || laplaceinhib) {
+	if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+		posteriorinit <- Linit + prinit
+		#posteriorinit <- posterior(phi, sum(Linit), lambda, B, Z, gam, it, K, priortype)
 	} else {
 		posteriorinit <- NULL
 	}
@@ -57,30 +71,34 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	
 	bestmodel <- list(phi=phi,L=Linit,aic=aicinit,bic=bicinit,posterior=posteriorinit,dat=dat,
 			theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
-			hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1), lambda=lambda,
-			B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,gam=gam,it=it,K=K,phi.orig=phiorig, burnin=burnin)#,
+			hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1),
+			lambda=lambda,B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,
+			gam=gam,it=it,K=K,phi.orig=phiorig, burnin=burnin,priortype=priortype,pr=prinit)#,
 			#samplelambda=samplelambda)
 
 	it <- 1
-	stats <- matrix(0, nrow=maxiterations, ncol=11, dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp","lambda","acpt","lacpt","stmove")))
+	stats <- matrix(0, nrow=maxiterations, ncol=15, dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp","lambda","acpt","lacpt","stmove","lratio","prratio","postratio","proposalratio")))
 	freqa <- freqi <- eoccur <- bestmodel$phi
 	freqa[freqa!=0] <- 0
 	freqi[freqi!=0] <- 0
 	eoccur[eoccur!=0] <- 0
 	while(it < maxiterations) {
-		cat("++ ", it, " ")
-		if(laplace) {
+		cat("iteration ", it, " ")
+		#if(laplace) {
+		if(priortype=="laplaceinhib" || priortype=="laplace") {			
 			if(samplelambda) {
 				newlambda <- runif(1, bestmodel$lambda-1, bestmodel$lambda+1)
-				newlambda <- min(max(0.01,newlambda),30)
+				newlambda <- min(max(0.01,newlambda),500)
 			} else {
 				newlambda <- bestmodel$lambda
 			}
-		} else if(sparsity) {
+		#} else if(scalefree) {
+		} else if(priortype=="scalefree") {
 			#newgam <- runif(1, bestmodel$gam-1, bestmodel$gam+1)
 			#newgam <- min(max(2,newgam),30) # gamma mustn't be smaller than 2
 			newgam <- bestmodel$gam
 		}
+		#print(paste("+++++",newlambda, samplelambda))
 		movetype <- sample(1:length(movetypes),1)
 		if(all(bestmodel$phi==0))
 			movetype <- sample(c(3,4),1) ## v1
@@ -91,18 +109,25 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			#movetype <- sample(c(2,5),1)## v1
 			
 		st <- system.time(b1 <- mcmc_move(bestmodel, movetypes[movetype]))
-		if(b1[[1]]$posterior==Inf || b1[[1]]$posterior==-Inf)
+		if(b1[[1]]$posterior==Inf || b1[[1]]$posterior==-Inf){
+			print("Posterior of proposal is Inf. Please check.")
 			browser()
-		if(laplace) {
+		}
+		if(priortype=="laplace" | priortype=="laplaceinhib") {
 			ret <- mcmc_accept(bestmodel, b1, newlambda)
-		} else if (sparsity) {
+		} else if (priortype=="scalefree") {
 			ret <- mcmc_accept(bestmodel, b1, newgam)
 		}
-		if(ret$bestproposal$posterior==Inf || ret$bestproposal$posterior==-Inf)
+		if(ret$bestproposal$posterior==Inf || ret$bestproposal$posterior==-Inf) {
+			print("Posterior of accepted model is Inf. Please check.")
 			browser()
-		
+		}
+		liklihoodratio <- bestmodel$L / b1[[1]]$L
+		priorratio <- bestmodel$pr / b1[[1]]$pr
+		posteriorratio <- bestmodel$posterior / b1[[1]]$posterior
+		proposalratio <- b1[[1]]$pegmundo / b1[[1]]$pegm
 		bestmodel <- ret$bestproposal
-		if(it>=burnin) {
+	#	if(it>=burnin) {
 			## count how often any edge occurred at a given position
 			tmp <- bestmodel$phi
 			tmp[bestmodel$phi==2] <- 0
@@ -133,15 +158,16 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 				comp <- rep(0,8)
 				names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
 			}
-			if(laplace) {
-				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3])))
-			} else if(sparsity) {
-				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$gam, ret$acpt, ret$lacpt, st[3])))
+#browser()
+			if(priortype=="laplace" || priortype=="laplaceinhib") {
+				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio)))
+			} else if(priortype=="scalefree") {
+				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$gam, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio)))
 			}
 			if(nrow(replace)!=1)
 				replace <- t(replace)
 			stats[it,] <- replace
-		}		
+	#	}		
 		# some convergence statistic
 		#SSW <- sd(stats[,"MAP"],na.rm=T)
 		#SSB <- 
@@ -189,5 +215,6 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	bestmodel[["stats"]] <- stats
 	bestmodel[["freqa"]] <- freqa
 	bestmodel[["freqi"]] <- freqi
+	gc(verbose=FALSE)
 	bestmodel
 }

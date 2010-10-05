@@ -64,10 +64,10 @@ mcmc_move <- function(bestmodel, type) {
 		possback <- poss
 	}
 	# pr that edge is chosen in the selected move: P(Edge|move)
-	pegm <- log2(1/(length(poss)*nummoves)) / max(length(poss),1)
+	pegm <- log(1/(length(poss)*nummoves)) / max(length(poss),1)
 	#pegm <- -log2(length(poss))
 	# pr that the move from above for the given edge is reverted: P(Edgechangeundo|move)
-	pegmundo <- log2(1/((length(possback)+1) * nummoves))  / max(length(possback),1)
+	pegmundo <- log(1/((length(possback)+1) * nummoves))  / max(length(possback),1)
 	#pegmundo <- -log2((length(possback)+1))
 	if(length(poss)>0) {
 		tps <- bestmodel$tps
@@ -83,8 +83,7 @@ mcmc_move <- function(bestmodel, type) {
 		gam <- bestmodel$gam
 		it <- bestmodel$it
 		K <- bestmodel$K
-		laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
-		sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
+		priortype <- bestmodel$priortype
 		# permute poss to propose moves in different orders
 		#poss <- sample(poss)
 		counter <- 1
@@ -118,8 +117,10 @@ mcmc_move <- function(bestmodel, type) {
 			browser()
 		bic.n <- L.res$bic
 		aic.n <- L.res$aic
-		if(laplace || sparsity) {
-			posterior.n <- posterior(phi.n, L.n, lambda, B, Z, gam, it, K)
+		pr.n <- prior(phi.n, lambda, B, Z, gam, it, K, priortype)
+		if(priortype=="laplaceinhib" || priortype=="laplace") {
+			posterior.n <- L.n + pr.n
+			#posterior.n <- posterior(phi.n, L.n, lambda, B, Z, gam, it, K)
 		} else {
 			posterior.n <- NULL			
 		}
@@ -127,7 +128,7 @@ mcmc_move <- function(bestmodel, type) {
 				theta=theta.n, gamma=gamma.n, gammaposs=gammaposs.n, tps=tps, stimuli=stimuli,
 				reps=reps, hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove=type, coords=cds,
 				lambda=lambda, B=B, Z=Z, pegm=pegm, pegmundo=pegmundo,nummoves=bestmodel$nummoves,fanin=fanin,
-				gam=gam, it=it, K=K,phi.orig=phiorig)	
+				gam=gam, it=it, K=K,phi.orig=phiorig,priortype=priortype,pr=pr.n)	
 		numbettermodel <- numbettermodel + 1
 	} else {
 		bettermodels <- list(bestmodel)

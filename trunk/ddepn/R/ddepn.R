@@ -4,30 +4,35 @@
 #	cols: experiments, labeled by EXPLABEL_time
 # lambda: laplace prior hyperparameter
 # B     : prior weights matrix
-# gam   : sparsity prior hyperparameter
-# it    : sparsity prior hyperparameter
-# k     : sparsity prior hyperparameter
-# fan.in: maximum number of incoming edges, used for efficient computation of the 
+# gam   : scalefree prior hyperparameter
+# it    : scalefree prior hyperparameter
+# K     : scalefree prior hyperparameter
+# fanin: maximum number of incoming edges, used for efficient computation of the 
 #         normalization factor for the prior distribution
 #
 #
 #  Priors: laplace: Fr�hlich 2007 / Wehrli/Husmeier 2007
-#          sparsity: Kamimura 200??? F7 414, Lee 2005 etc., not sure about the correct citation
+#          scalefree: Kamimura and Shimodaira, A Scale-free Prior over Graph Structures for Bayesian Inference of Gene Networks
 # Author: benderc
 ###############################################################################
 
 ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
 				  usebics=TRUE, cores=2, 
+				  priortype="laplaceinhib",
 				  lambda=NULL, B=NULL, samplelambda=TRUE,
 				  hmmiterations=100, fanin=4,
 				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
 				  debug=FALSE,burnin=1000) {
-	# get the experiments, i.e. the stimuli/inhibitor combinations, if not provided
+	# get the experiments, i.e. the stimuli/inhibitor combinations
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
 	cols <- colnames(dat)
 	tmp <- sapply(cols, function(x) strsplit(x,"_")[[1]])
+	## check if number of time points is the same across all experiments
+	if(length(unique(table(tmp[2,])))!=1) {
+		stop("ERROR: Found differing number of time points across experiments.")
+	}
 	exps <- unique(tmp[1,])
 	stims <- sapply(exps, function(x) strsplit(x,"&")[[1]])
 	allstim <- unique(unlist(stims))
@@ -37,16 +42,22 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		# find the row in which the stimulus is in the data matrix
 		x <- match(el,rownames(dat))
 		# or define a number 
-		if(is.na(x))
+		if(any(is.na(x)))
 			x <- match(el,allstim)
 		names(x) <- el
 		stimuli[[i]] <- x
 	}
 	# add the stimuli as dummy data rows, if they are missing
-	if(any(is.na(match(names(unlist(stimuli)),rownames(dat))))) {
+	stimm <- match(unique(names(unlist(stimuli))),rownames(dat))
+	if(any(is.na(stimm))) {
+	#if(any(is.na(match(names(unlist(stimuli)),rownames(dat))))) {
 		xx <- unlist(stimuli)
 		xxmat <- unique(cbind(xx,names(xx)))
 		toattach <- matrix(0.0,nrow=nrow(xxmat),ncol=ncol(dat),dimnames=list(xxmat[,2],colnames(dat)))
+		## remove stimulus that is already there, to get the order right
+		prune <- stimm[!is.na(stimm)]
+		if(length(prune)>0)
+			dat <- dat[-prune,]
 		dat <- rbind(toattach,dat)
 	}
 	n <- nrow(dat)
@@ -77,9 +88,9 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				X[[i]] <- phi[[i]]
 			}
 			if(multicores) {
-				P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K, mc.preschedule=FALSE,mc.cores=cores)		
+				P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype, mc.preschedule=FALSE,mc.cores=cores)		
 			} else {
-				P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K)
+				P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype)
 			}
 		} else if(inference=="mcmc") {
 			if(class(phi)=="list" && length(phi)!=cores) {
@@ -98,24 +109,29 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 			}
 		}
 	}
-	laplace <- !is.null(lambda) && !is.null(B)
-	sparsity <- !is.null(gam) && !is.null(it) && !is.null(K)
-	none <- is.null(lambda) && is.null(B) && is.null(gam) && is.null(it) && is.null(K)
-	
-	if(laplace) {
+	## if BIC score should be used, don't use a prior
+	if(usebics)
+		priortype <- "none"
+
+	## preparing the priors
+	if(priortype %in% c("laplace", "laplaceinhib")) {
+		if(is.null(lambda) | is.null(B))
+			stop("Please specify lambda and B for use of laplaceinhib prior.")
 		## get normalisation factor for the networks
 		print("Computing prior normalisation factor...")
 		Z <- zlambda(B, lambda)
 		print("done.")
-	} else if(sparsity || none) {
+	} else if(priortype %in% c("scalefree", "none")) {
 		Z <- NULL
 	} else {
-		stop("Error in function arguments. Please specifiy either lambda/gamma for laplace prior, gam/it/K for sparsity prior or none if no prior distribution should be used.")
+		stop("Error in function arguments. Please specifiy either lambda/gamma for laplace prior, gam/it/K for scalefree prior or none if no prior distribution should be used.")
 	}
-	
+	## if GA should be used
 	if(inference=="netga") {
 		if(!is.null(outfile)) {
-			scorefile <- paste("score",sub("\\.pdf","",outfile),".pdf",sep="")
+			bname <- basename(outfile)
+			dname <- dirname(outfile)
+			scorefile <- paste(dname,paste("score",sub("\\.pdf","",bname),".pdf",sep=""),sep="/")
 		} else {
 			scorefile <- NULL
 		}
@@ -123,8 +139,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						p=p,q=q,m=m,multicores=multicores,usebics=usebics,
 						cores=cores,lambda=lambda,B=B,Z=Z,hmmiterations=hmmiterations,
 						scorefile=scorefile,fanin=fanin,
-						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC))
-        phi.activation.count <- phi.inhibition.count <- weights.tc <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat))) 
+						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype))
+		phi.activation.count <- phi.inhibition.count <- weights.tc <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat))) 
 		# now compare all graphs to the original
         result <- NULL
 		resultep <- NULL
@@ -171,6 +187,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
+						priortype=priortype,
 						mc.preschedule=FALSE,mc.cores=cores)
 				### experimental
 				if(debug)
@@ -189,8 +206,9 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				}
 				ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
 						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
-						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z,
-						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin)
+						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
+						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
+						priortype=priortype)
 				retlist <- list()
 				retlist[[1]] <- ret
 			}
