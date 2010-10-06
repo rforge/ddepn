@@ -34,7 +34,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	hmmiterations <- bestmodel$hmmiterations
 	gamprimetotal <- NULL
 	gamposstotal <- NULL
-	# separates HMM für jedes experiment, also jeden stimulus
+	# separates HMM fï¿½r jedes experiment, also jeden stimulus
 	for(s in stimuli) {
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
 		R <- length(exind)/length(tps)
@@ -141,7 +141,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			sel <- cbind(1:length(maxima.ind),2:(length(maxima.ind)+1))
 			## transitions hold the switchings from state i to state j in the state sequence
 			transitions <- matrix(maxima.ind[sel],ncol=2)
-			## hier aendere ich nur die übergangswahrscheinlichkeiten, die auch gesehen wurden
+			## hier aendere ich nur die ï¿½bergangswahrscheinlichkeiten, die auch gesehen wurden
 			trans <- table(transitions[-nrow(transitions),1])
 			transall <- table(paste(transitions[-nrow(transitions),1], transitions[-nrow(transitions),2], sep="_"))		
 			ind <- match(as.numeric(sapply(names(transall), function(x) strsplit(x, split="_")[[1]][1])),as.numeric(names(trans)))	
@@ -155,7 +155,6 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		gamprimetotal <- cbind(gamprimetotal, gamprime)
 		gamposstotal <- cbind(gamposstotal, gammaposs)
 	}
-	browser()
 	Liktmp <- likl(dat,gamprimetotal)
 	Lik <- Liktmp$L
 	thetaprime <- Liktmp$theta

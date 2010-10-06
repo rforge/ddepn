@@ -50,7 +50,8 @@ netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   \item{B}{The Prior information matrix. Corresponds to prior edge probabilities in the final network.}
   \item{Z}{The normalisation factor for the prior distribution.}
   \item{fanin}{Integer: maximal indegree for nodes.}
-  \item{gam}{Prior influence strength in scalefree prior.}
+  \item{gam}{Prior influence strength in scalefree prior. Used as exponent in \code{laplaceinhib} prior: see
+  	\code{\link{prior}} for details.}
   \item{it}{Number of iterations to generate background distribution in scalefree prior.}
   \item{K}{Proportionality factor in scalefree prior}
   \item{quantL}{Quantile of Population likelihood. Defines the selection threshold in \code{netga}.

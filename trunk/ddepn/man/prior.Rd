@@ -19,7 +19,8 @@ prior(phi, lambda = NULL, B = NULL, Z = NULL,
   \item{lambda}{  Laplace prior hyperparameter describing the prior influence strength.  }
   \item{B}{ Laplace prior probability matrix.  }
   \item{Z}{ Laplace prior normalisation factor for the prior.  }
-  \item{gam}{  Scale-free prior degree distribution coefficient: \eqn{P(k) ~ k^gam}  }
+  \item{gam}{ Scalefree prior degree distribution coefficient: \eqn{P(k) ~ k^gam} or exponent for difference term in 
+  	laplaceinhib prior.  }
   \item{K}{   Scale-free prior scaling factor/Strength  }
   \item{it}{  Scale-free prior number of iterations for prior sampling.  }
   \item{priortype}{String. Either \code{laplaceinhib}, \code{laplace} or \code{scalefree}. 
@@ -31,6 +32,12 @@ prior(phi, lambda = NULL, B = NULL, Z = NULL,
 }
 \details{
 A description of the priors used is given in the references.\cr
+The normal use of \code{gam} is for the scalefree prior, as it is described in the reference. If \code{laplaceinhib}
+is used, \code{gam} is used as exponent in the following formula:\cr
+\eqn{P(phi_{ij}|lambda,gam,B) = \frac{1}{2 \cdot lambda} exp(\frac{-|phi_{ij}-B_{ij}|^{gam}}{lambda})}\cr
+It controls how strong the differences between an inferred edge and the probability for seeing this edge in a reference set
+of networks are to be weighted. Defaults to 2, if omitted, which leads to weak penalisation of small differences between 
+inferred and reference interaction, and strong penalisation for big differences.
 %\section{laplaceinhib}{TODO}
 %\section{laplace}{TODO}
 %\section{scalefree}{TODO}
@@ -65,5 +72,5 @@ TODO
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+%\keyword{ ~kwd1 }
+%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

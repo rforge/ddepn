@@ -59,7 +59,8 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
   \item{B}{The Prior information matrix. Corresponds to prior edge probabilities for edges between
     all nodes.}
   \item{fanin}{Integer: maximal indegree for each node.}
-  \item{gam}{Prior influence strength for scalefree prior.}
+  \item{gam}{Prior influence strength for scalefree prior. Used as exponent in \code{laplaceinhib} prior: see
+  	\code{\link{prior}} for details. }
   \item{it}{Number of iterations to generate the background distribution for scalefree prior.}
   \item{K}{Proportionality factor for scalefree prior.}
    \item{quantL}{Quantile of Population Likelihood/Posterior, used as selection threshold in \code{netga}.
