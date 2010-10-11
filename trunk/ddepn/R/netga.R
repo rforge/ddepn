@@ -70,9 +70,20 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   # main loop         #
   #####################
   p <- length(P)
-  diffpercent <- opts <- NULL
+  diffpercent <- NULL
+  #diffpercent <- opts <- NULL
   numequalscore <- 0
   autoc <- list(acf=rep(0,5),n.used=10)
+  ## define a matrix holding some statistics on the development of the scores
+  scorestats <- matrix(NA, nrow=maxiterations, ncol=13)
+  colnames(scorestats) <- c("dL_total","dP_total",
+		  				"dL_crossover","dL_mutation",
+						"dP_crossover","dP_mutation",
+						"dL_total_abs","dP_total_abs",
+						"dL_crossover_abs","dL_mutation_abs",
+						"dP_crossover_abs","dP_mutation_abs",
+						"score")
+  rownames(scorestats) <- 1:maxiterations
   for(iter in 1:maxiterations) {
 	pdiff <- "x"
 	# terminate criterion: 50x equal optimal score, then return
@@ -94,16 +105,18 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     # selection    #
     ################
 	diffpercent <- c(diffpercent,abs(round(((min(wks) - mean(wks))/min(wks)*100), digits=3)))
-	opts <- c(opts, score_quantile)
+	#opts <- c(opts, score_quantile)
+	scorestats[iter,"score"] <- score_quantile
     print(paste("selection ",iter, "diff(opt,avg): ", diffpercent[length(diffpercent)], " Diffs in Opts==0? ", pdiff))
 	#########################
-	### plot some diagnostics
+	### plot some population diagnostics
 	if(iter %% 10 == 0) {
+		opts <- scorestats[1:iter,"score"]
 		if(!is.null(scorefile)) {
 			pdf(scorefile,width=8,height=10)			
 		}
 		layout(matrix(c(1,1,2,3,4,5), 3, 2, byrow = TRUE))
-		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Score trace: min: ", round(min(opts),3), " max: ", round(max(opts),3)))
+		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Median score trace: min: ", round(min(opts),3), " max: ", round(max(opts),3)))
 		autoc <- acf(opts, main="Autocorrelation of median scores",ci.type="ma")
 		abline(h=-2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
 		abline(h=2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
@@ -154,10 +167,11 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     # i.e. perform crossover for all not selected individuals
     numcrossings <- p - length(selection)
     numcrossings <- (numcrossings - numcrossings%%2)
-
-    ##############
-    # crossover  #
-    ##############
+	################
+    ################
+    ## crossover  ##
+    ################
+	################
     print(paste("crossover",iter))
 	# sample randomly number of crossings individuals, i.e. numcrossings/2 pairs
 	# take preferrably the most fit individuals for crossingover
@@ -191,6 +205,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   	} else {
 		ret <- lapply(PP, function(x) perform.hmmsearch(x$phi, x))	
 	}
+	## init statistics vector
+	dL <- dP <- NULL
 	for(k in 1:length(ret)) {
 		if(is.null(ret[[k]])){
 			cat("*!!*")
@@ -198,26 +214,43 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 			xret <- perform.hmmsearch(x$phi,x)
 			ret[[k]] <- xret
 		}
-		bestmodel <- PP[[k]]
+		bestmodel <- PP[[k]] ## contains already the new network
 		L.res <- ret[[k]]
+		## statistics, Liklihood difference 
+		dL <- c(dL,bestmodel$L - L.res$Likl)		
 		bestmodel$gamma <- matrix(L.res$gammax,nrow=nrow(bestmodel$gamma),ncol=ncol(bestmodel$gamma),dimnames=dimnames(bestmodel$gamma))
 		bestmodel$theta <- matrix(L.res$thetax,nrow=nrow(bestmodel$theta),ncol=ncol(bestmodel$theta),dimnames=dimnames(bestmodel$theta))
 		bestmodel$L <- L.res$Likl
 		bestmodel$bic <- L.res$bic
 		bestmodel$aic <- L.res$aic
 		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
-		#if(laplace || scalefree) {
-			bestmodel$pr <- prior(bestmodel$phi, lambda, B, Z, gam, it, K, priortype)
+			## new prior; L.res$phix should be equal to bestmodel$phi
+			if(!all(L.res$phix==bestmodel$phi)) {
+				print("Error: New network proposal is not set correctly.")
+				browser()
+			}
+			prnew <- prior(bestmodel$phi, lambda, B, Z, gam, it, K, priortype)
+			## statistics, prior difference
+			dP <- c(dP,bestmodel$pr - prnew)
+			## setting the new prior and posterior
+			bestmodel$pr <- prnew
 			bestmodel$posterior <- bestmodel$L + bestmodel$pr
-			#bestmodel$posterior <- posterior(bestmodel$phi, bestmodel$L, lambda, B, Z, gam, it, K)
 		} else {
+			## statistics, prior difference
+			dP <- c(dP,0)
+			prnew <- NULL
 			bestmodel$pr <- NULL
 			bestmodel$posterior <- NULL
 		}
 		bestmodel$gammaposs <- L.res$gammaposs
 		Pprime <- c(Pprime, list(bestmodel))
 	}
-
+	## bestmodel: unchanged model, L.res holds the scores for the changed model
+	scorestats[iter,"dL_crossover"] <- median(dL)
+	scorestats[iter,"dL_crossover_abs"] <- median(abs(dL))
+	## statistics: old prior - new prior
+	scorestats[iter,"dP_crossover"] <- median(dP)
+	scorestats[iter,"dP_crossover_abs"] <- median(abs(dP))
 	#Pprime <- c(Pprime, PP)
  	# if new generation is smaller than old one, add some unchanged individuals
     if(length(Pprime)<p) {
@@ -233,7 +266,6 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	} else {
 		# maximize over posterior if prior is given
 		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {	
-		#if(laplace || scalefree) {
 			wks <- sapply(Pprime, function(x) x$posterior)
 		} else {
 			wks <- sapply(Pprime, function(x) x$L)
@@ -284,6 +316,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	} else {
 			ret <- lapply(Pprime[mutation], function(x) perform.hmmsearch(x$phi, x))	
 	}
+	## init statistics vector
+	dLm <- dPm <- NULL
 	## fang ab, dass manchmal leere Werte zurueckgegeben werden, warum???
 	for(k in 1:length(ret)) {
 		if(is.null(ret[[k]])){
@@ -296,18 +330,23 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		bestmodel <- Pprime[[mutation[k]]]
 		L.res <- ret[[k]]
 		posteriornew <- NULL
+		## statistics, Likelihood difference
+		dLm <- c(dLm,bestmodel$L - L.res$Likl)
 		if(usebics) {
 			scorenew <- -L.res$bic
 			scoreold <- -score_quantile
+			dPm <- c(dPm,0)
 		} else {
-			if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
-			#if(laplace || scalefree) {
+			if(priortype %in% c("laplaceinhib","laplace","scalefree") && !usebics) {
 				prnew <- prior(bestmodel$phi, lambda, B, Z, gam, it, K, priortype )
+				## statistics: prior difference
+				dPm <- c(dPm,bestmodel$pr - prnew)
 				posteriornew <- L.res$Likl + prnew
-				#posteriornew <- posterior(bestmodel$phi, L.res$Likl, lambda, B, Z, gam, it, K)
 				scorenew <- posteriornew
 				scoreold <- score_quantile
 			} else {
+				## statistics: prior difference
+				dPm <- c(dPm,0)
 				prnew <- NULL
 				scorenew <- L.res$Likl
 				scoreold <- score_quantile
@@ -330,6 +369,17 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		}
 		Pprime[[mutation[k]]] <- bestmodel
 	}
+	## bestmodel: unchanged model, L.res holds the scores for the changed model
+	scorestats[iter,"dL_mutation"] <- median(dLm)
+	scorestats[iter,"dL_mutation_abs"] <- median(abs(dLm))
+	scorestats[iter,"dL_total"] <- median(c(dLm,dL))
+	scorestats[iter,"dL_total_abs"] <- median(abs(c(dLm,dL)))
+	## statistics: old prior - new prior
+	scorestats[iter,"dP_mutation"] <- median(dPm)
+	scorestats[iter,"dP_mutation_abs"] <- median(abs(dPm))
+	scorestats[iter,"dP_total"] <- median(c(dPm,dP))
+	scorestats[iter,"dP_total_abs"] <- median(abs(c(dPm,dP)))
+	
 	if(usebics) {
 		wks <- sapply(Pprime, function(x) x$bic)
 		wks2 <- wks - max(wks) -1
@@ -350,5 +400,5 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     P <- Pprime
 	garbage <- gc(verbose=FALSE)
   } # end main loop
-  return(P)
+  return(list(P=P,scorestats=scorestats))
 }

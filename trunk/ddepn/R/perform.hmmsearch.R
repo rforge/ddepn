@@ -39,9 +39,6 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
 		R <- length(exind)/length(tps)
 		datx <- dat[,exind]
-		#longprop <- 1:max(length(tps),(nrow(phi.n)*100)) # set high maximum number of propagation steps
-		#gammaposs <- uniquegammaposs(propagate.effect.set(phi.n,longprop,list(s),reps=R))
-		#gammaposs <- propagate.effect.set(phi.n,stimuli)
 		gammaposs <- propagate.effect.simple(phi.n,stimulus=s,stimuli=stimuli)
 		colnames(gammaposs) <- paste(paste(names(s),collapse="&"), colnames(gammaposs), sep="_")
 		V <- rownames(datx)
@@ -56,9 +53,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		pseudocount <- 1
 		pseudocountsum <- M
 		A <- log2(A)
-		### pseudocounts brauch ich die??? 
-		###rkl <- matrix(1,nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
-		## initial gamprime: dimensions: 
+		## initial gamprime 
 		#gamprime <- array(rep(gammaposs[,sort(sample(M,T,replace=TRUE))],R), dim=c(N, T, R), dimnames=list(V, TC, 1:R))
 		gamprime <- replicatecolumns(gammaposs[,sort(sample(M,T,replace=TRUE))],R)
 		## initial theta
@@ -86,7 +81,6 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 					# restart if switching behaviour occurs,
 					# don't know where this comes from
 					if(equally == 3) {
-						#print(paste("####Switching between two local optima, restart.Diff: ",diff))
 						restarts <- restarts + 1
 						# only up to 5 restarts
 						if(restarts < 5){

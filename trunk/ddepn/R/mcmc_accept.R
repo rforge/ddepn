@@ -75,9 +75,9 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 	}
 	## acceptance newlambda
 	if(priortype=="laplaceinhib" || priortype=="laplace") {
-		pnew <- posterior(bestproposal$phi, bestproposal$L, newlambda, B, Z, gam, it, K) / scalefac	
+		pnew <- posterior(bestproposal$phi, bestproposal$L, newlambda, B, Z, gam, it, K, priortype) / scalefac	
 	} else if(priortype=="scalefree") {
-		pnew <- posterior(bestproposal$phi, bestproposal$L, NULL, B, Z, newlambda, it, K) / scalefac
+		pnew <- posterior(bestproposal$phi, bestproposal$L, NULL, B, Z, newlambda, it, K, priortype) / scalefac
 	}
 	
 	postratio2 <- pnew/pold

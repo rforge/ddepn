@@ -69,13 +69,11 @@ Usually this function is called internally by \code{\link{ddepn}}.
   \item{stimuli}{List of stimuli.}
   \item{reps}{Number of replicates.}
   \item{hmmiterations}{Maximum number of iterations during an HMM run.}
-  \item{TSA}{deprecated}
-  \item{Tt}{deprecated}  
   \item{lastmove}{Type of the last change that was performed.}
   \item{coords}{Position in the network where the last change was performed.}
   \item{lambda}{Laplace prior hyperparameter.}
   \item{B}{Laplace prior matrix.}
-  \item{Z}{Laplace prior normalisation factor.}
+  \item{Z}{Laplace prior normalisation factor. (Not used at the moment.)}
   \item{pegm}{Probability of performing the last move.}
   \item{pegmundo}{Probability of reverting the last move.}
   \item{nummoves}{Total number of possible moves in the current step.}  
@@ -90,6 +88,9 @@ Usually this function is called internally by \code{\link{ddepn}}.
   \item{stats}{Matrix of scores and statistics recorded during MCMC.}
   \item{freqa}{Counts how often an edge was an activation.}
   \item{freqi}{Counts how often an edge was an activation.}
+  \item{mu_run}{The running mean values of the parameters in theta.}
+  \item{Qi}{A helper for the calculation of sd_run.}
+  \item{sd_run}{The running standard deviations of the parameters in theta.}
 }
 \references{
 TODO

@@ -101,26 +101,27 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
 \value{
 	\emph{For \code{netga}, a list containing the following elements:}
 	\item{dat}{Double matrix. The data matrix.}
-	\item{phi.activation.count}{Counts how often an edge is an activation in the population.}
-	\item{phi.inhibition.count}{Counts how often an edge is an inhibition in the population.}
+	\item{phi.activation.count}{Integer. Counts how often an edge is an activation in the population.}
+	\item{phi.inhibition.count}{Integer. Counts how often an edge is an inhibition in the population.}
 	\item{phi.orig}{Adjacency matrix. The reference network, if it was provided.}
 	\item{phi}{Adjacency matrix. The inferred network}
-	 \item{weights}{Matrix: each entry is the maximum of the conf.act/conf.inh entries. I.e. this describes
+	\item{weights}{Matrix. Each entry is the maximum of the conf.act/conf.inh entries. I.e. this describes
     the support for an edge in the final network.}
-  \item{weights.tc}{Similar to weights, but calculated ignoring the types of the edges.}
-  \item{stats}{A matrix containing result statistics for each network in the population:
+  \item{weights.tc}{Matrix. Similar to weights, but calculated ignoring the types of the edges.}
+  \item{stats}{Matrix. Contains result statistics for each network in the population:
           TP, FP, TN, FN, Sensitivity(SN), Specificity(SP), precision, F1. Only present if a 
           reference network \code{phi.orig} was provided in the function call to \code{ddepn}.} 
-	\item{conf.act}{phi.activation.count/p}
-	\item{conf.inh}{phi.inhibition.count/p}
+	\item{conf.act}{Matrix. Calculated as phi.activation.count/p}
+	\item{conf.inh}{Matrix. Calculated as phi.inhibition.count/p}
 	\item{stimuli}{List. The given list of input stimuli.}
-  \item{P}{The population of networks that was inferred, i.e. the return list of \code{\link{netga}}.}
+  \item{P}{List. The population of networks that was inferred, i.e. the return list of \code{\link{netga}}.}
+  \item{scorestats}{Matrix. Contains traces of the scores during the genetic algorithm. See \code{\link{netga}}.}
 	\cr
 	\cr
 	\emph{For \code{mcmc}, a list containing two elements:}
-	\item{samplings}{A list containing all sampling runs. Each sampling run itself is a list as obtained
+	\item{samplings}{List. Contains all sampling runs. Each sampling run itself is a list as obtained
 	 via \code{\link{mcmc_ddepn}}.}
-	\item{ltraces}{Matrix containing the posterior traces, each trace stored in one column of the matrix.} 
+	\item{ltraces}{Matrix. Contains the posterior traces, each trace stored in one column of the matrix.} 
 }
 \references{
 %% ~put references to the literature/web site here ~
@@ -128,9 +129,10 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
 %  for Reconstructing Protein Signaling Networks from Multiple Interventions\cr 
 \emph{Laplace prior}\cr
 Froehlich et. al. 2007, Large scale statistical inference of signaling pathways from RNAi
-and microarray data.\cr
-Wehrli and Husmeier 2007,  Reconstructing gene regulatory networks with bayesian networks by combining
-  expression data with multiple sources of prior knowledge\cr
+and microarray data.
+%\cr
+%Wehrli and Husmeier 2007,  Reconstructing gene regulatory networks with bayesian networks by combining
+%  expression data with multiple sources of prior knowledge\cr
   
 \emph{Scale free prior}\cr
 Kamimura and Shimodaira, A Scale-free Prior over Graph Structures for Bayesian Inference of Gene Networks

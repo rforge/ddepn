@@ -22,24 +22,10 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		diag(B) <- 0
 	if(!priortype %in% c("laplaceinhib","laplace","scalefree"))
 		stop("Error, priortype must be one of 'laplaceinhib', 'laplace' or 'scalefree'.")
-#	laplaceinhib <- laplace <- scalefree <- none <- FALSE
-#	switch(priortype,
-#			laplaceinhib = laplaceinhib<-TRUE,
-#			laplace = laplace<-TRUE,
-#			scalefree = scalefree<-TRUE,
-#			none<-TRUE)
-	#browser()
-	#laplace <- !is.null(lambda) && !is.null(B) && !is.null(Z)
-	#scalefree <- !is.null(gam) && !is.null(it) && !is.null(K)
-	# initialise
-	#dat[is.na(dat)] <- 0
 	antibodies <- rownames(dat)
 	tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
 	reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
 	gammaposs <- propagate.effect.set(phi,stimuli)
-#	longprop <- 1:max(length(tps),(nrow(phi)*100))
-#	gammaposs <- propagate.effect.set(phi,longprop,stimuli,reps=reps)
-#	gammaposs <- uniquegammaposs(gammaposs)
 	# now get an initial gamma matrix
 	gammax <- NULL
 	for(sti in 1:length(stimuli)) {
@@ -48,7 +34,6 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps[sti])
 		gammax <- cbind(gammax, gx)
 	}
-	#gammax <- propagate.effect.set(phi,tps,stimuli,reps=reps)
 	Ltmp <- likl(dat,gammax)
 	Linit <- Ltmp$L
 	thetax <- Ltmp$theta
@@ -58,33 +43,38 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	aicinit <- get.aic(phi,Linit)
 	bicinit <- get.bic(phi,Linit, length(dat))
 	prinit <- prior(phi, lambda, B, Z, gam, it, K, priortype)
-	#if(laplace || scalefree || laplaceinhib) {
 	if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
 		posteriorinit <- Linit + prinit
-		#posteriorinit <- posterior(phi, sum(Linit), lambda, B, Z, gam, it, K, priortype)
 	} else {
 		posteriorinit <- NULL
 	}
-	#}
+	#mean_thetax <- 0
+	#mean_squared_thetax <- 0
+	#sd_thetax <- NULL
+	
+	
 	movetypes <- c("switchtype","delete","addactivation","addinhibition","revert") ## v1
 	#movetypes <- c("add","delete","revert") ## v2
+	mu_run <- 0
+	Qi <- 0
 	
 	bestmodel <- list(phi=phi,L=Linit,aic=aicinit,bic=bicinit,posterior=posteriorinit,dat=dat,
 			theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
-			hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove="addactivation", coords=c(1,1),
+			hmmiterations=hmmiterations, lastmove="addactivation", coords=c(1,1),
 			lambda=lambda,B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,
-			gam=gam,it=it,K=K,phi.orig=phiorig, burnin=burnin,priortype=priortype,pr=prinit)#,
+			gam=gam,it=it,K=K,phi.orig=phiorig, burnin=burnin,priortype=priortype,pr=prinit
+			,mu_run=mu_run,Qi=Qi,sd_run=NA)
+			#,mean_thetax=mean_thetax, mean_squared_thetax=mean_squared_thetax, sd_thetax=sd_thetax)#,
 			#samplelambda=samplelambda)
 
 	it <- 1
-	stats <- matrix(0, nrow=maxiterations, ncol=15, dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp","lambda","acpt","lacpt","stmove","lratio","prratio","postratio","proposalratio")))
+	stats <- matrix(0, nrow=maxiterations, ncol=17, dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp","lambda","acpt","lacpt","stmove","lratio","prratio","postratio","proposalratio","prior","liklihood")))
 	freqa <- freqi <- eoccur <- bestmodel$phi
 	freqa[freqa!=0] <- 0
 	freqi[freqi!=0] <- 0
 	eoccur[eoccur!=0] <- 0
 	while(it < maxiterations) {
 		cat("iteration ", it, " ")
-		#if(laplace) {
 		if(priortype=="laplaceinhib" || priortype=="laplace") {			
 			if(samplelambda) {
 				newlambda <- runif(1, bestmodel$lambda-1, bestmodel$lambda+1)
@@ -92,13 +82,11 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			} else {
 				newlambda <- bestmodel$lambda
 			}
-		#} else if(scalefree) {
 		} else if(priortype=="scalefree") {
 			#newgam <- runif(1, bestmodel$gam-1, bestmodel$gam+1)
 			#newgam <- min(max(2,newgam),30) # gamma mustn't be smaller than 2
 			newgam <- bestmodel$gam
 		}
-		#print(paste("+++++",newlambda, samplelambda))
 		movetype <- sample(1:length(movetypes),1)
 		if(all(bestmodel$phi==0))
 			movetype <- sample(c(3,4),1) ## v1
@@ -127,6 +115,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		posteriorratio <- bestmodel$posterior / b1[[1]]$posterior
 		proposalratio <- b1[[1]]$pegmundo / b1[[1]]$pegm
 		bestmodel <- ret$bestproposal
+		
 	#	if(it>=burnin) {
 			## count how often any edge occurred at a given position
 			tmp <- bestmodel$phi
@@ -149,7 +138,16 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			bestmodel[["eoccur"]] <- eoccur
 			bestmodel[["phi.orig"]] <- phiorig
 			bestmodel[["burnin"]] <- burnin
-		
+#browser()		
+			## update mean and standard deviations of theta parameters
+			bth <- bestmodel$theta
+			bth[is.na(bth)] <- 0
+			mu_run_plus1 <- bestmodel$mu_run + 1/it * (bth - bestmodel$mu_run)
+			Qiplus1 <- bestmodel$Qi + (bth - bestmodel$mu_run) * (bth - mu_run_plus1)
+			bestmodel[["mu_run"]] <- mu_run_plus1
+			bestmodel[["Qi"]] <- Qiplus1
+			bestmodel[["sd_run"]] <- sqrt((1/(it-1)) * Qiplus1) 
+			
 			#lst <- get.phi.final(bestmodel,th=th)
 			lst <- get.phi.final.mcmc(list(bestmodel), it, prob=.333, qu=.99999)[[1]]	
 			if(!is.null(phiorig)) {
@@ -160,9 +158,9 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			}
 #browser()
 			if(priortype=="laplace" || priortype=="laplaceinhib") {
-				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio)))
+				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio,bestmodel$pr,bestmodel$L)))
 			} else if(priortype=="scalefree") {
-				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$gam, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio)))
+				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$gam, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio,bestmodel$pr,bestmodel$L)))
 			}
 			if(nrow(replace)!=1)
 				replace <- t(replace)

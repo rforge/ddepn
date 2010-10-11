@@ -114,18 +114,21 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		priortype <- "none"
 
 	## preparing the priors
-	if(priortype %in% c("laplace", "laplaceinhib")) {
+	Z <- NULL
+	if(priortype %in% c("laplace", "laplaceinhib") && !usebics) {
 		if(is.null(lambda) | is.null(B))
-			stop("Please specify lambda and B for use of laplaceinhib prior.")
+			stop("Please specify arguments lambda and B for use of laplaceinhib or laplace prior.")
 		## get normalisation factor for the networks
-		print("Computing prior normalisation factor...")
-		Z <- zlambda(B, lambda)
-		print("done.")
-	} else if(priortype %in% c("scalefree", "none")) {
-		Z <- NULL
-	} else {
-		stop("Error in function arguments. Please specifiy either lambda/gamma for laplace prior, gam/it/K for scalefree prior or none if no prior distribution should be used.")
+		##print("Computing prior normalisation factor...")
+		##Z <- zlambda(B, lambda)
+		##print("done.")
+	} else if(priortype %in% c("scalefree") && !usebics) {
+		if(is.null(gam) | is.null(it) | is.null(K))
+			stop("Please specify arguments gam, it and K for use of laplaceinhib prior.")
 	}
+	#else if(priortype %in% c("none")) {
+	#	stop("Error in function arguments. Please specifiy either lambda/gamma for laplace prior, gam/it/K for scalefree prior or none if no prior distribution should be used.")
+	#}
 	## if GA should be used
 	if(inference=="netga") {
 		if(!is.null(outfile)) {
@@ -135,11 +138,14 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		} else {
 			scorefile <- NULL
 		}
-        stime <- system.time(P <- netga(dat,stimuli,P=P,maxiterations=maxiterations,
+        stime <- system.time(retnetga <- netga(dat,stimuli,P=P,maxiterations=maxiterations,
 						p=p,q=q,m=m,multicores=multicores,usebics=usebics,
 						cores=cores,lambda=lambda,B=B,Z=Z,hmmiterations=hmmiterations,
 						scorefile=scorefile,fanin=fanin,
 						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype))
+		P <- retnetga$P
+		scorestats <- retnetga$scorestats
+		rm(retnetga)
 		phi.activation.count <- phi.inhibition.count <- weights.tc <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat))) 
 		# now compare all graphs to the original
         result <- NULL
@@ -163,6 +169,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
         ret <- get.phi.final(ret,th)
         plotrepresult(ret,outfile)
         ret[["P"]] <- P
+		ret[["scorestats"]] <- scorestats
 	} else {
 		if(inference=="mcmc") {
 			if(multicores) {

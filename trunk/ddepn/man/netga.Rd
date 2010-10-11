@@ -73,7 +73,8 @@ netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 Usually this function is called internally by \code{\link{ddepn}}.
 }
 \value{
-A list containing the model objects for each candidate network in the population. Each 
+A list containing the following objects:\cr
+A list named \code{P} holding the model objects for each candidate network in the population. Each 
 entry in the list contains the following elements:
   \item{phi}{Adjacency matrix. The inferred network.}
   \item{L}{Likelihood.}
@@ -94,13 +95,30 @@ entry in the list contains the following elements:
   \item{lastmove}{String. Type of the last change that was performed.}
   \item{coords}{Position in the network where the last change was performed.}
   \item{lambda}{Laplace prior hyperparameter.}
-  \item{B}{Laplace prior matrix}
-  \item{Z}{Laplace prior normalisation factor.}
+  \item{B}{Laplace prior matrix.}
+  \item{Z}{Laplace prior normalisation factor. (Not used at the moment.)}
   \item{fanin}{Maximal indegree for nodes.}
   \item{gam}{Sparsity prior hyperparameter.}
   \item{it}{Sparsity prior iterations.}
   \item{K}{Sparsity prior scaling factor.}
-  \item{priortype}{The prior that was used.}
+  \item{priortype}{The prior that was used.}\cr
+A matrix named \code{scorestats} holding in each column the traces of the following statistics, 
+each row corresponds to one iteration:\cr
+    \item{dL_total}{Median of total Likelihood change.}
+    \item{dP_total}{Median of total Prior change.}
+    \item{dL_crossover}{Median of Likelihood change for crossover.}
+    \item{dL_mutation}{Median of Likelihood change for mutation.}
+    \item{dP_crossover}{Median of Prior change for crossover.}
+    \item{dP_mutation}{Median of Prior change for mutation.}
+    \item{dL_total_abs}{As above, but absolute values.}
+    \item{dP_total_abs}{As above, but absolute values.}
+    \item{dL_crossover_abs}{As above, but absolute values.}
+    \item{dL_mutation_abs}{As above, but absolute values.}
+    \item{dP_crossover_abs}{As above, but absolute values.}
+    \item{dP_mutation_abs}{As above, but absolute values.}
+    \item{score}{Trace of the total median score. The score depends on the type of inference, if 
+      \code{usebics=TRUE} it is the BIC score, if \code{usebics=FALSE} and \code{priortype="none"},
+      it is the Liklihood score, otherwise the posterior score.}
 }
 \references{
 TODO

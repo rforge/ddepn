@@ -18,7 +18,7 @@ prior(phi, lambda = NULL, B = NULL, Z = NULL,
   \item{phi}{ The candidate network.  }
   \item{lambda}{  Laplace prior hyperparameter describing the prior influence strength.  }
   \item{B}{ Laplace prior probability matrix.  }
-  \item{Z}{ Laplace prior normalisation factor for the prior.  }
+  \item{Z}{ Laplace prior normalisation factor for the prior. (Not used at the moment.)  }
   \item{gam}{ Scalefree prior degree distribution coefficient: \eqn{P(k) ~ k^gam} or exponent for difference term in 
   	laplaceinhib prior.  }
   \item{K}{   Scale-free prior scaling factor/Strength  }
@@ -48,9 +48,10 @@ Returns a double for the prior probability of network structure \code{phi}.
 \references{
 \emph{Laplace prior}\cr
 Froehlich et. al. 2007, Large scale statistical inference of signaling pathways from RNAi
-and microarray data.\cr
-Wehrli and Husmeier 2007,  Reconstructing gene regulatory networks with bayesian networks by combining
-  expression data with multiple sources of prior knowledge\cr
+and microarray data.
+%\cr
+%Wehrli and Husmeier 2007,  Reconstructing gene regulatory networks with bayesian networks by combining
+%  expression data with multiple sources of prior knowledge\cr
   
 \emph{Scale free prior}\cr
 Kamimura and Shimodaira, A Scale-free Prior over Graph Structures for Bayesian Inference of Gene Networks

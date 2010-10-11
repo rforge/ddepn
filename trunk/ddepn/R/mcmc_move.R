@@ -118,7 +118,7 @@ mcmc_move <- function(bestmodel, type) {
 		bic.n <- L.res$bic
 		aic.n <- L.res$aic
 		pr.n <- prior(phi.n, lambda, B, Z, gam, it, K, priortype)
-		if(priortype=="laplaceinhib" || priortype=="laplace") {
+		if(priortype=="laplaceinhib" || priortype=="laplace" || priortype=="scalefree") {
 			posterior.n <- L.n + pr.n
 			#posterior.n <- posterior(phi.n, L.n, lambda, B, Z, gam, it, K)
 		} else {
@@ -128,7 +128,10 @@ mcmc_move <- function(bestmodel, type) {
 				theta=theta.n, gamma=gamma.n, gammaposs=gammaposs.n, tps=tps, stimuli=stimuli,
 				reps=reps, hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove=type, coords=cds,
 				lambda=lambda, B=B, Z=Z, pegm=pegm, pegmundo=pegmundo,nummoves=bestmodel$nummoves,fanin=fanin,
-				gam=gam, it=it, K=K,phi.orig=phiorig,priortype=priortype,pr=pr.n)	
+				gam=gam, it=it, K=K,phi.orig=phiorig,priortype=priortype,pr=pr.n,
+				mu_run=bestmodel$mu_run,Qi=bestmodel$Qi,sd_run=bestmodel$sd_run)
+				#,mean_thetax=bestmodel$mean_thetax, mean_squared_thetax=bestmodel$mean_squared_thetax,
+				#sd_thetax=bestmodel$sd_thetax)	
 		numbettermodel <- numbettermodel + 1
 	} else {
 		bettermodels <- list(bestmodel)

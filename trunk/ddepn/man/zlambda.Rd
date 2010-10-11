@@ -30,7 +30,7 @@ Wehrli and Husmeier 2007,  Reconstructing gene regulatory networks with bayesian
 Christian Bender
 }
 \note{
-TODO
+Not used at the moment
 }
 \seealso{
 TODO

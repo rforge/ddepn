@@ -6,7 +6,7 @@
 prior <- function(phi, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, priortype="laplaceinhib") {
 	if(priortype=="laplace") {
 		EG <- -(abs(B - detailed.to.simple.regulations(phi))/lambda)
-		prefix <- -log(2) + log(lambda)
+		prefix <- -log(2) - log(lambda)
 		PGlambda <- sum(prefix + EG)
 	} else if(priortype=="scalefree") {
 		PGlambda <- log(pgs(phi,gam,K,it))
@@ -20,7 +20,7 @@ prior <- function(phi, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, p
 		if(is.null(gam))
 			gam <- 2
 		phi[phi==2] <- -1	
-		PGlambda <- sum(-log(2) + log(lambda) + (-abs(B - phi)^gam)/lambda)
+		PGlambda <- sum(-log(2) - log(lambda) + (-abs(B - phi)^gam)/lambda)
 	}
 	PGlambda
 }
