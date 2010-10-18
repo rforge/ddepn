@@ -118,7 +118,6 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		if(!is.null(scorefile)) {
 			pdf(scorefile,width=8,height=10)			
 		}
-#browser()
 		layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
 		## score trace
 		opts <- scorestats[1:(iter-1),"score"]
@@ -256,8 +255,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 			## statistics, prior difference
 			dP <- c(dP,0)
 			prnew <- 0
-			bestmodel$pr <- NULL
-			bestmodel$posterior <- NULL
+			bestmodel$pr <- 0
+			bestmodel$posterior <- 0
 		}
 		bestmodel$gammaposs <- L.res$gammaposs
 		Pprime <- c(Pprime, list(bestmodel))
@@ -353,6 +352,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 			scorenew <- -L.res$bic
 			scoreold <- -score_quantile
 			dPm <- c(dPm,0)
+			prnew <- 0
+			posteriornew <- 0
 		} else {
 			if(priortype %in% c("laplaceinhib","laplace","scalefree") && !usebics) {
 				prnew <- prior(bestmodel$phi, lambda, B, Z, gam, it, K, priortype )
@@ -365,6 +366,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 				## statistics: prior difference
 				dPm <- c(dPm,0)
 				prnew <- 0
+				posteriornew <- 0
 				scorenew <- L.res$Likl
 				scoreold <- score_quantile
 			}

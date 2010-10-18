@@ -93,7 +93,7 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
       time is indicated as a numeric value, separated by an underscore in the column name.
       Example:
       \tabular{lcccccccc}{
-         \tab EGF_1\tab EGF_1 \tab EGF_2 \tab EGF_2 \tab EGF&X_1 \tab _1 EGF&X_2 \tab EGF&X_2 \tab EGF&X_2\cr
+         \tab EGF_1\tab EGF_1 \tab EGF_2 \tab EGF_2 \tab EGF&X_1 \tab EGF&X_2 \tab EGF&X_2 \tab EGF&X_2\cr
          EGF \tab 0 \tab  0 \tab  0  \tab 0 \tab  0 \tab  0  \tab 0 \tab  0 \cr
          X   \tab 0 \tab  0 \tab  0  \tab 0  \tab 0 \tab 0 \tab  0  \tab 0 \cr
          AKT \tab 1.45 \tab 1.8 \tab  0.99 \tab 1.6 \tab 1.78 \tab 1.8  \tab 1.56 \tab 1.58 \cr
@@ -129,18 +129,26 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
 	\item{ltraces}{Matrix. Contains the posterior traces, each trace stored in one column of the matrix.} 
 }
 \references{
+\emph{DDEPN}\cr
+Bender et. al. 2010: Dynamic deterministic effects propagation networks: learning 
+ signalling pathways from longitudinal protein array data; Bioinformatics,
+ Vol. 26(18), pp. i596-i602
+ 
 %% ~put references to the literature/web site here ~
 %Froehlich et.al. 2009, Deterministic Effects Propagation Networks
 %  for Reconstructing Protein Signaling Networks from Multiple Interventions\cr 
+
 \emph{Laplace prior}\cr
 Froehlich et. al. 2007, Large scale statistical inference of signaling pathways from RNAi
-and microarray data.
+and microarray data; BMC Bioinformatics, Vol. 8(11), pp. 386ff
+
 %\cr
 %Wehrli and Husmeier 2007,  Reconstructing gene regulatory networks with bayesian networks by combining
 %  expression data with multiple sources of prior knowledge\cr
   
 \emph{Scale free prior}\cr
-Kamimura and Shimodaira, A Scale-free Prior over Graph Structures for Bayesian Inference of Gene Networks
+Kamimura and Shimodaira, A Scale-free Prior over Graph Structures for Bayesian
+ Inference of Gene Networks
 
 %Froehlich et.al. 2008, Estimating Large Scale Signaling Networks through Nested Effect Models with
 %  Intervention Effects from Microarray Data

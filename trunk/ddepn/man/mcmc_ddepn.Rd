@@ -137,7 +137,7 @@ phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(V,V))
 ret <- mcmc_ddepn(dataset$datx, phiorig=phit, phi=phistart, stimuli=stimuli,
             th=th, multicores=FALSE, outfile=NULL, maxiterations=300,
             usebics=FALSE, cores=1, lambda=lambda, B=B, Z=Z,
-            hmmiterations=100, fanin=4, burnin=100)
+            hmmiterations=100, fanin=4, burnin=100, priortype="laplaceinhib")
 }
 
 }

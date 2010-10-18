@@ -29,9 +29,12 @@ Christian Bender
 
 Maintainer: Christian Bender <c.bender@dkfz-heidelberg.de>
 }
-%\references{
-%TODO
-%}
+\references{
+Bender et. al. 2010: Dynamic deterministic effects propagation networks: learning 
+ signalling pathways from longitudinal protein array data; Bioinformatics,
+ Vol. 26(18), pp. i596-i602
+ 
+}
 \keyword{ package }
 \seealso{
 \code{\link{ddepn}}, \code{\link{netga}}

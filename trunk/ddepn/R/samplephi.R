@@ -58,7 +58,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 	if(priortype %in% c("laplaceinhib","laplace","scalefree"))
 		prnew <- prior(phi.n, lambda, B, Z, gam, it, K, priortype)
 	else
-		prnew <- NULL
+		prnew <- 0
 	if(searchstatespace) {
 		bestmodel <- list(phi=phi.n,L=Lnew,aic=aicnew,bic=bicnew,dat=dat,
 				theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,

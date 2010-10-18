@@ -150,7 +150,7 @@ library(multicore)
 ret <- ddepn(data, phiorig=net, inference="mcmc",
 		maxiterations=mi, burnin=burnin,
 		usebics=FALSE, lambda=5, B=B,
-		multicores=TRUE, cores=2)
+		multicores=TRUE, cores=2, priortype="laplaceinhib")
 
 @
 After the sampling one can examine the sampling run:
@@ -441,7 +441,7 @@ B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
 lambda <- 5
 ret <- ddepn(data, phiorig=net, inference="netga",
 		maxiterations=mi, p=p, q=q, m=m,
-		usebics=FALSE, lambda=lambda, B=B)
+		usebics=FALSE, lambda=lambda, B=B, priortype="laplaceinhib")
 @
 \subsection*{GA, use scalefree prior}
 <<GA ScaleFree,echo=TRUE,eval=FALSE>>=
@@ -455,7 +455,7 @@ it <- 500
 K <- 0.8
 ret <- ddepn(data, phiorig=net, inference="netga",
 		maxiterations=mi, p=p, q=q, m=m,
-		usebics=FALSE, gam=gam, it=it, K=K)
+		usebics=FALSE, gam=gam, it=it, K=K, priortype="scalefree")
 @
 \subsection*{MCMC, use laplace prior}
 <<MCMC Laplace,echo=TRUE,eval=FALSE>>=
@@ -465,7 +465,7 @@ B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
 lambda <- 5
 ret <- ddepn(data, phiorig=net, inference="mcmc",
 		maxiterations=mi, burnin=burnin,
-		usebics=FALSE, lambda=lambda, B=B)
+		usebics=FALSE, lambda=lambda, B=B, priortype="laplaceinhib")
 @
 \subsection*{MCMC, use scalefree prior}
 <<MCMC ScaleFree,echo=TRUE,eval=FALSE>>=
@@ -475,7 +475,7 @@ it <- 500
 K <- 0.8
 ret <- ddepn(data,phiorig=net, inference="mcmc",
 		maxiterations=mi, burnin=burnin,
-		usebics=FALSE, gam=gam, it=it, K=K)
+		usebics=FALSE, gam=gam, it=it, K=K, priortype="scalefree")
 @
 
 
@@ -483,6 +483,43 @@ ret <- ddepn(data,phiorig=net, inference="mcmc",
 %If desired, a reference network \emph{phiorig} can be given. This is used to compare edges to the inferred
 %network in the algorithm and calculate sensitivity and specificity statistics. A seed network \emph{phi} can
 %also be provided, which is used as starting point for inference by the genetic algorithm  
+
+
+\section*{Application to example data set from HCC1954 cell line}
+We show how we apply DDEPN to a data set from HCC1954 breast cancer cell line. Phosphorylation
+of 16 proteins was measured on Reverse Phase Protein Arrays. We performed time courses over
+10 time points (0,4,8,12,16,20,30,40,50,60 minutes). Each measurement was replicated five times
+independently and for each of these five biological replicates, spotting was done in 
+triplicate for each time point, leaving 15 replicates per time point and protein. Cells 
+were stimulated with the EGFR ligand Epidermal Growth Factor (EGF) and the ERBB3 ligand 
+Heregulin (HRG), both as single treatments as well as combined treatment (EGF\&HRG). The data
+is included in the dataset:
+
+<<Get data,echo=TRUE,eval=FALSE>>=
+data(hcc1954)
+@
+
+First, change the column names. These contain, which of the replicates belong to the same
+biological replicate, which is not used in the inference in DDEPN. 
+
+<<Get data,echo=TRUE,eval=FALSE>>=
+dat <- format_ddepn(hcc1954)
+@
+
+Now start a genetic algorithm to infer a signalling network between the 16 phosphoproteins
+(takes a while):
+
+<<Infer signalling network,echo=TRUE,eval=FALSE>>=
+mi=1000
+p=500
+q=0.3
+m=0.8
+ret <- ddepn(dat, phiorig=NULL, inference="netga",
+		maxiterations=mi, p=p, q=q, m=m,
+		usebics=TRUE)
+@
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\clearpage
