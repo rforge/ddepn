@@ -75,15 +75,20 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   numequalscore <- 0
   autoc <- list(acf=rep(0,5),n.used=10)
   ## define a matrix holding some statistics on the development of the scores
-  scorestats <- matrix(NA, nrow=maxiterations, ncol=13)
+  scorestats <- matrix(NA, nrow=maxiterations, ncol=18)
   colnames(scorestats) <- c("dL_total","dP_total",
 		  				"dL_crossover","dL_mutation",
 						"dP_crossover","dP_mutation",
 						"dL_total_abs","dP_total_abs",
 						"dL_crossover_abs","dL_mutation_abs",
 						"dP_crossover_abs","dP_mutation_abs",
-						"score")
+						"liklihood","prior",
+						"liklihood_mad","prior_mad",
+						"score", "score_mad")
   rownames(scorestats) <- 1:maxiterations
+  #scorestats[iter,"score"] <- score_quantile
+  #scorestats[iter,"score_mad"] <- mad(wks)
+  
   for(iter in 1:maxiterations) {
 	pdiff <- "x"
 	# terminate criterion: 50x equal optimal score, then return
@@ -106,25 +111,37 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     ################
 	diffpercent <- c(diffpercent,abs(round(((min(wks) - mean(wks))/min(wks)*100), digits=3)))
 	#opts <- c(opts, score_quantile)
-	scorestats[iter,"score"] <- score_quantile
     print(paste("selection ",iter, "diff(opt,avg): ", diffpercent[length(diffpercent)], " Diffs in Opts==0? ", pdiff))
 	#########################
 	### plot some population diagnostics
-	if(iter %% 10 == 0) {
-		opts <- scorestats[1:iter,"score"]
+	if(iter %% 10 == 1 & iter>1) {
 		if(!is.null(scorefile)) {
 			pdf(scorefile,width=8,height=10)			
 		}
-		layout(matrix(c(1,1,2,3,4,5), 3, 2, byrow = TRUE))
-		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Median score trace: min: ", round(min(opts),3), " max: ", round(max(opts),3)))
-		autoc <- acf(opts, main="Autocorrelation of median scores",ci.type="ma")
-		abline(h=-2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
-		abline(h=2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
-		pautoc <- pacf(opts, main="Partial autocorrelation of median scores")
-		abline(h=-2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
-		abline(h=2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
-		plot(diff(opts), type='b', ylab="differences avg scores (t-1 -> t)",xlab="generation i+1", pch="*")
-		plot(diffpercent, type='l', ylab="percent optimumscore - avgscore", xlab="generation",main=paste("optimum(minimum difference): ",min(diffpercent)))
+#browser()
+		layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+		## score trace
+		opts <- scorestats[1:(iter-1),"score"]
+		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Score trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
+		plot(diff(opts), type='l', ylab="difference median scores", xlab="generation", main=paste("Median score diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))
+		## liklihood trace
+		opts <- scorestats[1:(iter-1),"liklihood"]
+		plot(opts, type='l', ylab="liklihood", xlab="generation", main=paste("Liklihood trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
+		plot(diff(opts), type='l', ylab="difference liklihood", xlab="generation", main=paste("Median liklihood diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))
+		## prior trace
+		opts <- scorestats[1:(iter-1),"prior"]
+		plot(opts, type='l', ylab="prior", xlab="generation", main=paste("Prior trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
+		plot(diff(opts), type='l', ylab="difference liklihood", xlab="generation", main=paste("Median prior diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))	
+#		layout(matrix(c(1,1,2,3,4,5), 3, 2, byrow = TRUE))
+#		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Median score trace: min: ", round(min(opts),3), " max: ", round(max(opts),3)))
+#		autoc <- acf(opts, main="Autocorrelation of median scores",ci.type="ma")
+#		abline(h=-2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
+#		abline(h=2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
+#		pautoc <- pacf(opts, main="Partial autocorrelation of median scores")
+#		abline(h=-2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
+#		abline(h=2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
+#		plot(diff(opts), type='b', ylab="differences avg scores (t-1 -> t)",xlab="generation i+1", pch="*")
+#		plot(diffpercent, type='l', ylab="percent optimumscore - avgscore", xlab="generation",main=paste("optimum(minimum difference): ",min(diffpercent)))
 		if(!is.null(scorefile)) {
 			dev.off()	
 		}
@@ -217,7 +234,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		bestmodel <- PP[[k]] ## contains already the new network
 		L.res <- ret[[k]]
 		## statistics, Liklihood difference 
-		dL <- c(dL,bestmodel$L - L.res$Likl)		
+		dL <- c(dL,bestmodel$L - L.res$Likl)
 		bestmodel$gamma <- matrix(L.res$gammax,nrow=nrow(bestmodel$gamma),ncol=ncol(bestmodel$gamma),dimnames=dimnames(bestmodel$gamma))
 		bestmodel$theta <- matrix(L.res$thetax,nrow=nrow(bestmodel$theta),ncol=ncol(bestmodel$theta),dimnames=dimnames(bestmodel$theta))
 		bestmodel$L <- L.res$Likl
@@ -238,7 +255,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		} else {
 			## statistics, prior difference
 			dP <- c(dP,0)
-			prnew <- NULL
+			prnew <- 0
 			bestmodel$pr <- NULL
 			bestmodel$posterior <- NULL
 		}
@@ -314,7 +331,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	if(multicores) {
 		ret <- mclapply(Pprime[mutation], function(x){perform.hmmsearch(x$phi, x)}, mc.preschedule=FALSE,mc.cores=cores)	
 	} else {
-			ret <- lapply(Pprime[mutation], function(x) perform.hmmsearch(x$phi, x))	
+		ret <- lapply(Pprime[mutation], function(x) perform.hmmsearch(x$phi, x))	
 	}
 	## init statistics vector
 	dLm <- dPm <- NULL
@@ -347,7 +364,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 			} else {
 				## statistics: prior difference
 				dPm <- c(dPm,0)
-				prnew <- NULL
+				prnew <- 0
 				scorenew <- L.res$Likl
 				scoreold <- score_quantile
 			}
@@ -379,7 +396,12 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	scorestats[iter,"dP_mutation_abs"] <- median(abs(dPm))
 	scorestats[iter,"dP_total"] <- median(c(dPm,dP))
 	scorestats[iter,"dP_total_abs"] <- median(abs(c(dPm,dP)))
-	
+	## statistics: L, Pr, score 
+	scorestats[iter,"liklihood"] <- median(sapply(Pprime, function(x) x$L))
+	scorestats[iter,"prior"] <- median(sapply(Pprime, function(x) x$pr))
+	scorestats[iter,"liklihood_mad"] <- mad(sapply(Pprime, function(x) x$L))
+	scorestats[iter,"prior_mad"] <- mad(sapply(Pprime, function(x) x$pr))
+
 	if(usebics) {
 		wks <- sapply(Pprime, function(x) x$bic)
 		wks2 <- wks - max(wks) -1
@@ -397,6 +419,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		probs <- wks2/sum(wks2)
 		score_quantile <- quantile(wks,na.rm=T,probs=quantL)
 	}
+	## statistics: score
+	scorestats[iter,"score"] <- score_quantile
+	scorestats[iter,"score_mad"] <- mad(wks)
     P <- Pprime
 	garbage <- gc(verbose=FALSE)
   } # end main loop

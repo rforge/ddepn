@@ -2,10 +2,12 @@
 # 
 # Author: benderc
 ###############################################################################
-reverse.direction <- function(phi, i) {
+reverse.direction <- function(phi, i, switchtype=FALSE) {
 	cs <- coord(i,phi)
 	phi[cs[2],cs[1]] <- phi[cs[1],cs[2]]
 	phi[cs[1],cs[2]] <- 0
+	if(switchtype)
+		phi[cs[2],cs[1]] <- ifelse(phi[cs[2],cs[1]]==2,1,2)
 	phi
 }
 

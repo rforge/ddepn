@@ -18,6 +18,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
 		samplelambda=TRUE, hmmiterations=30, fanin=4,
 		gam=NULL, it=NULL, K=NULL, burnin=1000,priortype="laplaceinhib") {
+	if(!is.null(outfile))
+		outfile <- sub("\\.pdf","_stats.pdf", outfile)
 	if(!is.null(B))
 		diag(B) <- 0
 	if(!priortype %in% c("laplaceinhib","laplace","scalefree"))
@@ -48,32 +50,30 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	} else {
 		posteriorinit <- NULL
 	}
-	#mean_thetax <- 0
-	#mean_squared_thetax <- 0
-	#sd_thetax <- NULL
-	
-	
-	movetypes <- c("switchtype","delete","addactivation","addinhibition","revert") ## v1
-	#movetypes <- c("add","delete","revert") ## v2
+	## which types for the moves are needed?
+	movetypes <- c("switchtype","delete","addactivation","addinhibition","revert","revswitch") ## v3
 	mu_run <- 0
 	Qi <- 0
+	freqa <- freqi <- eoccur <- phi
+	freqa[freqa!=0] <- 0
+	freqi[freqi!=0] <- 0
+	eoccur[eoccur!=0] <- 0
 	
-	bestmodel <- list(phi=phi,L=Linit,aic=aicinit,bic=bicinit,posterior=posteriorinit,dat=dat,
+	bestmodel <- list(phi=phi,phiorig=phiorig,L=Linit,aic=aicinit,bic=bicinit,posterior=posteriorinit,dat=dat,
 			theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
 			hmmiterations=hmmiterations, lastmove="addactivation", coords=c(1,1),
 			lambda=lambda,B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,
 			gam=gam,it=it,K=K,phi.orig=phiorig, burnin=burnin,priortype=priortype,pr=prinit
-			,mu_run=mu_run,Qi=Qi,sd_run=NA)
-			#,mean_thetax=mean_thetax, mean_squared_thetax=mean_squared_thetax, sd_thetax=sd_thetax)#,
-			#samplelambda=samplelambda)
-
+			,mu_run=mu_run,Qi=Qi,sd_run=NA,freqa=freqa,freqi=freqi,eoccur=eoccur,scalefac=0.005)
+	## setup a matrix holding the statistics
+	## TODO if thin==TRUE, this matrix
+	## is of size maxiterations/x=10000, i.e. store every xth element
 	it <- 1
-	stats <- matrix(0, nrow=maxiterations, ncol=17, dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp","lambda","acpt","lacpt","stmove","lratio","prratio","postratio","proposalratio","prior","liklihood")))
-	freqa <- freqi <- eoccur <- bestmodel$phi
-	freqa[freqa!=0] <- 0
-	freqi[freqi!=0] <- 0
-	eoccur[eoccur!=0] <- 0
-	while(it < maxiterations) {
+	stats <- matrix(0, nrow=maxiterations, ncol=18,
+			dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp",
+							"lambda","acpt","lacpt","stmove","lratio","prratio","postratio","proposalratio",
+							"prior","liklihood","scalefac")))
+	while(it <= maxiterations) {
 		cat("iteration ", it, " ")
 		if(priortype=="laplaceinhib" || priortype=="laplace") {			
 			if(samplelambda) {
@@ -87,16 +87,18 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			#newgam <- min(max(2,newgam),30) # gamma mustn't be smaller than 2
 			newgam <- bestmodel$gam
 		}
-		movetype <- sample(1:length(movetypes),1)
-		if(all(bestmodel$phi==0))
-			movetype <- sample(c(3,4),1) ## v1
-			#movetype <- 1 # add, ## v2
-		if(all(bestmodel$phi!=0))
-			movetype <- sample(c(1,2,5),1)## v1
-			#movetype <- sample(c(2,3),1) # delete, revert, ## v2
-			#movetype <- sample(c(2,5),1)## v1
-			
-		st <- system.time(b1 <- mcmc_move(bestmodel, movetypes[movetype]))
+		b1 <- movesproposed <- NULL
+		while(is.null(b1)) {
+			movetype <- sample(setdiff(movetypes,movesproposed),1)
+			if(all(bestmodel$phi==0)) {
+				movetype <- sample(setdiff(movetypes[c(3,4)],movesproposed),1) #v4
+			}
+			if(all(bestmodel$phi!=0)) {
+				movetype <- sample(setdiff(movetypes[c(1,2,5,6)],movesproposed),1)#v4
+			}
+			movesproposed <- c(movesproposed, movetype)
+			st <- system.time(b1 <- mcmc_move(bestmodel, movetype))##v4
+		}
 		if(b1[[1]]$posterior==Inf || b1[[1]]$posterior==-Inf){
 			print("Posterior of proposal is Inf. Please check.")
 			browser()
@@ -110,13 +112,30 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			print("Posterior of accepted model is Inf. Please check.")
 			browser()
 		}
-		liklihoodratio <- bestmodel$L / b1[[1]]$L
-		priorratio <- bestmodel$pr / b1[[1]]$pr
-		posteriorratio <- bestmodel$posterior / b1[[1]]$posterior
-		proposalratio <- b1[[1]]$pegmundo / b1[[1]]$pegm
+		liklihoodratio <- bestmodel$L - b1[[1]]$L
+		priorratio <- bestmodel$pr - b1[[1]]$pr
+		posteriorratio <- bestmodel$posterior - b1[[1]]$posterior
+		proposalratio <- b1[[1]]$pegmundo - b1[[1]]$pegm
 		bestmodel <- ret$bestproposal
+		## during burnin: find scalefac parameter to adjust the acceptance rate
+		## to lie around 0.4. don't know if this is a reasonable level for acceptance rates,
+		## suggested in Gelman 2003, chapter 11.10, recommended posterior simulation strategy
+		if(it<=burnin) {
+			## find scale factor that holds acpt around .4, see gelman 2003 for explanation
+			if((posteriorratio+proposalratio)==0)
+				if(it==1 || all(stats[1:it,"scalefac"]==Inf)) ## some fallback scalefactor
+					scalefac <- 0.005
+				else
+					scalefac <- median(stats[1:it,"scalefac"])
+			else
+				scalefac <- abs(log(0.4))/abs(posteriorratio+proposalratio)	
+		} else {
+			sf <- stats[1:burnin,"scalefac"]
+			scalefac <- max(0.001,median(sf[sf!=Inf],na.rm=TRUE))
+		}
+		bestmodel$scalefac <- scalefac
 		
-	#	if(it>=burnin) {
+		if(it>burnin) {
 			## count how often any edge occurred at a given position
 			tmp <- bestmodel$phi
 			tmp[bestmodel$phi==2] <- 0
@@ -124,7 +143,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			tmp <- bestmodel$phi
 			tmp[bestmodel$phi==1] <- 0
 			freqi <- freqi + (tmp/2)
-			### get a 'final' network
+			## get confidences for edges from the samplings
 			eoccur <- freqi + freqa
 			lst <- bestmodel
 			conf.act <- freqa/eoccur
@@ -138,7 +157,6 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			bestmodel[["eoccur"]] <- eoccur
 			bestmodel[["phi.orig"]] <- phiorig
 			bestmodel[["burnin"]] <- burnin
-#browser()		
 			## update mean and standard deviations of theta parameters
 			bth <- bestmodel$theta
 			bth[is.na(bth)] <- 0
@@ -147,59 +165,73 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			bestmodel[["mu_run"]] <- mu_run_plus1
 			bestmodel[["Qi"]] <- Qiplus1
 			bestmodel[["sd_run"]] <- sqrt((1/(it-1)) * Qiplus1) 
-			
-			#lst <- get.phi.final(bestmodel,th=th)
-			lst <- get.phi.final.mcmc(list(bestmodel), it, prob=.333, qu=.99999)[[1]]	
-			if(!is.null(phiorig)) {
-				comp <- compare.graphs.tc(phiorig=phiorig,phi=lst$phi)
-			} else {
-				comp <- rep(0,8)
-				names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
-			}
-#browser()
-			if(priortype=="laplace" || priortype=="laplaceinhib") {
-				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$lambda, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio,bestmodel$pr,bestmodel$L)))
-			} else if(priortype=="scalefree") {
-				replace <- as.matrix(unlist(c(bestmodel$posterior, comp[1:6], bestmodel$gam, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio,bestmodel$pr,bestmodel$L)))
-			}
-			if(nrow(replace)!=1)
-				replace <- t(replace)
-			stats[it,] <- replace
-	#	}		
-		# some convergence statistic
+		}
+		## get an intermediate network from the samplings
+		#lst <- get.phi.final(bestmodel,th=th)
+		if(it>burnin)
+			lst <- get.phi.final(bestmodel,th=th) # set th around 0.8
+			#lst <- get.phi.final.mcmc(list(bestmodel), it, prob=.333, qu=.99999)[[1]] ## doesn't give good results
+		else
+			lst <- bestmodel # if in burnin, just use whatever is there
+		if(!is.null(phiorig) & it > burnin) {
+			comp <- compare.graphs.tc(phiorig=phiorig,phi=lst$phi,ignore.type=FALSE)
+		} else {
+			comp <- rep(0,8)
+			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
+		}
+		## save some statistics for this iteration
+		if(priortype=="laplace" || priortype=="laplaceinhib") {
+			replace <- as.matrix(unlist(c(lst$posterior, comp[1:6], lst$lambda, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio,lst$pr,lst$L,scalefac)))
+		} else if(priortype=="scalefree") {
+			replace <- as.matrix(unlist(c(lst$posterior, comp[1:6], lst$gam, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio,lst$pr,lst$L,scalefac)))
+		}
+		if(nrow(replace)!=1)
+			replace <- t(replace)
+		stats[it,] <- replace
+		# some convergence statistic -> should become gelmans Rhat at some time
 		#SSW <- sd(stats[,"MAP"],na.rm=T)
 		#SSB <- 
 		#Rhat <- ((nrow(stats)-1)/nrow(stats)) * SSW
-		#l <- maxiterations
-		l <- it #nrow(stats)
-		if(it%%250==1 && it >= burnin){
+		if(it%%250==1 && it > burnin){
 			if(!is.null(outfile))
-				pdf(outfile)
-			par(mfrow=c(3,3),mar=c(3,4,1,1),oma=c(1,1,1,1))
-			plot(1:l, stats[1:l,"MAP"], type='l',ylab="",xlab="iteration",main="log posterior")
-			perf <- mcmc_performance(bestmodel)
-			hist(stats[1:l,"acpt"],breaks=100,main="acpt")
-			hist(stats[1:l,"lacpt"],breaks=100,main="lacpt")
-			hist(stats[1:l,"lambda"],breaks=100,main="lambda")
+				pdf(outfile,width=10,height=10)
+			start <- burnin + 1
+			layout(matrix(c(1,2,3,4,5,6,7,8,9), 3, 3, byrow = TRUE))
+			## posterior
+			plot(1:it, stats[1:it,"MAP"], type='l', ylab="", xlab="iteration", main="Posterior trace")
+			abline(v=start,col="green")
+			plot(1:it, stats[1:it,"postratio"], type='l', ylab="", xlab="iteration", main="Posterior ratios")
+			abline(v=start,col="green")	
+			## orig/inferred network
 			if(is.null(phiorig)) {
 				plot.new()
 				text(0.5,0.5,labels="no origininal network given")
 			} else {
-				plotdetailed(phiorig,stimuli=bestmodel$stimuli,fontsize=25)
+				plotdetailed(phiorig,stimuli=lst$stimuli,fontsize=15,main="Original net")
 			}
-			#if(it>burnin) {
-				boxplot(as.data.frame(stats[(burnin:it),c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
-						main=paste("avgSN: ", signif(median(stats[(burnin:it),"sn"]),digits=4), "avgSP: ", signif(median(stats[(burnin:it),"sp"]),digits=4)))
-			#} else {
-			#	boxplot(as.data.frame(stats[1:it,c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
-			#			main=paste("BURNIN avgSN: ", signif(median(stats[,"sn"]),digits=4), "avgSP: ", signif(median(stats[,"sp"]),digits=4)))
-			#}
+			## liklihood
+			plot(1:it, stats[1:it,"liklihood"], type='l', ylab="", xlab="iteration", main="Liklihood trace")
+			abline(v=start,col="green")
+			plot(1:it, stats[1:it,"lratio"], type='l', ylab="", xlab="iteration", main="Liklihood ratios")
+			abline(v=start,col="green")
+			## inferred network
+			plotdetailed(lst$phi,stimuli=lst$stimuli,weights=lst$weights,fontsize=15, main="Inferred net")	
+			## prior
+			plot(1:it, stats[1:it,"prior"], type='l', ylab="", xlab="iteration", main="Prior trace")
+			abline(v=start,col="green")
+			plot(1:it, stats[1:it,"prratio"], type='l', ylab="", xlab="iteration", main="Prior ratios")
+			abline(v=start,col="green")
+			## roc curve
+			perf <- mcmc_performance(lst)
+			# some more statistics that could be plotted
+			### acceptance rate
+			#stpl <- stats[1:it,"acpt"]
+			#hist(stpl[stpl!=1],breaks=100,main="Acceptance rates (only != 1)")
+			### sn/sp plot
+			#boxplot(as.data.frame(stats[((burnin+1):it),c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
+			#		main=paste("avgSN: ", signif(median(stats[(burnin:it),"sn"]),digits=4), "avgSP: ", signif(median(stats[(burnin:it),"sp"]),digits=4)))
 			# partial autocorrelation function:
-			R <- acf(stats[1:l,"MAP"])
-			weights <- bestmodel$phi
-			weights[bestmodel$phi==1] <- freqa[bestmodel$phi==1]
-			weights[bestmodel$phi==2] <- freqi[bestmodel$phi==2]
-			plotdetailed(bestmodel$phi,stimuli=bestmodel$stimuli,weights=bestmodel$weights,fontsize=15)
+			#R <- acf(stats[1:it,"MAP"])
 			if(!is.null(outfile))
 				dev.off()
 		}

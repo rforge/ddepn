@@ -1,7 +1,7 @@
 Package: ddepn
 Type: Package
 Title: Dynamical Deterministic Effects Propagation Networks: Infer signalling networks for timecourse RPPA data.
-Version: 1.3
+Version: 1.4
 Date: 2010-10-08
 Author: Christian Bender
 Maintainer: Christian Bender <c.bender@dkfz-heidelberg.de>

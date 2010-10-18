@@ -46,7 +46,7 @@ tp.median(dat)
 
 detailed.to.simple.regulations(phi)
 
-reverse.direction(phi, i)
+reverse.direction(phi, i, switchtype=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -65,6 +65,7 @@ Functions are usually not called directly.
 \item{dat}{todo}
 \item{phi}{todo}
 \item{i}{todo}
+\item{switchtype}{todo}
  }
 \details{
 Some internal functions, usually not to be called directly.

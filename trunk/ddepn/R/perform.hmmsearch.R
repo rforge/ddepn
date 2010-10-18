@@ -34,7 +34,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	hmmiterations <- bestmodel$hmmiterations
 	gamprimetotal <- NULL
 	gamposstotal <- NULL
-	# separates HMM f�r jedes experiment, also jeden stimulus
+	# separates HMM fuer jedes experiment, also jeden stimulus
 	for(s in stimuli) {
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
 		R <- length(exind)/length(tps)
@@ -46,19 +46,22 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		M <- ncol(gammaposs)
 		N <- nrow(datx)
 		T <- length(tps)
-		
-		## initial transition matrix, all transitions equally likely
-		Adimn <- colnames(gammaposs) #c(colnames(gamposs),"X0")
-		A <- matrix((1/(M*M)),nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
+		## initial transition matrix
+		Adimn <- colnames(gammaposs)
+		# all transitions equally likely
+		#A <- matrix((1/(M*M)),nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
+		## random transition matrix
+		A <- matrix(runif(M*M,0,1),nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
+		A <- A/sum(A)
 		pseudocount <- 1
 		pseudocountsum <- M
 		A <- log2(A)
 		## initial gamprime 
-		#gamprime <- array(rep(gammaposs[,sort(sample(M,T,replace=TRUE))],R), dim=c(N, T, R), dimnames=list(V, TC, 1:R))
 		gamprime <- replicatecolumns(gammaposs[,sort(sample(M,T,replace=TRUE))],R)
 		## initial theta
 		Lik <- -Inf
 		diffold <- -100
+		diffsold <- rep(NA, hmmiterations)
 		equally <- 0
 		it <- 0
 		restarts <- 0		
@@ -76,6 +79,14 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 				if(abs((abs(Lik)-abs(Lold))) <= 1) 
 					break
 				diff <- abs((abs(Lik)-abs(Lold)))
+				diffsold[it] <- diff
+				## check for repeating patterns
+				if(diff %in% diffsold[-length(diffsold)]) {
+					if(length(which(diffsold==diff))>25) {
+						equally <- 2
+						diff <- diffold
+					}
+				}
 				if(diff==diffold) {
 					equally <- equally + 1
 					# restart if switching behaviour occurs,
@@ -91,7 +102,6 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 							equally <- 0
 							next
 						}
-						print("maximum number of restarts reached. Finishing the search.")
 					}		
 				}
 				diffold <- diff

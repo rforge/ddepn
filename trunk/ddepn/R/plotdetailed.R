@@ -72,9 +72,9 @@ plotdetailed <- function(phi, weights=NULL,main="",stimuli=NULL, layoutType="dot
 		labels <- get.labels(weights)
 	} 
 	arrowhead <- get.arrowhead(phi)
-	graph.par(list(graph = list(main = main)), edges = list(lwd = 1)) #, sub = "... and a subtitle",cex.main = 1.8, cex.sub = 1.4, col.sub = "gray")))
+	gpar <- list(graph = list(main = main), edges = list(lwd = 1))
 	if(emptygraph)
-		graph.par(list(edges = list(lwd = 0)))
+		gpar <- list(edges = list(lwd = 0))
 	## something with the edgeRenderInfo function doesn't work, so pass edgeAttrs directly
 	## to layoutGraph
 	## In stead, passing nodeAttrs directly to layoutGraph doesn't seem to work, so
@@ -99,7 +99,7 @@ plotdetailed <- function(phi, weights=NULL,main="",stimuli=NULL, layoutType="dot
 		g1 <- layoutGraph(g1, recipEdges = "distinct", edgeAttrs = list(arrowhead = arrowhead),
 						layoutType=layoutType)
 	}
-	renderGraph(g1)
+	renderGraph(g1,graph.pars=gpar)
 	if(emptygraph)
 		graph.par(list(edges = list(lwd = 1)))
 }

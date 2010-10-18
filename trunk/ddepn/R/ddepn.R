@@ -11,7 +11,7 @@
 #         normalization factor for the prior distribution
 #
 #
-#  Priors: laplace: Fr�hlich 2007 / Wehrli/Husmeier 2007
+#  Priors: laplace: Froehlich 2007
 #          scalefree: Kamimura and Shimodaira, A Scale-free Prior over Graph Structures for Bayesian Inference of Gene Networks
 # Author: benderc
 ###############################################################################
@@ -23,7 +23,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				  lambda=NULL, B=NULL, samplelambda=TRUE,
 				  hmmiterations=100, fanin=4,
 				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-				  debug=FALSE,burnin=1000) {
+				  debug=FALSE,burnin=1000, thin=FALSE) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
@@ -50,7 +50,6 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 	# add the stimuli as dummy data rows, if they are missing
 	stimm <- match(unique(names(unlist(stimuli))),rownames(dat))
 	if(any(is.na(stimm))) {
-	#if(any(is.na(match(names(unlist(stimuli)),rownames(dat))))) {
 		xx <- unlist(stimuli)
 		xxmat <- unique(cbind(xx,names(xx)))
 		toattach <- matrix(0.0,nrow=nrow(xxmat),ncol=ncol(dat),dimnames=list(xxmat[,2],colnames(dat)))
@@ -69,8 +68,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		if(inference=="netga") {
 			if(class(phi)=="list" && length(phi)!=p) {
 				stop(paste("Error: length of seed network list must be the same as p =",p))
-			}
-			if(class(phi)=="matrix") {
+			} else if(class(phi)=="matrix") {
 				if(dim(phi)!=c(nrow(dat),nrow(dat))) {
 					stop(paste("Error: dimension of seed network must be",nrow(dat),"x",nrow(dat),"."))
 				}
@@ -79,6 +77,15 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 					tmp[[i]] <- phi
 				phi <- tmp
 				rm(tmp)
+			} else if(is.null(phi)) {
+				phi <- matrix(0, nrow=nrow(dat), ncol=ncol(dat), dimnames=list(rownames(dat),rownames(dat)))
+				tmp <- vector("list",p)
+				for(i in 1:p)
+					tmp[[i]] <- phi
+				phi <- tmp
+				rm(tmp)
+			} else {
+				stop("Error: please provide either a list of or a single seed network in argument phi, or leave it as NULL.")
 			}
 			V <- rownames(dat)
 			tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
@@ -93,14 +100,23 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype)
 			}
 		} else if(inference=="mcmc") {
-			if(class(phi)=="list" && length(phi)!=cores) {
-				stop(paste("Error: length of seed network list must be the same as cores =",cores))
-			}
-			if(class(phi)=="matrix") {
+			## if a list of networks is given, create a named list that is used for mcmc_ddepn
+			if(class(phi)=="list"){
+				if(length(phi)!=cores)
+					stop(paste("Error: length of seed network list must be the same as cores =",cores))
+				P <- vector("list",cores)
+				for(i in 1:cores) {
+					P[[i]] <- list(phi=phi[[i]])
+				}
+			} else if(class(phi)=="matrix") {
+				## if a matrix is given, create a list of cores copies
+				## for cores independent mcmc runs.
 				if(dim(phi)!=c(nrow(dat),nrow(dat))) {
 					stop(paste("Error: dimension of seed network must be",nrow(dat),"x",nrow(dat),"."))
 				}
 				if(multicores==TRUE) {
+					## create list of start nets, copy the 
+					## one start network cores times
 					P <- vector("list",cores)
 					for(i in 1:cores)
 						P[[i]] <- list(phi=phi)
@@ -124,7 +140,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		##print("done.")
 	} else if(priortype %in% c("scalefree") && !usebics) {
 		if(is.null(gam) | is.null(it) | is.null(K))
-			stop("Please specify arguments gam, it and K for use of laplaceinhib prior.")
+			stop("Please specify arguments gam, it and K for use of scalefree prior.")
 	}
 	#else if(priortype %in% c("none")) {
 	#	stop("Error in function arguments. Please specifiy either lambda/gamma for laplace prior, gam/it/K for scalefree prior or none if no prior distribution should be used.")
@@ -173,8 +189,9 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 	} else {
 		if(inference=="mcmc") {
 			if(multicores) {
-				# start an mcmc run for each core
-				# liste, die die dateinamen und die startnetze enthaelt
+				## start an mcmc run for each core
+				## list of start networks: if not given, create cores empty
+				## networks
 				if(is.null(P)) {
 					P <- list()
 					phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
@@ -182,6 +199,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						P[[cr]] <- list(phi=phistart)
 					}
 				}
+				## prepare a temp object for the runmcmc call
 				X <- list()
 				for(cr in 1:cores) {
 					if(!is.null(outfile))
@@ -190,7 +208,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						filename <- NULL
 					X[[cr]] <- list(phi=P[[cr]]$phi, outfile=filename)
 				}
-				retlist <- mclapply(X, runmcmc, dat=dat, phiorig=phiorig, phi=phistart, stimuli=stimuli,
+				retlist <- mclapply(X, runmcmc, dat=dat, phiorig=phiorig, phi=NULL, stimuli=stimuli,
 						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
@@ -199,13 +217,15 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				### experimental
 				if(debug)
 					browser()
-				retlist <- get.phi.final.mcmc(retlist, maxiterations, prob=.3333, qu=.99999)
+				#retlist <- get.phi.final.mcmc(retlist, maxiterations, prob=.3333, qu=.99999)
 				##### end experimental
 			} else {
 				#phistart <- matrix(sample(c(0,1,2),n*n,replace=T), nrow=n, ncol=n, dimnames=list(phinames,phinames))
 				if(is.null(phi)) {
+					## create empty start net, if phi==NULL
 					phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
 				} else {
+					## otherwise, take the first net from phi
 					if(class(phi)=="list")
 						phistart <- phi[[1]]
 					else
@@ -216,15 +236,19 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
 						priortype=priortype)
+				## convert the return value to a list, to keep it in the same format
+				## as for the multicore==TRUE case
 				retlist <- list()
 				retlist[[1]] <- ret
 			}
 			## get the likelihood traces
-			ltraces <- sapply(retlist,function(x) x$stats[,"MAP"])
-			## make sure ltraces has less than 10000 rows
-			if(nrow(ltraces)>10000){
+			ltraces <- as.matrix(sapply(retlist,function(x) x$stats[,"MAP"]))
+			## thinning: make sure ltraces has less than 10000 rows
+			## TODO: change such that only 10000 rows are recorded (i.e. in mcmc_ddepn),
+			## otherwise it doesn't really make sense
+			if(nrow(ltraces)>10000 && thin == TRUE){
 				ss <- seq(1,nrow(ltraces),by=nrow(ltraces)/10000)
-				ltraces <-  ltraces[ss,]
+				ltraces <-  as.matrix(ltraces[ss,])
 			}
 			colors <- rainbow(ncol(ltraces))
 			ret <- list(samplings=retlist,ltraces=ltraces)
@@ -238,7 +262,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 			plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
 			if(ncol(ltraces)>1)
 				sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)
-			## get the final network from all cores inferences
+			## get the final network from all cores inferences and plot
 			for(netnr in 1:length(retlist)) {
 				ret2 <- retlist[[netnr]]
 				plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)

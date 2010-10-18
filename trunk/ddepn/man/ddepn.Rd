@@ -15,7 +15,7 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
           lambda=NULL, B=NULL, samplelambda=TRUE,
           hmmiterations=100, fanin=4,
           gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-          debug=FALSE, burnin=1000)
+          debug=FALSE, burnin=1000, thin=FALSE)
 }
 \arguments{
   \item{dat}{
@@ -77,7 +77,12 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
   \item{priortype}{Character. One of \code{none}, \code{laplaceinhib}, \code{laplace} or
    \code{scalefree} for use of the respective prior type. Ignored if \code{usebics=TRUE}. For 
    \code{netga}, \code{usebics=FALSE, priortype="none"} means optimising the likelihood 
-   directly, for \code{mcmc_ddepn}, \code{none} is not allowed.} 
+   directly, for \code{mcmc_ddepn}, \code{none} is not allowed. \code{laplaceinhib} uses prior 
+   information for edges with two types (activation/inhibition), \code{laplace} ignores the 
+   edge type. Useful if only knowledge about the presence of an edge is available, but not 
+   about its type.} 
+  \item{thin}{Boolean. If TRUE, make sure that the MCMC return objects are shortened to at
+  	most 10000 iterations. Defaults to FALSE.}
 }
 \details{
   \describe{
