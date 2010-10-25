@@ -1,4 +1,4 @@
-# TODO: Add comment
+# Convert KEGGgraph graphviz object to adjacency matrix.
 # 
 # Author: benderc
 ###############################################################################
@@ -16,12 +16,13 @@ kegggraph.to.detailed.adjacency <- function(gR) {
 		for(j in 1:length(ed)) {
 			to <- ed[j]
 			ked <- getKEGGedgeData(gR,paste(from,to,sep="~"))
-			if(length(getSubtype(ked))==0)
-				next
-			st <- getSubtype(ked)$subtype@name
-			if(st=="inhibition") {
-				if(phi[from,to]==1) {
-					phi[from,to] <- 2
+			stype <- getSubtype(ked)
+			if(class(stype)=="list" & length(stype)>0) {
+				st <- getSubtype(ked)$subtype@name
+				if(st=="inhibition") {
+					if(phi[from,to]==1) {
+						phi[from,to] <- 2
+					}
 				}
 			}
 		}

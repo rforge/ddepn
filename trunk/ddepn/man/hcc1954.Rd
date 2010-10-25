@@ -2,6 +2,8 @@
 \Rdversion{1.1}
 \alias{hcc1954}
 \alias{hcc1954raw}
+\alias{hcc1954fcf}
+\alias{hcc1954fcfmedian}
 \docType{data}
 \title{
 hcc1954

@@ -26,9 +26,9 @@ format_ddepn(dat)
   Example for column names holding information on biological replicates:
   \tabular{lcccccccc}{
     \tab EGF-3_1\tab EGF-5_1 \tab EGF-3_1 \tab EGF-5_1 \tab EGF-3_2 \tab EGF-5_2 \tab EGF-3_2 \tab EGF-5_2 \cr
-    EGF ... \cr
-    X   ... \cr
-    AKT ... \cr
+    EGF ...\tab \tab  \tab  \tab  \tab  \tab  \tab  \tab \cr
+    X   ...\tab \tab  \tab  \tab  \tab  \tab  \tab  \tab  \cr
+    AKT ...\tab \tab  \tab  \tab  \tab  \tab  \tab  \tab  \cr
   }
   The format is \code{STIMULUS-biolreplicate_time}, i.e. \code{EGF-3_1} means experiment with
   EGF stimulation, biological replicate labeled as 3 at time point 1. The biological replicate

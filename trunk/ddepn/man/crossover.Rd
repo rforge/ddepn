@@ -3,7 +3,8 @@
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ crossover - perform crossing over of two networks }
 \description{
-Perform a crossover of two networks at a random node and exchange all connected edges.
+Perform a crossover of two networks at a random node and
+ exchange all connected edges.
 }
 \usage{
 crossover(phi1, phi2, fanin)
@@ -15,7 +16,8 @@ crossover(phi1, phi2, fanin)
   \item{fanin}{ Max indegree of node. }
 }
 \details{
-Chooses a random node and performs crossover of network \code{phi1} and \code{phi2}. Used for \code{\link{netga}}.
+Chooses a random node and performs crossover of network \code{phi1}
+ and \code{phi2}. Used for \code{\link{netga}}.
 }
 \value{
   A list containing the matrices after the crossover.

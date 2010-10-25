@@ -28,6 +28,14 @@ mcmc_move <- function(bestmodel, type) {
 		## pr that exactly the edge added is deleted, this is for the proposal density
 		possback <- which(bestmodel$phi!=0) + 1 # all edges that are not 0 plus the one added
 		rm(phi)
+#		if(length(poss)>0) {
+#			## check if edges would point to a stimulus node
+#			cds <- sapply(poss, coord, mat=bestmodel$phi)
+#			if(any(cds[2,] %in% unique(unlist(stimuli)))) {
+#				print("Error: add edge would be drawn to a stimulus.")
+#				browser()
+#			}
+#		}
 	}
 	if(type=="delete") {
 		poss <- which(bestmodel$phi!=0)
@@ -55,6 +63,14 @@ mcmc_move <- function(bestmodel, type) {
 		for(i in fanin_omit) {
 			phi[i,] <- rep(0,ncol(phi))
 		}
+		## all edges that would go into a stimulus if reverting are not allowed to revert
+		phi[unique(unlist(stimuli)), ] <- 0
+		## exclude edges that are disconnected
+		#noreach <- which(apply(gammaposs, 1, function(x) all(x==0)))
+		#for(i in noreach) {
+		#	phi[i,] <- rep(1,ncol(phi))
+		#}
+		
 		## which edges are allowed to revert/revswitch
 		poss <- which(phi!=0)
 		for(p in poss) {
@@ -62,14 +78,19 @@ mcmc_move <- function(bestmodel, type) {
 			## do not allow to revert/revswitch if this edge already exists
 			if(bestmodel$phi[cs[2],cs[1]]!=0) {
 				poss <- poss[-p]
-			} else if(cs[1] %in% unique(unlist(stimuli))) {
-				## do not allow to revert/revswitch if edge points to a stimulus node after reverting
-				poss <- poss[-p]
 			}
 		}
 		possback <- poss
+#		if(length(poss)>0) {			
+#			## check if edges would point to a stimulus node
+#			cds <- sapply(poss, coord, mat=bestmodel$phi)
+#			if(any(cds[1,] %in% unique(unlist(stimuli)))) {
+#				print("Error: revswitch edge would be drawn to a stimulus.")
+#				browser()
+#			}
+#		}
 	}
-	if(length(poss)>0) {
+	if(length(poss)>0) {		
 		## pr that edge is chosen in the selected move: P(Edge|move)
 		pegm <- -log(length(poss)) - log(nummoves) ## v3
 		## pr that the move from above for the given edge is reverted: P(Edgechangeundo|move)
@@ -97,8 +118,8 @@ mcmc_move <- function(bestmodel, type) {
 		i <- ifelse(length(poss)>1,sample(poss, 1),poss[1])
 		phi.n <- bestmodel$phi
 		cds <- coord(i, phi.n)
-		if(cds[1]==cds[2]) {
-			print("ERROR: chosen element of the diagonal for the move.")
+		if(cds[1]==cds[2] || cds[2] %in% unique(unlist(stimuli))) {
+			print("ERROR: chosen element of the diagonal for the move or edge back to stimulus.")
 			browser()
 		}
 		switch(type,

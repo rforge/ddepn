@@ -19,8 +19,8 @@ prior(phi, lambda = NULL, B = NULL, Z = NULL,
   \item{lambda}{  Laplace prior hyperparameter describing the prior influence strength.  }
   \item{B}{ Laplace prior probability matrix.  }
   \item{Z}{ Laplace prior normalisation factor for the prior. (Not used at the moment.)  }
-  \item{gam}{ Scalefree prior degree distribution coefficient: \eqn{P(k) ~ k^gam} or exponent for difference term in 
-  	laplaceinhib prior.  }
+  \item{gam}{ Scalefree prior degree distribution coefficient: \eqn{P(k) ~ k^gam} or
+   exponent for difference term in laplaceinhib prior.  }
   \item{K}{   Scale-free prior scaling factor/Strength  }
   \item{it}{  Scale-free prior number of iterations for prior sampling.  }
   \item{priortype}{String. Either \code{laplaceinhib}, \code{laplace} or \code{scalefree}. 
@@ -31,13 +31,39 @@ prior(phi, lambda = NULL, B = NULL, Z = NULL,
     architecture. See the references for a detailed description of the priors.}
 }
 \details{
-A description of the priors used is given in the references.\cr
-The normal use of \code{gam} is for the scalefree prior, as it is described in the reference. If \code{laplaceinhib}
-is used, \code{gam} is used as exponent in the following formula:\cr
+For the \emph{laplaceinhib} and \emph{laplace} prior types, the matrix \eqn{B} is of 
+central importance. The matrix has the same dimensions as the network to be inferred,
+each entry corresponding to a confidence in the existence of the respective edge. This
+confidence can be aquired by using external pathway sources, e.g. the KEGG database. 
+See the vignette for a description of how to get the prior matrices. No matter how
+the confidence scores are obtained, there are two options, either use the \emph{laplaceinhib}
+prior type, in which knowledge about the type of the edges is present in the 
+external pathway source. Each confidence score for an edge, that is found as 
+inhibiting edge in the reference pathways, is multiplied by \eqn{-1} to obtain a 
+negative value for the inhibiting edges. The entries of the prior matrix \eqn{B} 
+thus lie in the interval \eqn{[-1;1]}, where \eqn{-1} means strong confidence that 
+an edge is an inhibition, \eqn{1} means strong confidence that the edge is an activation 
+and \eqn{0} means that nothing is known about the presence or type of the edge.\cr
+
+If no information on the type of the edges is available in the external data source,
+\emph{priortype="laplace"} should be used, where the edge confidence ranges in the 
+interval \eqn{[0;1]}, where \eqn{1} means strong confidence that the edge is present 
+and \eqn{0} means that nothing is known about the presence of the edge.\cr  
+
+Argument \code{gam} is used either as exponent in the scalefree prior, as it is described
+in the reference, or in \code{laplaceinhib} as exponent in the following formula:\cr
 \eqn{P(phi_{ij}|lambda,gam,B) = \frac{1}{2 \cdot lambda} exp(\frac{-|phi_{ij}-B_{ij}|^{gam}}{lambda})}\cr
-It controls how strong the differences between an inferred edge and the probability for seeing this edge in a reference set
-of networks are to be weighted. Defaults to 2, if omitted, which leads to weak penalisation of small differences between 
-inferred and reference interaction, and strong penalisation for big differences.
+It controls how strong the differences between an inferred edge and the probability
+for seeing this edge in a reference set of networks are to be weighted. Defaults to 2,
+if omitted, which leads to weak penalisation of small differences between 
+inferred and reference interaction, and strong penalisation for big differences. The 
+prior curve is a 'double exponential', rapidly decaying with increasing difference 
+\eqn{|phi_{ij}-B_{ij}|}, while for \code{gam} larger than 1, the prior curve is
+changed to an s-shaped curve with a plateau at the upper bound of
+\eqn{P(phi_{ij}|lambda,gam,B)} and an exponential decay when a certain threshold of 
+\eqn{|phi_{ij}-B_{ij}|} is reached.\cr
+
+See also the references for a description of the priors.
 %\section{laplaceinhib}{TODO}
 %\section{laplace}{TODO}
 %\section{scalefree}{TODO}

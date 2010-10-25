@@ -20,12 +20,12 @@ replicatecolumns <- function(mat, replicates=4) {
 	mm
 }
 
-### datx: N x T x R matrix, N: number of proteins, T number of timepoints, R: number of replicates
-### gammaprime: N x T x R matrix
+### dat: N x (T x R) matrix, N: number of proteins, T number of timepoints, R: number of replicates
+### gammaprime: N x (T x R) matrix
 ### gammaposs: N x M matrix, M: number of reachable states derived in effect propagation
-### E: M x T x R matrix: Emission matrix
+### E: M x (T x R) matrix: Emission matrix
 ### A: M x M matrix: Transition matrix
-### viterbi: M x T x R matrix: which path to take
+### viterbi: M x T matrix: which path to take
 perform.hmmsearch <- function(phi.n, bestmodel) {
 	cat(".")
 	tps <- bestmodel$tps
@@ -34,7 +34,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	hmmiterations <- bestmodel$hmmiterations
 	gamprimetotal <- NULL
 	gamposstotal <- NULL
-	# separates HMM fuer jedes experiment, also jeden stimulus
+	# separate HMM for each experiment, i.e. each stimulus
 	for(s in stimuli) {
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
 		R <- length(exind)/length(tps)
@@ -143,9 +143,9 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			## M-step
 			## maximize the transition matrices parameters
 			sel <- cbind(1:length(maxima.ind),2:(length(maxima.ind)+1))
-			## transitions hold the switchings from state i to state j in the state sequence
+			## transitions hold the switchings from state i to state i+1 in the state sequence
 			transitions <- matrix(maxima.ind[sel],ncol=2)
-			## hier aendere ich nur die �bergangswahrscheinlichkeiten, die auch gesehen wurden
+			## change the probabilities for transitions that were observerd
 			trans <- table(transitions[-nrow(transitions),1])
 			transall <- table(paste(transitions[-nrow(transitions),1], transitions[-nrow(transitions),2], sep="_"))		
 			ind <- match(as.numeric(sapply(names(transall), function(x) strsplit(x, split="_")[[1]][1])),as.numeric(names(trans)))	
@@ -153,12 +153,12 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			indices <- sapply(names(transprob), function(x,rows) (as.numeric(strsplit(x, "_")[[1]])-c(0,1)) %*% c(1,rows),rows=nrow(A))
 			A[indices] <- transprob	
 			A <- A - log2(sum(2^A))	
-		} # end outer for loop
+		} # end while
 		# now we have an A, an E and a gammaprime for the first experiment
 		# save the gammaprime
 		gamprimetotal <- cbind(gamprimetotal, gamprime)
 		gamposstotal <- cbind(gamposstotal, gammaposs)
-	}
+	} # end outer for loop
 	Liktmp <- likl(dat,gamprimetotal)
 	Lik <- Liktmp$L
 	thetaprime <- Liktmp$theta

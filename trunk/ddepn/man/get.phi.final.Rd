@@ -27,7 +27,7 @@ get.phi.final.mcmc(retlist,maxiterations,prob=.333,qu=.99999)
 \code{get.phi.final}
 Takes the population P from the GA resultlist and returns the list with the element \emph{lst$phi} 
 replaced by the new final network. \emph{lst$weights} only contains the weights
-with \eqn{lst\$weights > th}.
+with \eqn{lst$weights > th}.
 \code{get.phi.final.mcmc}
 Takes a list of MCMC samplings returned by \code{\link{mcmc_ddepn}} and extracts a final network for
 each result. It is assumed that any type of edge is expected to be found with probability 1/3=0.33, thus
@@ -68,16 +68,19 @@ plotrepresult(ret2,outfile=NULL)
 
 ## mcmc
 maxiterations <- 300
-## uniform prior matrix
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
+## use original network as prior matrix
+## reset all entries for inhibiting edges 
+## to -1
+B <- phit
+B[B==2] <- -1
+
 ret3 <- ddepn(dataset$datx,phiorig=phit,
       inference="mcmc", usebics=FALSE,
-      maxiterations=maxiterations, burnin=100, lambda=5, B=B)
+      maxiterations=maxiterations, burnin=100, lambda=0.01, B=B)
 
 plotrepresult(ret3$samplings[[1]],outfile=NULL)
-ret4 <- ret3
-ret4$samplings <- get.phi.final.mcmc(ret3$samplings, maxiterations=maxiterations, .33, .99999)
-plotrepresult(ret4$samplings[[1]],outfile=NULL)
+ret4 <- get.phi.final(ret3$samplings[[1]],th=0.9)
+plotrepresult(ret4,outfile=NULL)
 
 }
 }

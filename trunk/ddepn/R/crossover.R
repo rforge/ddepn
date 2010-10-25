@@ -7,7 +7,11 @@ crossover <- function(phi1, phi2,fanin) {
   chcol <- 1:ncol(phi1)
   out1 <- which(colSums(ifelse(rbind(phi2[crossnode,],phi1[-crossnode,])==0,0,1)) > fanin)
   out2 <- which(colSums(ifelse(rbind(phi1[crossnode,],phi2[-crossnode,])==0,0,1)) > fanin)
-  ch <- chcol[-c(out1,out2)]
+  if(length(out1) > 0 | length(out2) > 0) {
+  	ch <- chcol[-c(out1,out2)]
+  } else {
+	ch <- chcol
+  }
   if(length(ch)>0) {
   	phi1[crossnode,ch] <- phi2[crossnode,ch]
   	phi2[crossnode,ch] <- phi1.tmp[crossnode,ch]

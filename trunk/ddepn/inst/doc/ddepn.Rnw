@@ -60,7 +60,7 @@ phosphorylation data measured on Reverse Phase Protein Arrays to infer
 a signalling network among proteins of the ERBB signalling cascade in
 a human breast cancer cell line. 
 
-Our method models the signalling dynamics by a boolean signal
+Our method (\cite{Bender2010}) models the signalling dynamics by a boolean signal
 propagation mechanism that defines a sequence of state transitions for
 a given network structure. A likelihood score is proposed that
 describes the probability of our measurements given a particular state
@@ -142,16 +142,18 @@ since two parallel and independent MCMC runs are performed. If \emph{multicore} 
 on the machine, just set \emph{multicores=FALSE} to perform sampling for a single chain.
 
 <<MCMCsampling, echo=TRUE, results=hide, eval=FALSE>>=
+# use the original network as prior probability matrix
+B <- net
+B[B==2] <- -1
 # construct a prior matrix with uniform probabilities for each edge
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
 mi <- 5000
 burnin <- 1000
-library(multicore)
-ret <- ddepn(data, phiorig=net, inference="mcmc",
+if(require(multicore)) {
+	ret <- ddepn(data, phiorig=net, inference="mcmc",
 		maxiterations=mi, burnin=burnin,
-		usebics=FALSE, lambda=5, B=B,
+		usebics=FALSE, lambda=0.01, B=B,
 		multicores=TRUE, cores=2, priortype="laplaceinhib")
-
+}
 @
 After the sampling one can examine the sampling run:
 
@@ -175,12 +177,13 @@ corresponds to one trace. Output diagnostics can be produced using the R-package
 figure \ref{fig:mcmcoutput} for some example plots.
 
 <<MCMC output, echo=TRUE, results=hide, eval=FALSE>>=
-library(coda)
+if(require(coda)) {
 mcmc1 <- mcmc(data=ret$ltraces[-c(1:burnin,mi),1])
 mcmc2 <- mcmc(data=ret$ltraces[-c(1:burnin,mi),2])
 mcmcl <- mcmc.list(mcmc1,mcmc2)
 plot(mcmcl)
 gelman.plot(mcmcl)
+}
 @
 \begin{figure}[h]
 \centering
@@ -263,7 +266,7 @@ automatically, only requiring the correct labeling of the columns.
 \subsection*{Reference network \emph{phiorig}} 
 
 If desired, a reference network \emph{phiorig} can be given, used to compare the edges of the 
-inferred network to it. The user \textbf{must} ensure that all treatments are included as nodes,
+inferred network to it. The user \textit{must} ensure that all treatments are included as nodes,
 since the inference will estimate effects from these.\\
 The format of the network must be an adjacency matrix, where each entry corresponds to an edge
 from the node specified by the rowname to the node specified by the column name. Two types of
@@ -304,7 +307,7 @@ Both the GA and MCMC sampler require single or multiple seed networks. If not gi
 unconnected network is used as seed for each individual in the GA population or the start 
 networks for each MCMC run, respectively. However, the user can provide own seed networks using 
 the argument \emph{phi}. This can either be an adjacency matrix or a list of adjacency matrices.
-Again, the treatments \textbf{must} be included as nodes. If given a single adjacency matrix, it
+Again, the treatments \textit{must} be included as nodes. If given a single adjacency matrix, it
 is used as seed network for each of the individuals in the population of networks during the
 genetic algorithm, or as independent seeds for parallel MCMC samplings. If given as list,
 its length must equal the number of individuals in the population in the GA (specified by the 
@@ -323,63 +326,96 @@ first as \emph{Laplace} prior (\cite{Froehlich2007,Werhli2007}), and to the seco
 \label{sec:laplace}
 The laplace prior penalises deviations of edges in the inferred network from prior edge
 probabilities, aquired from network databases (e.g. KEGG \cite{Kanehisa2008KEGG}). The
-package includes a snapshot of the KEGG database, downloaded in August 2009.
+package includes a snapshot of the KEGG database (containing signalling and disease pathways),
+downloaded in October 2010.
 
 <<kegggraphs, echo=TRUE, results=hide, eval=FALSE>>=
 data(kegggraphs)
 length(kegggraphs)
 @
+\begin{verbatim}
+[1] 78
+\end{verbatim}
 
-The list \emph{kegggraphs} includes 195 elements, each of which has 3 members, a string \emph{name} 
-specifying the name of the pathway, a graphNEL object \emph{g} and an igraph object \emph{ig}, 
-which for the time being is not used:
+The list \emph{kegggraphs} includes 78 elements, each of which has 3 members, a string \emph{id} 
+specifying the KEGG pathway id, a graphNEL object \emph{g} and an adjacency matrix \emph{phi}.
+
+<<kegggraphs name, echo=TRUE, results=hide, eval=FALSE>>=
+names(kegggraphs)[1]
+@
+\begin{verbatim}
+[1] "MAPK signaling pathway"
+\end{verbatim}
 
 <<kegggraphs element, echo=TRUE, results=hide, eval=FALSE>>=
 kegggraphs[[1]]
 @
 \begin{verbatim}
-$name
-[1] "Glycolysis / Gluconeogenesis"
+$id
+[1] "04010"
 
 $g
 A graphNEL graph with directed edges
-Number of Nodes = 64 
-Number of Edges = 256 
+Number of Nodes = 267 
+Number of Edges = 882 
 
-$ig
-NULL
+$phi
+              hsa:5923 hsa:5924 hsa:11072 hsa:11221 hsa:1843...
+hsa:5923             0        0         0         0        0...
+...
 \end{verbatim}
 
-Similar to the set of reference networks from KEGG, one can download other reference networks 
-from different sources (e.g. Reactome, Transpath) and compile the prior distribution from them.
-Each graphNEL object can be converted to a detailed adjacency list (including inhibitions as entries
-with value 2):
+Each graphNEL object was converted to a detailed adjacency list phi (including inhibitions as entries
+with value 2) using the 'kegggraph.to.detailed.adjacency' function:
 
 <<Convert graphNEL to detailed adjacency matrix, echo=TRUE, results=hide, eval=FALSE>>=
 kegggraph.to.detailed.adjacency(gR=kegggraphs[[1]]$g)
 @
 
 To obtain prior probabilites for each edge between all pairs of nodes present in \emph{kegggraphs}, 
-we follow the approach suggested by \cite{Werhli2007}. We count the total number of node pairs $M$
-occurring in all reference networks as well as the number of node pairs $m$ that are connected 
+an approach of \cite{Werhli2007} is followed. The total number of node pairs $M$
+occurring in all reference networks is counted as well as the number of node pairs $m$ that are connected 
 via an edge in all reference networks. The prior probability matrix $\mathcal{B}$ is defined as:
 
-\[ \mathcal{B} = \frac{m}{M} \]
+\[ \mathcal{B} = \frac{m}{M}, \]
 
-We compute a normalising factor $Z$ as described in \cite{Werhli2007} for a given hyperparameter 
-$\lambda$. The prior probability density for each edge between node $i$ and $j$ is calculated
-as laplace type distribution:
+where each entry is multiplied with $-1$ if the edge occurred as inhibiting edge in the KEGG 
+pathways. This kind of prior matrix can the be used together with the \emph{laplaceinhib} prior:
+In the function call to \emph{ddepn}, just pass the arguments \emph{B} and \emph{lambda} and
+set \emph{usebics=FALSE} and \emph{priortype="laplaceinhib"} to use the laplace prior for the inference.
 
-\[
-P(\Phi_{ij}|\lambda) = \frac{1}{2\lambda}exp(\frac{-|\Phi_{ij} - \mathcal{B}_{ij}|}{\lambda})
-\]
+<<Use Laplaceinhib prior, echo=TRUE, results=hide, eval=FALSE>>=
+ddepn(data, lambda=0.01, B=B, usebics=FALSE,
+		priortype="laplaceinhib")
+@
 
-In the function call to \emph{ddepn}, just pass arguments \emph{B} and \emph{lambda} and
-set \emph{usebics=FALSE} to use the laplace prior for inference.
+If no information is available on the type of the edges in the reference networks, one should use the 
+\emph{laplace} prior type. Here, all entries in $\mathcal{B}$ are positive, and for the prior 
+calculation, the edge type in the inferred network is ignored.
 
 <<Use Laplace prior, echo=TRUE, results=hide, eval=FALSE>>=
-ddepn(data, lambda=2, B=B, usebics=FALSE)
+ddepn(data, lambda=0.01, B=B, usebics=FALSE,
+		priortype="laplace")
 @
+
+
+%We compute a normalising factor $Z$ as described in \cite{Werhli2007} for a given hyperparameter 
+%$\lambda$. The prior probability density for each edge between node $i$ and $j$ is calculated
+%as laplace type distribution:
+%The prior density for each edge between node $i$ and $j$ is calculated as laplace type distribution:
+
+%\[
+%P(\Phi_{ij}|\lambda) = \frac{1}{2\lambda}exp(\frac{-|\Phi_{ij} - \mathcal{B}_{ij}|^\gamma}{\lambda})
+%\]
+
+%In the function call to \emph{ddepn}, just pass the arguments \emph{B} and \emph{lambda} and
+%set \emph{usebics=FALSE} and \emph{priortype="laplaceinhib"} to use the laplace prior for the inference.
+%
+
+%<<Use Laplace prior, echo=TRUE, results=hide, eval=FALSE>>=
+%ddepn(data, lambda=2, B=B, usebics=FALSE, priortype="laplaceinhib")
+%@
+
 
 
 \subsection*{ScaleFree prior}
@@ -418,61 +454,75 @@ stimuli <- signet$stimuli
 weights <- signet$weights
 dataset <- makedata(net, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
 data <- dataset$datx
+
+# netga arguments
+mi=15
+p=30
+q=0.3
+m=0.8
+
+# mcmc arguments
+mi <- 1000
+burnin <- 100
+lambda <- 5
+
+#laplace prior arguments
+lambda=0.01
+# for priortype="laplace": use original net as prior and reset inhibition
+# edges, such that their type is ignored
+Bpos <- net
+Bpos[Bpos==2] <- 1
+# for priortype="laplaceinhib": use original net as prior and reset
+# inhibition edge entries in B from 2 to -1
+B <- net
+B[B==2] <- -1
+
+# scale free prior arguments
+gam <- 2.2
+it <- 500
+K <- 0.8
+
 @
 
 
 \subsection*{GA, use BICs optimisation and no prior}
 <<GA BIC,echo=TRUE,eval=FALSE>>=
-mi=15
-p=30
-q=0.3
-m=0.8
 ret <- ddepn(data, phiorig=net, inference="netga",
              maxiterations=mi, p=p, q=q, m=m,
              usebics=TRUE)
 @
-\subsection*{GA, use laplace prior}
+\subsection*{GA, use laplaceinhib prior}
 <<GA Laplace,echo=TRUE,eval=FALSE>>=
-mi=15
-p=30
-q=0.3
-m=0.8
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
-lambda <- 5
 ret <- ddepn(data, phiorig=net, inference="netga",
 		maxiterations=mi, p=p, q=q, m=m,
 		usebics=FALSE, lambda=lambda, B=B, priortype="laplaceinhib")
 @
+\subsection*{GA, use laplace prior}
+<<GA Laplace,echo=TRUE,eval=FALSE>>=
+ret <- ddepn(data, phiorig=net, inference="netga",
+		maxiterations=mi, p=p, q=q, m=m,
+		usebics=FALSE, lambda=lambda, B=Bpos, priortype="laplace")
+@
 \subsection*{GA, use scalefree prior}
 <<GA ScaleFree,echo=TRUE,eval=FALSE>>=
-mi=15
-p=30
-q=0.3
-m=0.8
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
-gam <- 2.2
-it <- 500
-K <- 0.8
 ret <- ddepn(data, phiorig=net, inference="netga",
 		maxiterations=mi, p=p, q=q, m=m,
 		usebics=FALSE, gam=gam, it=it, K=K, priortype="scalefree")
 @
-\subsection*{MCMC, use laplace prior}
+\subsection*{MCMC, use laplaceinhib prior}
 <<MCMC Laplace,echo=TRUE,eval=FALSE>>=
-mi <- 1000
-burnin <- 100
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
-lambda <- 5
 ret <- ddepn(data, phiorig=net, inference="mcmc",
 		maxiterations=mi, burnin=burnin,
 		usebics=FALSE, lambda=lambda, B=B, priortype="laplaceinhib")
 @
+\subsection*{MCMC, use laplace prior}
+<<MCMC Laplace,echo=TRUE,eval=FALSE>>=
+ret <- ddepn(data, phiorig=net, inference="mcmc",
+		maxiterations=mi, burnin=burnin,
+		usebics=FALSE, lambda=lambda, B=Bpos, priortype="laplace")
+@
 \subsection*{MCMC, use scalefree prior}
 <<MCMC ScaleFree,echo=TRUE,eval=FALSE>>=
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(net))
-gam <- 2.2
-it <- 500
-K <- 0.8
 ret <- ddepn(data,phiorig=net, inference="mcmc",
 		maxiterations=mi, burnin=burnin,
 		usebics=FALSE, gam=gam, it=it, K=K, priortype="scalefree")

@@ -51,7 +51,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   if(usebics){
 	  wks <- sapply(P, function(x) x$bic)
 	  score_quantile <- quantile(wks,na.rm=T,probs=quantBIC)
-	  old_score_quantile <- -Inf
+	  old_score_quantile <- Inf
 	  wks2 <- wks - max(wks) -1
 	  probs <- wks2/sum(wks2)
   } else {
@@ -61,7 +61,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  wks <- sapply(P, function(x) x$L)
 	  }
 	  score_quantile <- quantile(wks,na.rm=T,probs=quantL)
-	  old_score_quantile <- Inf
+	  old_score_quantile <- -Inf
 	  wks2 <- wks + abs(min(wks)) +1
 	  probs <- wks2/sum(wks2)
   }
@@ -89,6 +89,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   #scorestats[iter,"score"] <- score_quantile
   #scorestats[iter,"score_mad"] <- mad(wks)
   
+  #####################
+  ### GA Main loop
+  #####################
   for(iter in 1:maxiterations) {
 	pdiff <- "x"
 	# terminate criterion: 50x equal optimal score, then return
@@ -149,12 +152,12 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	# or minimize bics
 	if(usebics) {
 		selection <- which(wks < score_quantile) # minimise the bic
-		# don't stop if no score is less than the median score
+		# don't stop if no score is less than the quantile of the scores
 		if(length(selection)==0)
 			selection <- sample(which(wks==min(wks)),1)
 	} else {
 		selection <- which(wks > score_quantile) # maximise the L or posterior
-		# don't stop if no score is less than the median score
+		# don't stop if no score is less than the quantile of the scores
 		if(length(selection)==0)
 			selection <- sample(which(wks==max(wks)),1)
 	}
@@ -180,7 +183,6 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	old_score_quantile <- score_quantile
 	# get the number of crossovers
     # size of population - already selected individuals
-    # i.e. perform crossover for all not selected individuals
     numcrossings <- p - length(selection)
     numcrossings <- (numcrossings - numcrossings%%2)
 	################

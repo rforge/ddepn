@@ -53,8 +53,11 @@ stimuli <- signet$stimuli
 ## sample data
 dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
 
-## uniform prior matrix
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
+## use original network as prior matrix
+## reset all entries for inhibiting edges 
+## to -1
+B <- phit
+B[B==2] <- -1
 
 ## Genetic algorithm, using BIC score as optimisation criterion
 ret1 <- ddepn(dataset$datx, phiorig=phit,inference="netga",
@@ -63,18 +66,18 @@ ret1 <- ddepn(dataset$datx, phiorig=phit,inference="netga",
 x11()
 plotdetailed(ret1$phi,stimuli=stimuli,fontsize=20)
 
-## Genetic algorithm, using a laplaceinhib prior and the posterior probabilities as optimisation criterion
-B <- matrix(0.5,nrow=n,ncol=n,dimnames=dimnames(phit))
+## Genetic algorithm, using a laplaceinhib prior and the posterior
+## probabilities as optimisation criterion
 ret2 <- ddepn(dataset$datx, phiorig=phit, inference="netga",
               maxiterations=30, p=15, q=0.3, m=0.8,
-              usebics=FALSE, lambda=5, B=B, priortype="laplaceinhib") 
+              usebics=FALSE, lambda=0.01, B=B, priortype="laplaceinhib") 
 x11()
 plotdetailed(ret2$phi,stimuli=ret2$stimuli,fontsize=20)
 
 ## MCMC sampling using a laplaceinhib prior
 ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
               maxiterations=300, burnin=100,
-              usebics=FALSE, lambda=2, B=B, priortype="laplaceinhib")
+              usebics=FALSE, lambda=0.01, B=B, priortype="laplaceinhib")
 
 x11()
 plotdetailed(ret3$samplings[[1]]$phi,stimuli=ret3$samplings[[1]]$stimuli)

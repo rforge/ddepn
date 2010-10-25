@@ -6,33 +6,32 @@
 kegggraph.to.detailed.adjacency
 }
 \description{
-Converts a keggraph object to an adjacency matrix containing inhibitions and activations.
+Converts a graphNEL object extracted by KEGGgraph to an adjacency
+matrix containing inhibitions and activations.
 }
 \usage{
 kegggraph.to.detailed.adjacency(gR)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{gR}{A KEGGgraph object.}
+  \item{gR}{A KEGGgraph graphviz object.}
 }
 \details{
-Internal function. Shouldn't be called directly.
+Can be used to convert the objects in \code{\link{kegggraphs}} to 
+adjacency matrices.
 }
 \value{
 An adjacency matrix.
 }
 \author{
 Christian Bender
-%%  ~~who you are~~
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
+\examples{
+\dontrun{
+  data(kegggraphs)
+  adj <- kegggraph.to.detailed.adjacency(kegggraphs[[1]]$g)
+}
+}
 
-%\examples{
-%##---- Should be DIRECTLY executable !! ----
-%##-- ==>  Define data, use random,
-%##--	or do  help(data=index)  for the standard data sets.
-%}
-
-\keyword{ internal }
+%\keyword{ internal }
 %\keyword{ ~matrix }% __ONLY ONE__ keyword per line

@@ -33,7 +33,7 @@ runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
   \item{usebics}{Use bics for model selection.}
   \item{cores}{Not used here.}
   \item{lambda}{Strength of prior influence.}
-  \item{B}{Prior information matrix.}
+  \item{B}{The Prior information matrix. See \code{\link{prior}} for details.}
   \item{Z}{Normalisation factor for prior.}
   \item{hmmiterations}{Maximum iterations in the HMM.}
   \item{fanin}{Integer: maximal indegree for nodes.}
@@ -121,22 +121,23 @@ stimuli <- signet$stimuli
 ## sample data
 dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
 
-## uniform prior matrix
-B <- matrix(0.5, nrow=n, ncol=n, dimnames=dimnames(phit))
-
 ## prior normalisation factor
-lambda <- 5 
-Z <- zlambda(B, lambda)
+lambda <- 0.01 
 
 ## network to start with
 V <- rownames(dataset$datx)
 phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(V,V))
 
-## now the sampling
+## use original network as prior matrix
+## reset all entries for inhibiting edges 
+## to -1
+B <- phit
+B[B==2] <- -1
 
+## now the sampling
 ret <- mcmc_ddepn(dataset$datx, phiorig=phit, phi=phistart, stimuli=stimuli,
-            th=th, multicores=FALSE, outfile=NULL, maxiterations=300,
-            usebics=FALSE, cores=1, lambda=lambda, B=B, Z=Z,
+            th=0.8, multicores=FALSE, outfile=NULL, maxiterations=300,
+            usebics=FALSE, cores=1, lambda=lambda, B=B,
             hmmiterations=100, fanin=4, burnin=100, priortype="laplaceinhib")
 }
 

@@ -1,4 +1,5 @@
-# Calculate the Likelihood of datx given gammax and thetax
+# Calculate the Likelihood given an optimal state sequence
+# returns the likelihood and parameter point estimates theta
 # 
 # Author: benderc
 ###############################################################################

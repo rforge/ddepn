@@ -95,7 +95,7 @@ entry in the list contains the following elements:
   \item{lastmove}{String. Type of the last change that was performed.}
   \item{coords}{Position in the network where the last change was performed.}
   \item{lambda}{Laplace prior hyperparameter.}
-  \item{B}{Laplace prior matrix.}
+  \item{B}{The Prior information matrix. See \code{\link{prior}} for details.}
   \item{Z}{Laplace prior normalisation factor. (Not used at the moment.)}
   \item{fanin}{Maximal indegree for nodes.}
   \item{gam}{Sparsity prior hyperparameter.}
@@ -152,7 +152,16 @@ dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.s
 ## now the GA
 ret <- netga(dataset$dat, stimuli, P=NULL, maxiterations=30, p=15,
     q=0.3, m=0.8, hmmiterations=100, multicores=FALSE, usebics=TRUE, cores=1,
-    lambda=NULL, B=NULL, Z=NULL, scorefile=NULL, priortype="none")
+    lambda=NULL, B=NULL, scorefile=NULL, priortype="none")
+## now the GA with prior
+## use original network as prior matrix
+## reset all entries for inhibiting edges 
+## to -1
+B <- phit
+B[B==2] <- -1
+ret <- netga(dataset$dat, stimuli, P=NULL, maxiterations=30, p=15,
+    q=0.3, m=0.8, hmmiterations=100, multicores=FALSE, usebics=FALSE, cores=1,
+    lambda=0.01, B=B, scorefile=NULL, priortype="laplaceinhib")
 
 
 }

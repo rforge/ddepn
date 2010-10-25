@@ -6,7 +6,8 @@
 coord - compute coordinates for a given index.
 }
 \description{
-Given an index k and a matrix mat, compute the coordinate pair (x,y) at which k is found in mat.
+Given an index k and a matrix mat, compute the coordinate
+ pair (x,y) at which k is found in mat.
 }
 \usage{
 coord(k,mat)
