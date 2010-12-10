@@ -48,40 +48,51 @@ rm(list=ls())
 \maketitle
 
 
-\begin{abstract}
-Network modelling in systems biology has become an important tool to
-study molecular interactions, especially in the medical field like
-cancer research. The understanding of the interplay of proteins in
-cellular signalling is the basis for the development of novel drugs
-and therapies. Here, we set up a new method for the reconstruction of
-signalling networks from time course protein data after external
-perturbation. We show how to use protein expression and
-phosphorylation data measured on Reverse Phase Protein Arrays to infer
-a signalling network among proteins of the ERBB signalling cascade in
-a human breast cancer cell line. 
-
-Our method (\cite{Bender2010}) models the signalling dynamics by a boolean signal
-propagation mechanism that defines a sequence of state transitions for
-a given network structure. A likelihood score is proposed that
-describes the probability of our measurements given a particular state
-transition matrix. We identify the optimal sequence of state
-transitions via a Hidden Markov Model. Network structure search is
-performed by a genetic algorithm that optimises the overall likelihood
-of a population of candidate networks. We test our method on simulated
-networks and data and show its increased performance in comparison to
-another Dynamical Bayesian Network approach. The reconstruction of a
-network in our real data results in several known signalling chains
-from the ERBB network, showing the validity and usefulness of our
-approach.
-\end{abstract}
-
+%\begin{abstract}
+%Network modelling in systems biology has become an important tool to
+%study molecular interactions, especially in the medical field like
+%cancer research. The understanding of the interplay of proteins in
+%cellular signalling is the basis for the development of novel drugs
+%and therapies. Here, we set up a new method for the reconstruction of
+%signalling networks from time course protein data after external
+%perturbation. We show how to use protein expression and
+%phosphorylation data measured on Reverse Phase Protein Arrays to infer
+%a signalling network among proteins of the ERBB signalling cascade in
+%a human breast cancer cell line. 
+%
+%Our method (\cite{Bender2010}) models the signalling dynamics by a boolean signal
+%propagation mechanism that defines a sequence of state transitions for
+%a given network structure. A likelihood score is proposed that
+%describes the probability of our measurements given a particular state
+%transition matrix. We identify the optimal sequence of state
+%transitions via a Hidden Markov Model. Network structure search is
+%performed by a genetic algorithm that optimises the overall likelihood
+%of a population of candidate networks. We test our method on simulated
+%networks and data and show its increased performance in comparison to
+%another Dynamical Bayesian Network approach. The reconstruction of a
+%network in our real data results in several known signalling chains
+%from the ERBB network, showing the validity and usefulness of our
+%approach.
+%\end{abstract}
+This document describes the package 'ddepn' implementing our proposed 
+network reconstruction algorithm (\cite{Bender2010}). Section \ref{sec:quickstart}
+gives a quick introduction on how to use the package. Section \ref{sec:formatdata}
+shows how to format the input arguments for the ddepn function. Section 
+\ref{sec:prior} gives an overview on how to include prior knowledge on 
+network structures and in section \ref{sec:usecases} code snippets are given 
+for the possible types of calling ddepn. Finally, in section \ref{sec:application}
+an example for inference on real data is given.  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{QuickStart: using DDEPN for network inference on simulated data sets}
+\label{sec:quickstart}
 This section shows an exemplary workflow to reconstruct a signalling network from 
-simulated data. An analysis on real data can be performed analogously. Details on 
-formatting the input data matrix as well as arguments for the function calls can 
-be found in subsequent sections.
+simulated data. Details on formatting the input data matrix as well as arguments
+for the function calls can be found in subsequent sections. An analysis on real
+data can be performed analogously and an example is given at the end of this
+document, showing a simple analysis of longitudinal data measuring protein 
+phosphorylation in HCC1954 breast cancer cells, generated on Reverse Phase
+Protein Arrays.
 
 %% chunk 1
 <<label=Load_package,echo=FALSE, eval=FALSE>>=
@@ -120,7 +131,7 @@ compare it to the originally sampled network \emph{net}.
 
 <<RunGA, results=hide, eval=FALSE>>=
 ret <- ddepn(data, phiorig=net, inference="netga",
-              maxiterations=15, p=30, q=0.3, m=0.8,
+              maxiterations=150, p=50, q=0.3, m=0.8,
               usebics=TRUE)
 @
 After the reconstruction, the generated network can be viewed as follows:
@@ -130,10 +141,14 @@ plotrepresult(ret)
 \begin{figure}[htp]
 \centering
 \includegraphics[width=12cm,height=4cm]{netgaresult}
-\caption{Result plot of the genetic algorithm. Left: the given graph; Middle: the inferred graph; 
+\caption{Result plot of the genetic algorithm example. Left: the original graph; Middle: the inferred graph; 
 	     Right: sensitivity/specificity plot for comparing the original and inferred graphs}
 \label{fig:resultga}
 \end{figure}
+
+The destination file of the output of the \emph{netga} function can be specified by argument
+\emph{outfile}. Figure \ref{fig:scorenetgaoutput} at the end of this document shows the output
+for the GA inference of figure \ref{fig:resultga}.
 
 
 \subsection{Running Markov Chain Monte Carlo Sampling (MCMC)}
@@ -146,11 +161,9 @@ on the machine, just set \emph{multicores=FALSE} to perform sampling for a singl
 B <- net
 B[B==2] <- -1
 # construct a prior matrix with uniform probabilities for each edge
-mi <- 5000
-burnin <- 1000
 if(require(multicore)) {
 	ret <- ddepn(data, phiorig=net, inference="mcmc",
-		maxiterations=mi, burnin=burnin,
+		maxiterations=15010, burnin=1000,
 		usebics=FALSE, lambda=0.01, B=B,
 		multicores=TRUE, cores=2, priortype="laplaceinhib")
 }
@@ -187,11 +200,16 @@ gelman.plot(mcmcl)
 @
 \begin{figure}[h]
 \centering
-\includegraphics[width=10cm,height=10cm]{mcmcoutput}
+\includegraphics[width=10cm,height=8cm]{mcmcoutput}
 \caption{Using package coda for some MCMC output analysis. A: Traces for 2 MCMC runs; B: 
 Distributionplot of the sampling; C: gelman.plot of two MCMC samplings}
 \label{fig:mcmcoutput}
 \end{figure}
+
+As in \emph{netga}, the destination file of the output of the \emph{mcmc\_ddepn} function can
+be specified by argument \emph{outfile}. Figure \ref{fig:scoremcmcoutput} at the end of 
+this document shows the output of one sampling run for the MCMC inference in figure
+ \ref{fig:resultmcmc}.
 
 
 \section{Notes on formatting constraints for the arguments of \emph{ddepn}}
@@ -201,7 +219,7 @@ matrix \emph{dat}. Optionally,  a reference
 network \emph{phiorig} and seed networks \emph{phi} can be passed to \emph{ddepn}.
 Each of these arguments is described briefly below.
 
-\subsection*{Input data matrix \emph{dat}}
+\subsection{Input data matrix \emph{dat}}
 The data matrix contains all measurements for the nodes in the rows (e.g. proteins or genes), 
 and the experiments and time points in the columns. There are some special needs on how to name
 the columns. We allow several treatments to be included in the data matrix. Examples for these
@@ -220,13 +238,16 @@ columns of the data matrix have to be named in the format \emph{treatment\_time}
 also can be a combination of several treatments, e.g. stimulation by \emph{EGF} and simultaneous
 inhibition by a drug \emph{X}. In this case, each stimulus has to be separated by an ampersand
 (\emph{$\&$}). The time point is separated from the stimuli via an underscore character
-(\emph{$\_$}), and can be on whatever scale (minutes, hours etc.). An example data matrix is
+(\emph{$\_$}), and can be on any scale (minutes, hours etc.). An example data matrix is
 shown below. In this table, the dummy rows for the treatments are already included (rows EGF and X).
 However, they are not mandatory as input to \emph{ddepn} and, if missing, will be generated 
-automatically, only requiring the correct labeling of the columns.
+automatically, only requiring the correct labeling of the columns. An example for a data matrix is 
+given in table \ref{tab:exampledatamatrix}.
 
 %\begin{scriptsize}
+\begin{table}[h]
 \begin{tiny}
+\label{tab:exampledatamatrix}
 \begin{tabular}{l|cccccccc}
 	& EGF\_1& EGF\_1 & EGF\_2 & EGF\_2 & EGF\&X\_1 & EGF\&X\_1 & EGF\&X\_2 & EGF\&X\_2\\
 	\hline
@@ -236,7 +257,10 @@ automatically, only requiring the correct labeling of the columns.
 	ERK & 1.33 & 1.7 &  1.57 & 1.3  & 0.68 & 0.34 & 0.62 & 0.47 \\
 	MEK & 0.45 & 0.8 &  0.99 & 0.6  & 0.78 & 0.8  & 0.56 & 0.58
 \end{tabular}
+\caption{Example data matrix for 3 nodes and 2 stimuli.}
 \end{tiny}
+\end{table}
+
 %\end{scriptsize}
 
 %\subsection*{\emph{stimuli}} 
@@ -263,12 +287,12 @@ automatically, only requiring the correct labeling of the columns.
 %labeled by the names of the treatments.
 
 
-\subsection*{Reference network \emph{phiorig}} 
+\subsection{Reference network \emph{phiorig}} 
 
 If desired, a reference network \emph{phiorig} can be given, used to compare the edges of the 
 inferred network to it. The user \textit{must} ensure that all treatments are included as nodes,
 since the inference will estimate effects from these.\\
-The format of the network must be an adjacency matrix, where each entry corresponds to an edge
+The format of the network is an adjacency matrix, where each entry corresponds to an edge
 from the node specified by the rowname to the node specified by the column name. Two types of
 edges are allowed: $1$ for activation, $2$ for inhibition. $0$ means no edge between the pair of
 nodes. An example network and corresponding adjacency matrix are shown in figure \ref{fig:examplenet}.
@@ -301,7 +325,7 @@ plotmatrix(phi,"phi")
 %ERK  1  1   0   0   0
 %\end{verbatim}
 
-\subsection*{Seed networks \emph{phi}}
+\subsection{Seed networks \emph{phi}}
 
 Both the GA and MCMC sampler require single or multiple seed networks. If not given, an 
 unconnected network is used as seed for each individual in the GA population or the start 
@@ -322,12 +346,12 @@ Currently, two methods for using biological prior knowledge are implemented. We 
 first as \emph{Laplace} prior (\cite{Froehlich2007,Werhli2007}), and to the second as
 \emph{ScaleFree} prior (\cite{Kamimura}).
 
-\subsection*{Laplace prior}
+\subsection{Laplace prior}
 \label{sec:laplace}
 The laplace prior penalises deviations of edges in the inferred network from prior edge
-probabilities, aquired from network databases (e.g. KEGG \cite{Kanehisa2008KEGG}). The
-package includes a snapshot of the KEGG database (containing signalling and disease pathways),
-downloaded in October 2010.
+confidences, which can be aquired from external network databases
+(e.g. KEGG \cite{Kanehisa2008KEGG}). The package includes a snapshot of the KEGG
+database (containing signalling and disease pathways), downloaded in October 2010.
 
 <<kegggraphs, echo=TRUE, results=hide, eval=FALSE>>=
 data(kegggraphs)
@@ -372,15 +396,13 @@ with value 2) using the 'kegggraph.to.detailed.adjacency' function:
 kegggraph.to.detailed.adjacency(gR=kegggraphs[[1]]$g)
 @
 
-To obtain prior probabilites for each edge between all pairs of nodes present in \emph{kegggraphs}, 
-an approach of \cite{Werhli2007} is followed. The total number of node pairs $M$
-occurring in all reference networks is counted as well as the number of node pairs $m$ that are connected 
-via an edge in all reference networks. The prior probability matrix $\mathcal{B}$ is defined as:
+To obtain prior probabilites for each edge between all pairs of nodes present in \emph{kegggraphs},
+one can follow the approach of \cite{Werhli2007} and count all pairs of nodes occuring in the 
+reference networks. Further the number, how often each pair is connected by an edge is counted. The 
+support for an edge is then the ratio of the number of edges divided by the number of pairs. If 
+the edge is an inhibitory edge, the ratio is multiplied by $-1$, leaving a negative confidence score. 
 
-\[ \mathcal{B} = \frac{m}{M}, \]
-
-where each entry is multiplied with $-1$ if the edge occurred as inhibiting edge in the KEGG 
-pathways. This kind of prior matrix can the be used together with the \emph{laplaceinhib} prior:
+This kind of prior matrix can the be used together with the \emph{laplaceinhib} prior:
 In the function call to \emph{ddepn}, just pass the arguments \emph{B} and \emph{lambda} and
 set \emph{usebics=FALSE} and \emph{priortype="laplaceinhib"} to use the laplace prior for the inference.
 
@@ -390,8 +412,9 @@ ddepn(data, lambda=0.01, B=B, usebics=FALSE,
 @
 
 If no information is available on the type of the edges in the reference networks, one should use the 
-\emph{laplace} prior type. Here, all entries in $\mathcal{B}$ are positive, and for the prior 
-calculation, the edge type in the inferred network is ignored.
+\emph{laplace} prior type. Here, all entries in $\mathcal{B}$ are positive (describing the belief 
+in existence of an edge), and for the prior calculation, the edge type in the inferred network is 
+ignored, too.
 
 <<Use Laplace prior, echo=TRUE, results=hide, eval=FALSE>>=
 ddepn(data, lambda=0.01, B=B, usebics=FALSE,
@@ -418,7 +441,7 @@ ddepn(data, lambda=0.01, B=B, usebics=FALSE,
 
 
 
-\subsection*{ScaleFree prior}
+\subsection{ScaleFree prior}
 \label{sec:scalefree}
 
 According to \cite{Kamimura} we set up a prior distribution that penalises high node degrees
@@ -443,7 +466,7 @@ ddepn(data, gam=2.2, it=500, K=0.8, usebics=FALSE)
 This section shows the various types of calls to \emph{ddepn} with all of the different settings
 (inference type, prior type).\\
 
-\subsection*{Data generation:}
+\subsection{Data generation:}
 <<Data generation,echo=TRUE, eval=FALSE>>=
 library(ddepn)
 set.seed(12345)
@@ -456,13 +479,13 @@ dataset <- makedata(net, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.si
 data <- dataset$datx
 
 # netga arguments
-mi=15
-p=30
-q=0.3
-m=0.8
+minetga <- 15
+p <- 30
+q <- 0.3
+m <- 0.8
 
 # mcmc arguments
-mi <- 1000
+mimcmc <- 1000
 burnin <- 100
 lambda <- 5
 
@@ -485,46 +508,46 @@ K <- 0.8
 @
 
 
-\subsection*{GA, use BICs optimisation and no prior}
+\subsection{GA, use BICs optimisation and no prior}
 <<GA BIC,echo=TRUE,eval=FALSE>>=
 ret <- ddepn(data, phiorig=net, inference="netga",
-             maxiterations=mi, p=p, q=q, m=m,
+             maxiterations=minetga, p=p, q=q, m=m,
              usebics=TRUE)
 @
-\subsection*{GA, use laplaceinhib prior}
+\subsection{GA, use laplaceinhib prior}
 <<GA Laplace,echo=TRUE,eval=FALSE>>=
 ret <- ddepn(data, phiorig=net, inference="netga",
-		maxiterations=mi, p=p, q=q, m=m,
+		maxiterations=minetga, p=p, q=q, m=m,
 		usebics=FALSE, lambda=lambda, B=B, priortype="laplaceinhib")
 @
-\subsection*{GA, use laplace prior}
+\subsection{GA, use laplace prior}
 <<GA Laplace,echo=TRUE,eval=FALSE>>=
 ret <- ddepn(data, phiorig=net, inference="netga",
-		maxiterations=mi, p=p, q=q, m=m,
+		maxiterations=minetga, p=p, q=q, m=m,
 		usebics=FALSE, lambda=lambda, B=Bpos, priortype="laplace")
 @
-\subsection*{GA, use scalefree prior}
+\subsection{GA, use scalefree prior}
 <<GA ScaleFree,echo=TRUE,eval=FALSE>>=
 ret <- ddepn(data, phiorig=net, inference="netga",
-		maxiterations=mi, p=p, q=q, m=m,
+		maxiterations=minetga, p=p, q=q, m=m,
 		usebics=FALSE, gam=gam, it=it, K=K, priortype="scalefree")
 @
-\subsection*{MCMC, use laplaceinhib prior}
+\subsection{MCMC, use laplaceinhib prior}
 <<MCMC Laplace,echo=TRUE,eval=FALSE>>=
 ret <- ddepn(data, phiorig=net, inference="mcmc",
-		maxiterations=mi, burnin=burnin,
+		maxiterations=mimcmc, burnin=burnin,
 		usebics=FALSE, lambda=lambda, B=B, priortype="laplaceinhib")
 @
-\subsection*{MCMC, use laplace prior}
+\subsection{MCMC, use laplace prior}
 <<MCMC Laplace,echo=TRUE,eval=FALSE>>=
 ret <- ddepn(data, phiorig=net, inference="mcmc",
-		maxiterations=mi, burnin=burnin,
+		maxiterations=mimcmc, burnin=burnin,
 		usebics=FALSE, lambda=lambda, B=Bpos, priortype="laplace")
 @
-\subsection*{MCMC, use scalefree prior}
+\subsection{MCMC, use scalefree prior}
 <<MCMC ScaleFree,echo=TRUE,eval=FALSE>>=
 ret <- ddepn(data,phiorig=net, inference="mcmc",
-		maxiterations=mi, burnin=burnin,
+		maxiterations=mimcmc, burnin=burnin,
 		usebics=FALSE, gam=gam, it=it, K=K, priortype="scalefree")
 @
 
@@ -535,7 +558,8 @@ ret <- ddepn(data,phiorig=net, inference="mcmc",
 %also be provided, which is used as starting point for inference by the genetic algorithm  
 
 
-\section*{Application to example data set from HCC1954 cell line}
+\section{Application to example data set from HCC1954 cell line}
+\label{sec:application}
 We show how we apply DDEPN to a data set from HCC1954 breast cancer cell line. Phosphorylation
 of 16 proteins was measured on Reverse Phase Protein Arrays. We performed time courses over
 10 time points (0,4,8,12,16,20,30,40,50,60 minutes). Each measurement was replicated five times
@@ -578,6 +602,31 @@ ret <- ddepn(dat, phiorig=NULL, inference="netga",
 %\bibliography{references}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\clearpage
+
+\begin{figure}[p]
+\centering
+\includegraphics{scorenetgatest}
+\caption{Output plot of \emph{netga}. The left column shows the posterior, likelihood and 
+prior traces (each point in the trace corresponds to the quantile of the respective score
+that was specified by argument \emph{quantBIC}). The right column shows the traces of the 
+posterior, likelihood and prior differences between iteration $i$ and $i+1$.}
+\label{fig:scorenetgaoutput}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics{mcmctest3_2_stats}
+\caption{Output plot of \emph{mcmc\_ddepn}. The left column shows the posterior, likelihood and 
+prior traces. The middle column shows the traces of the posterior, likelihood and prior
+ratios between iteration $i$ and $i+1$. The right column shows the original and 
+inferred networks, as well as a ROC curve for the comparison of both networks (only 
+if a reference network is provided).}
+\label{fig:resultmcmc}
+\end{figure}
+
+\clearpage
+
 \section*{Session Information}
 
 The version number of R and packages loaded for generating the vignette were:

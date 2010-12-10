@@ -134,6 +134,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			scalefac <- max(0.001,median(sf[sf!=Inf],na.rm=TRUE))
 		}
 		bestmodel$scalefac <- scalefac
+		bestmodel[["it"]] <- it
 		
 		if(it>burnin) {
 			## count how often any edge occurred at a given position

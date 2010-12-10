@@ -27,14 +27,14 @@ get.phi.final.mcmc(retlist,maxiterations,prob=.333,qu=.99999)
 \code{get.phi.final}
 Takes the population P from the GA resultlist and returns the list with the element \emph{lst$phi} 
 replaced by the new final network. \emph{lst$weights} only contains the weights
-with \eqn{lst$weights > th}.
+with \emph{lst$weights > th}.\cr
 \code{get.phi.final.mcmc}
 Takes a list of MCMC samplings returned by \code{\link{mcmc_ddepn}} and extracts a final network for
-each result. It is assumed that any type of edge is expected to be found with probability 1/3=0.33, thus
+each result. It is assumed that any type of edge is expected to be found with probability \eqn{1/3=0.33}, thus
 for \code{maxiterations} samplings we expect the probability of seeing exactly \code{k} edges of a certain
 type follows a binomial distribution \code{B(maxiterations, prob, k)}. An edge is included, if the 
-probability of seeing more than the observed number of occurrences is less or equal than \code{qu},
-i.e. \eqn{P(k>K_{observed}) \leq qu}.
+probability of seeing more than the observed number of occurrences is less or equal than \code{1-qu},
+i.e. \eqn{P(k>Kobserved) <= 1-qu}.
 }
 \value{
 Result list as in \code{\link{netga}}, with replaced \emph{phi} and \emph{weights} elements.

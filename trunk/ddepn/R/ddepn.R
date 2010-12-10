@@ -35,18 +35,26 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		stop("ERROR: Found differing number of time points across experiments.")
 	}
 	exps <- unique(tmp[1,])
-	stims <- sapply(exps, function(x) strsplit(x,"&")[[1]])
-	allstim <- unique(unlist(stims))
+	#stims <- sapply(exps, function(x) strsplit(x,"&")[[1]])
+	## create a stimuli list
+	allstim <- as.character(unique(unlist(sapply(exps, function(x) strsplit(x,"&")[[1]]))))
 	stimuli <- list()
-	for(i in 1:length(stims)) {
-		el <- stims[[i]]
-		# find the row in which the stimulus is in the data matrix
-		x <- match(el,rownames(dat))
-		# or define a number 
-		if(any(is.na(x)))
-			x <- match(el,allstim)
-		names(x) <- el
-		stimuli[[i]] <- x
+	#allstim <- NULL
+	for(i in 1:length(exps)) {
+		expsi <- exps[i]
+		stims <- as.character(sapply(expsi, function(x) strsplit(x,"&")[[1]]))
+		stimsid <- NULL
+		for(j in 1:length(stims)) {
+			el <- stims[j]
+			x <- match(el,rownames(dat))	
+			# or define a number 
+			if(any(is.na(x)))
+				x <- match(el,allstim)
+			names(x) <- el
+			stimsid <- c(stimsid, x)		
+		}
+		names(stimsid) <- stims
+		stimuli[[i]] <- stimsid	
 	}
 	# add the stimuli as dummy data rows, if they are missing
 	stimm <- match(unique(names(unlist(stimuli))),rownames(dat))
