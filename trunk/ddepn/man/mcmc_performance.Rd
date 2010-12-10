@@ -9,13 +9,16 @@ mcmc_performance - Performance plot for MCMC
 Creates ROC and AUC for MCMC sampling.
 }
 \usage{
-mcmc_performance(lst)
+mcmc_performance(lst, plot = TRUE)
 trapezoid(sp,sn)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{lst}{
 	The result list from an MCMC run.
+  }
+  \item{plot}{
+  Boolean. If TRUE, show a plot of the ROC curve.
   }
 }
 \details{
