@@ -1,6 +1,6 @@
 \name{posterior}
 \alias{posterior}
-\alias{pi}
+\alias{pri}
 \alias{pgs}
 \title{
 Posterior probability calculation.
@@ -10,7 +10,7 @@ Posterior probability calculation. Usually called internally.
 }
 \usage{
 posterior(phi, L, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, priortype="laplaceinhib")
-pi(i,gam,N)
+pri(i,gam,N)
 pgs(phi,gam,K=0.8,it=500)
 }
 \arguments{

@@ -10,7 +10,7 @@ prior <- function(phi, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, p
 		phi <- detailed.to.simple.regulations(phi)
 		PGlambda <- sum(-log(2) - log(lambda) + (-(abs(B - phi)^gam))/lambda)
 	} else if(priortype=="scalefree") {
-		PGlambda <- log(pgs(phi,gam,K,it))
+		PGlambda <- pgs(phi,gam,K,it) ## logged value is returned
 	} else if(priortype=="laplaceinhib") {
 		# B has same dimensions as phi, reduce phi to network with only one edge type
 		## make sure that the difference of an inhibition edge in stead of no edge
