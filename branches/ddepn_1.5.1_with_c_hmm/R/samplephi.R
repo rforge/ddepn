@@ -55,7 +55,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 	Lnew <- sum(Ltmp)
 	bicnew <- get.bic(phi.n,Lnew,length(dat))
 	aicnew <- get.aic(phi.n,Lnew)
-	if(priortype %in% c("laplaceinhib","laplace","scalefree"))
+	if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform"))
 		prnew <- prior(phi.n, lambda, B, Z, gam, it, K, priortype)
 	else
 		prnew <- 0
@@ -71,7 +71,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 		aicnew <- L.res$aic	
 	}
 	# if prior is given
-	if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+	if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {
 		postnew <- Lnew + prnew
 	} else {
 		postnew <- NULL

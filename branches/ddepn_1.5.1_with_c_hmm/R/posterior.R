@@ -7,7 +7,7 @@
 # scalefree prior
 #posterior <- function(phi, L, lambda, B=NULL, Z=NULL, gam=2.2, it=500, K=0.8) {
 posterior <- function(phi, L, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, priortype="laplaceinhib") {
-	if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+	if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {
 		PGlambda <- prior(phi, lambda, B, Z, gam, it, K, priortype)
 		post <- L + PGlambda
 	} else {

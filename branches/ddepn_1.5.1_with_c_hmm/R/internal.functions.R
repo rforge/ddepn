@@ -54,12 +54,15 @@ get.data <- function(gammax,mu.bg=0, sd.bg=0.1,
 			# stays active
 			if(gammax[p,t-1]==1 && gammax[p,t]==1) {
 				#datx[p,t:(t+reps-1)] <- datx[p,(t-reps):(t-1)] + rnorm(reps,(mu.signal.a/t),sd.signal.a) * fac
-				datx[p,t:(t+reps-1)] <- datx[p,(t-reps):(t-1)] + rnorm(reps,mu.bg,sd.bg)
+				#datx[p,t:(t+reps-1)] <- datx[p,(t-reps):(t-1)] + rnorm(reps,mu.bg,sd.bg)
+				datx[p,t:(t+reps-1)] <- rnorm(reps,mu.signal.a,sd.signal.a)
 			}
 		}
 	}
 	return(list(datx=datx[,-c(1:reps)],downreg=downreg))
 }
+
+
 # write a matrix to a plot region
 plotmatrix <- function(mat,name="") {
 	plot.new() # defines new plot with x/y region ranging from 0 to 1

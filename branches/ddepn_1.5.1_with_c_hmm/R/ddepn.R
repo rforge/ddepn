@@ -150,10 +150,13 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 	} else if(priortype %in% c("scalefree") && !usebics) {
 		if(is.null(gam) | is.null(it) | is.null(K))
 			stop("Please specify arguments gam, it and K for use of scalefree prior.")
+	} else if(priortype %in% c("none","uniform")) {
+		gam <- NULL
+		it <- NULL
+		K <- NULL
+		B <- NULL
+		lambda <- 0
 	}
-	#else if(priortype %in% c("none")) {
-	#	stop("Error in function arguments. Please specifiy either lambda/gamma for laplace prior, gam/it/K for scalefree prior or none if no prior distribution should be used.")
-	#}
 	## if GA should be used
 	if(inference=="netga") {
 		if(!is.null(outfile)) {

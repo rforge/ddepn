@@ -91,15 +91,17 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
   \item{debug}{Boolean. If TRUE, print extra informational messages.}
   \item{burnin}{Integer. Specifies the number of iterations used as
    burnin phase for \code{\link{mcmc_ddepn}}.}
-  \item{priortype}{Character. One of \code{none}, \code{laplaceinhib},
+  \item{priortype}{Character. One of \code{none}, \code{uniform}, \code{laplaceinhib},
    \code{laplace} or \code{scalefree} for use of the respective prior
-   type. Ignored if \code{usebics=TRUE}. For \code{netga},
+   type. Ignored if \code{usebics=TRUE} for \code{netga}. For \code{netga},
    \code{usebics=FALSE, priortype="none"} means optimising the likelihood 
-   directly, for \code{mcmc_ddepn}, \code{none} is not allowed.
+   directly. This is equivalent to setting \code{usebics=FALSE, priortype="uniform"}.
+   For \code{mcmc_ddepn}, \code{priortype="none"} is not allowed. Use
+   \code{priortype="uniform"}instead. 
    \code{laplaceinhib} uses prior information for edges with two types
    (activation/inhibition), \code{laplace} ignores the edge type. Useful
    if only knowledge about the presence of an edge is available, but not 
-   about its type.} 
+   about its type. \code{scalefree} assumes scale-free network architectures.} 
   \item{thin}{Boolean. If TRUE, make sure that the MCMC return objects are
    shortened to at most 10000 iterations. Defaults to FALSE.}
 }

@@ -23,7 +23,8 @@ prior(phi, lambda = NULL, B = NULL, Z = NULL,
    exponent for difference term in laplaceinhib prior.  }
   \item{K}{   Scale-free prior scaling factor/Strength  }
   \item{it}{  Scale-free prior number of iterations for prior sampling.  }
-  \item{priortype}{String. Either \code{laplaceinhib}, \code{laplace} or \code{scalefree}. 
+  \item{priortype}{String. Either \code{uniform}, \code{laplaceinhib}, \code{laplace} or \code{scalefree}.
+    \code{uniform} assumes uniform prior network distributions. 
     \code{laplaceinhib} calculates the difference between the candidate network and a 
     reference matrix containing edge probabilites, while both edge types (activation and 
     inhibition) are included. \code{laplace} is the same, except for ignoring the edge type. 

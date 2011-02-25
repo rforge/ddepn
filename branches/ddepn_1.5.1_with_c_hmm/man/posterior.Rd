@@ -23,7 +23,7 @@ pgs(phi,gam,K=0.8,it=500)
   \item{N}{  	Number of nodes  }
   \item{K}{  	Scale-free prior scaling factor/Strength  }
   \item{it}{  Scale-free prior number of iterations for prior sampling.  }
-  \item{priortype}{Character. One of \code{none}, \code{laplaceinhib}, \code{laplace} or
+  \item{priortype}{Character. One of \code{none}, \code{uniform}, \code{laplaceinhib}, \code{laplace} or
     \code{scalefree} for use of the respective prior type.} 
 }
 \details{

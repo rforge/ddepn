@@ -1,1 +1,2 @@
+useDynLib(ddepn)
 exportPattern("^[[:alpha:]]+")
