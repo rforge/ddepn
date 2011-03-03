@@ -66,6 +66,13 @@ ret1 <- ddepn(dataset$datx, phiorig=phit,inference="netga",
 x11()
 plotdetailed(ret1$phi,stimuli=stimuli,fontsize=20)
 
+## Genetic algorithm, using a uniform prior
+ret2 <- ddepn(dataset$datx, phiorig=phit, inference="netga",
+    maxiterations=15, p=15, q=0.3, m=0.8,
+    usebics=FALSE, priortype="uniform")
+x11()
+plotdetailed(ret2$phi,stimuli=ret2$stimuli,fontsize=20)
+
 ## Genetic algorithm, using a laplaceinhib prior and the posterior
 ## probabilities as optimisation criterion
 ret2 <- ddepn(dataset$datx, phiorig=phit, inference="netga",
@@ -74,11 +81,16 @@ ret2 <- ddepn(dataset$datx, phiorig=phit, inference="netga",
 x11()
 plotdetailed(ret2$phi,stimuli=ret2$stimuli,fontsize=20)
 
+## MCMC sampling using a uniform prior
+ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
+    maxiterations=300, burnin=100,
+    usebics=FALSE, priortype="uniform")
+
 ## MCMC sampling using a laplaceinhib prior
 ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
               maxiterations=300, burnin=100,
               usebics=FALSE, lambda=0.01, B=B, priortype="laplaceinhib")
-
+              
 x11()
 plotdetailed(ret3$samplings[[1]]$phi,stimuli=ret3$samplings[[1]]$stimuli)
 

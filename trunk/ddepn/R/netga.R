@@ -55,7 +55,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  wks2 <- wks - max(wks) -1
 	  probs <- wks2/sum(wks2)
   } else {
-	  if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+	  if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {
 		  wks <- sapply(P, function(x) x$posterior)
 	  } else {
 		  wks <- sapply(P, function(x) x$L)
@@ -173,7 +173,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	if(usebics) {
 		print(paste("Selected: ", length(Pprime), " models with bic < ", old_score_quantile, ". New minbic: ", score_quantile))
 	} else {
-		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+		if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {
 		#if(laplace || scalefree) {
 			print(paste("Selected: ", length(Pprime), " models with post > ", old_score_quantile, ". New maxPosterior: ", score_quantile))
 		} else {
@@ -241,7 +241,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		bestmodel$L <- L.res$Likl
 		bestmodel$bic <- L.res$bic
 		bestmodel$aic <- L.res$aic
-		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+		if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {
 			## new prior; L.res$phix should be equal to bestmodel$phi
 			if(!all(L.res$phix==bestmodel$phi)) {
 				print("Error: New network proposal is not set correctly.")
@@ -283,7 +283,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		score_quantile <- quantile(wks,na.rm=T,probs=quantBIC)
 	} else {
 		# maximize over posterior if prior is given
-		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {	
+		if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {	
 			wks <- sapply(Pprime, function(x) x$posterior)
 		} else {
 			wks <- sapply(Pprime, function(x) x$L)
@@ -357,7 +357,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 			prnew <- 0
 			posteriornew <- 0
 		} else {
-			if(priortype %in% c("laplaceinhib","laplace","scalefree") && !usebics) {
+			if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform") && !usebics) {
 				prnew <- prior(bestmodel$phi, lambda, B, Z, gam, it, K, priortype )
 				## statistics: prior difference
 				dPm <- c(dPm,bestmodel$pr - prnew)
@@ -413,8 +413,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		score_quantile <- quantile(wks,na.rm=T,probs=quantBIC)
 	} else {
 		# maximize over posterior if prior is given
-		if(priortype %in% c("laplaceinhib","laplace","scalefree")) {		
-		#if(laplace || scalefree) {
+		if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {		
 			wks <- sapply(Pprime, function(x) x$posterior)	
 		} else {
 			wks <- sapply(Pprime, function(x) x$L)

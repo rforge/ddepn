@@ -19,9 +19,14 @@ prior <- function(phi, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, p
 		## versa should be high, since introducing the wrong effect is worse than
 		## leaving out the effect
 		if(is.null(gam))
-			gam <- 2
+			gam <- 1
 		phi[phi==2] <- -1	
 		PGlambda <- sum(-log(2) - log(lambda) + (-(abs(B - phi)^gam))/lambda)
+	} else {
+		## uniform prior: set prior prob to 1 for all possible networks,
+		## will add a log-prior of 0 to the likelihood to obtain the 
+		## posterior. Thus, equals simple likelihood optimisation
+		PGlambda <- log(1)
 	}
 	PGlambda
 }

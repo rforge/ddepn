@@ -22,8 +22,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		outfile <- sub("\\.pdf","_stats.pdf", outfile)
 	if(!is.null(B))
 		diag(B) <- 0
-	if(!priortype %in% c("laplaceinhib","laplace","scalefree"))
-		stop("Error, priortype must be one of 'laplaceinhib', 'laplace' or 'scalefree'.")
+	if(!priortype %in% c("laplaceinhib","laplace","scalefree","uniform"))
+		stop("Error, for MCMC, usebics must be FALSE and priortype one out of 'laplaceinhib', 'laplace', 'scalefree' or 'uniform'.")
 	antibodies <- rownames(dat)
 	tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
 	reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
@@ -45,7 +45,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	aicinit <- get.aic(phi,Linit)
 	bicinit <- get.bic(phi,Linit, length(dat))
 	prinit <- prior(phi, lambda, B, Z, gam, it, K, priortype)
-	if(priortype %in% c("laplaceinhib","laplace","scalefree")) {
+	if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {
 		posteriorinit <- Linit + prinit
 	} else {
 		posteriorinit <- NULL
@@ -71,11 +71,12 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	it <- 1
 	stats <- matrix(0, nrow=maxiterations, ncol=18,
 			dimnames=list(1:maxiterations, c("MAP", "tp","tn","fp","fn","sn","sp",
-							"lambda","acpt","lacpt","stmove","lratio","prratio","postratio","proposalratio",
+							"lambda","acpt","lacpt","stmove",
+							"lratio","prratio","postratio","proposalratio",
 							"prior","liklihood","scalefac")))
 	while(it <= maxiterations) {
 		cat("iteration ", it, " ")
-		if(priortype=="laplaceinhib" || priortype=="laplace") {			
+		if(priortype %in% c("laplaceinhib", "laplace", "uniform")) {	
 			if(samplelambda) {
 				newlambda <- runif(1, bestmodel$lambda-1, bestmodel$lambda+1)
 				newlambda <- min(max(0.01,newlambda),500)
@@ -103,7 +104,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			print("Posterior of proposal is Inf. Please check.")
 			browser()
 		}
-		if(priortype=="laplace" | priortype=="laplaceinhib") {
+		if(priortype %in% c("laplaceinhib","laplace","uniform")) {
 			ret <- mcmc_accept(bestmodel, b1, newlambda)
 		} else if (priortype=="scalefree") {
 			ret <- mcmc_accept(bestmodel, b1, newgam)
@@ -168,10 +169,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			bestmodel[["sd_run"]] <- sqrt((1/(it-1)) * Qiplus1) 
 		}
 		## get an intermediate network from the samplings
-		#lst <- get.phi.final(bestmodel,th=th)
 		if(it>burnin)
 			lst <- get.phi.final(bestmodel,th=th) # set th around 0.8
-			#lst <- get.phi.final.mcmc(list(bestmodel), it, prob=.333, qu=.99999)[[1]] ## doesn't give good results
 		else
 			lst <- bestmodel # if in burnin, just use whatever is there
 		if(!is.null(phiorig) & it > burnin) {
@@ -181,7 +180,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
 		}
 		## save some statistics for this iteration
-		if(priortype=="laplace" || priortype=="laplaceinhib") {
+		if(priortype %in% c("laplaceinhib","laplace","uniform")) {
 			replace <- as.matrix(unlist(c(lst$posterior, comp[1:6], lst$lambda, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio,lst$pr,lst$L,scalefac)))
 		} else if(priortype=="scalefree") {
 			replace <- as.matrix(unlist(c(lst$posterior, comp[1:6], lst$gam, ret$acpt, ret$lacpt, st[3],liklihoodratio,priorratio,posteriorratio,proposalratio,lst$pr,lst$L,scalefac)))

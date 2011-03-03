@@ -23,7 +23,8 @@ prior(phi, lambda = NULL, B = NULL, Z = NULL,
    exponent for difference term in laplaceinhib prior.  }
   \item{K}{   Scale-free prior scaling factor/Strength  }
   \item{it}{  Scale-free prior number of iterations for prior sampling.  }
-  \item{priortype}{String. Either \code{laplaceinhib}, \code{laplace} or \code{scalefree}. 
+  \item{priortype}{String. Either \code{uniform}, \code{laplaceinhib}, \code{laplace} or \code{scalefree}.
+    \code{uniform} assumes uniform prior network distributions. 
     \code{laplaceinhib} calculates the difference between the candidate network and a 
     reference matrix containing edge probabilites, while both edge types (activation and 
     inhibition) are included. \code{laplace} is the same, except for ignoring the edge type. 
@@ -51,13 +52,11 @@ interval \eqn{[0;1]}, where \eqn{1} means strong confidence that the edge is pre
 and \eqn{0} means that nothing is known about the presence of the edge.\cr  
 
 Argument \code{gam} is used either as exponent in the scalefree prior, as it is described
-in the reference, or in \code{laplaceinhib} as exponent in the following formula:\cr
+in the reference, or in \code{laplaceinhib} and \code{laplace} as exponent in the following formula:\cr
 \eqn{P(phi_{ij}|lambda,gam,B) = \frac{1}{2 \cdot lambda} exp(\frac{-|phi_{ij}-B_{ij}|^{gam}}{lambda})}\cr
 It controls how strong the differences between an inferred edge and the probability
-for seeing this edge in a reference set of networks are to be weighted. Defaults to 2,
-if omitted, which leads to weak penalisation of small differences between 
-inferred and reference interaction, and strong penalisation for big differences. The 
-prior curve is a 'double exponential', rapidly decaying with increasing difference 
+for seeing this edge in a reference set of networks are to be weighted. Defaults to 1,
+if omitted. The prior curve rapidly decayes with increasing difference 
 \eqn{|phi_{ij}-B_{ij}|}, while for \code{gam} larger than 1, the prior curve is
 changed to an s-shaped curve with a plateau at the upper bound of
 \eqn{P(phi_{ij}|lambda,gam,B)} and an exponential decay when a certain threshold of 

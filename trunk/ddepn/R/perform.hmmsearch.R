@@ -19,7 +19,7 @@ replicatecolumns <- function(mat, replicates=4) {
 	rownames(mm) <- rownames(mat)
 	mm
 }
-
+### only R
 ### dat: N x (T x R) matrix, N: number of proteins, T number of timepoints, R: number of replicates
 ### gammaprime: N x (T x R) matrix
 ### gammaposs: N x M matrix, M: number of reachable states derived in effect propagation

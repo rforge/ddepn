@@ -23,11 +23,13 @@ pgs(phi,gam,K=0.8,it=500)
   \item{N}{  	Number of nodes  }
   \item{K}{  	Scale-free prior scaling factor/Strength  }
   \item{it}{  Scale-free prior number of iterations for prior sampling.  }
-  \item{priortype}{Character. One of \code{none}, \code{laplaceinhib}, \code{laplace} or
+  \item{priortype}{Character. One of \code{uniform}, \code{laplaceinhib}, \code{laplace} or
     \code{scalefree} for use of the respective prior type.} 
 }
 \details{
-Computes the posterior density from the likelihood and the prior information lambda, B and Z.
+Computes the posterior density depending on \code{priortype}: \code{uniform} uses uniform prior, \code{laplaceinhib} and \code{laplace} use 
+prior parameters lambda, gam, B and Z, and \code{scalefree} uses gam and K as prior parameters. See \code{\link{prior}} for a description of 
+the prior models.
 }
 \value{
 A double containing the posterior density.

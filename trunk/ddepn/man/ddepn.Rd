@@ -91,16 +91,18 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
   \item{debug}{Boolean. If TRUE, print extra informational messages.}
   \item{burnin}{Integer. Specifies the number of iterations used as
    burnin phase for \code{\link{mcmc_ddepn}}.}
-  \item{priortype}{Character. One of \code{none}, \code{laplaceinhib},
+  \item{priortype}{Character. One of \code{none}, \code{uniform}, \code{laplaceinhib},
    \code{laplace} or \code{scalefree} for use of the respective prior
-   type. Ignored if \code{usebics=TRUE}. For \code{netga},
+   type. Ignored if \code{usebics=TRUE} for \code{netga}. For \code{netga},
    \code{usebics=FALSE, priortype="none"} means optimising the likelihood 
-   directly, for \code{mcmc_ddepn}, \code{none} is not allowed.
+   directly. This is equivalent to setting \code{usebics=FALSE, priortype="uniform"}.
+   For \code{mcmc_ddepn}, \code{priortype="none"} is not allowed. Use
+   \code{priortype="uniform"} instead. 
    \code{laplaceinhib} uses prior information for edges with two types
    (activation/inhibition), \code{laplace} ignores the edge type. Useful
    if only knowledge about the presence of an edge is available, but not 
-   about its type.} 
-  \item{thin}{Boolean. If TRUE, make sure that the MCMC return objects are
+   about its type. \code{scalefree} assumes scale-free network architectures.} 
+  \item{thin}{Boolean. If TRUE, makes sure that the MCMC return objects are
    shortened to at most 10000 iterations. Defaults to FALSE.}
 }
 \details{
@@ -226,7 +228,7 @@ plotdetailed(ret1$phi,stimuli=ret1$stimuli)
 ## mcmc, laplaceinhib prior
 ret2 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
               maxiterations=300, burnin=100,
-              usebics=FALSE, lambda=0.01, B=B, priortype="laplaceinhib") 
+              usebics=FALSE, lambda=0.01, B=B, gam=1, priortype="laplaceinhib") 
       
 x11()
 plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
@@ -238,7 +240,7 @@ plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
  	ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
                 multicores=TRUE, cores=2,
                 maxiterations=300, burnin=100,
-                usebics=FALSE, lambda=0.01, B=B, priortype="laplaceinhib")
+                usebics=FALSE, lambda=0.01, B=B, gam=1, priortype="laplaceinhib")
  }
 }
 }

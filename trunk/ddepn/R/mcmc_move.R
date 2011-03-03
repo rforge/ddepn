@@ -146,7 +146,7 @@ mcmc_move <- function(bestmodel, type) {
 		bic.n <- L.res$bic
 		aic.n <- L.res$aic
 		pr.n <- prior(phi.n, lambda, B, Z, gam, it, K, priortype)
-		if(priortype %in% c("laplaceinhib", "laplace", "scalefree")) {
+		if(priortype %in% c("laplaceinhib", "laplace", "scalefree", "uniform")) {
 			posterior.n <- L.n + pr.n
 		} else {
 			posterior.n <- NULL			

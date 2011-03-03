@@ -61,7 +61,7 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 		m <- paste("MAP old/new: ", signif(pold,digits=7), " / ", signif(pnew,digits=7), " acpt: ", round(acpt,digits=5))
 	}
 	## acceptance newlambda
-	if(priortype=="laplaceinhib" || priortype=="laplace") {
+	if(priortype %in% c("laplaceinhib","laplace","uniform")) {
 		pnew <- posterior(bestproposal$phi, bestproposal$L, newlambda, B, Z, gam, it, K, priortype) #/ scalefac	
 	} else if(priortype=="scalefree") {
 		pnew <- posterior(bestproposal$phi, bestproposal$L, NULL, B, Z, newlambda, it, K, priortype) #/ scalefac
@@ -78,14 +78,14 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda) {
 	## take newlambda or not
 	takeit <- sample(c(0,1),1,prob=c((1-lacpt),lacpt))
 	if(takeit==1) {
-		if(priortype=="laplaceinhib" || priortype=="laplace") {
+		if(priortype %in% c("laplaceinhib","laplace","uniform")) {
 			bestproposal$lambda <- newlambda
 		} else if(priortype=="scalefree") {
 			bestproposal$gam <- newlambda
 		}
 		bestproposal$posterior <- pnew
 	}
-	if(priortype=="laplaceinhib" || priortype=="laplace") {
+	if(priortype %in% c("laplaceinhib","laplace","uniform")) {
 		m <- paste(m, " lambda: ", bestproposal$lambda)
 	} else if(priortype=="scalefree") {
 		m <- paste(m, " gam: ", bestproposal$gam)
