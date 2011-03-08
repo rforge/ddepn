@@ -41,7 +41,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	thetax <- Ltmp$theta
 	Linit[Linit==Inf] <- 0
 	Linit[Linit==-Inf] <- 0
-	Linit <- sum(Linit)
+	Linit <- sum(Linit,na.rm=TRUE)
 	aicinit <- get.aic(phi,Linit)
 	bicinit <- get.bic(phi,Linit, length(dat))
 	prinit <- prior(phi, lambda, B, Z, gam, it, K, priortype)

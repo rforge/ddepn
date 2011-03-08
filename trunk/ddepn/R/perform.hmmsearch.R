@@ -9,7 +9,7 @@ getE <- function(x, datx, thetaprime) {
 					dnorm(datx, mean=thetaprime[,"mu.active"],thetaprime[,"sd.active"])*ifelse(x==1,1,NA),na.rm=TRUE))
 	L[L==Inf] <- 0
 	L[L==-Inf] <- 0
-	L <- colSums(L, na.rm=T)
+	L <- colSums(L, na.rm=TRUE)
 	L
 }
 replicatecolumns <- function(mat, replicates=4) {
@@ -52,7 +52,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		#A <- matrix((1/(M*M)),nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
 		## random transition matrix
 		A <- matrix(runif(M*M,0,1),nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
-		A <- A/sum(A)
+		A <- A/sum(A,na.rm=TRUE)
 		pseudocount <- 1
 		pseudocountsum <- M
 		A <- log2(A)
@@ -68,13 +68,13 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		while(it <= hmmiterations) {
 			it <- it + 1
 			## total likelihood
-			Lold <- sum(Lik,na.rm=T)
+			Lold <- sum(Lik,na.rm=TRUE)
 			Liktmp <- likl(datx,gamprime)
 			Lik <- Liktmp$L
 			thetaprime <- Liktmp$theta
 			Lik[Lik == Inf] <- 0
 			Lik[Lik == -Inf] <- 0
-			Lik <- sum(Lik,na.rm=T)
+			Lik <- sum(Lik,na.rm=TRUE)
 			if(Lold!=-Inf) {
 				if(abs((abs(Lik)-abs(Lold))) <= 1) 
 					break
@@ -125,7 +125,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 				if(j == 1) {
 					vtcol <- rowSums(al + E[,j,,drop=FALSE]) 
 				} else {
-					vtcol <- apply(A, 2, function(Acol, viterbi, j) max(viterbi[,j-1,drop=FALSE] + Acol, na.rm=T), viterbi=viterbi, j=j) + rowSums(E[,j,,drop=FALSE])
+					vtcol <- apply(A, 2, function(Acol, viterbi, j) max(viterbi[,j-1,drop=FALSE] + Acol, na.rm=TRUE), viterbi=viterbi, j=j) + rowSums(E[,j,,drop=FALSE])
 				}
 				viterbi[,j] <- vtcol
 				vt <- max(vtcol)
@@ -152,7 +152,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			transprob <- log2((transall+pseudocount)) - log2(trans[ind]+pseudocountsum)
 			indices <- sapply(names(transprob), function(x,rows) (as.numeric(strsplit(x, "_")[[1]])-c(0,1)) %*% c(1,rows),rows=nrow(A))
 			A[indices] <- transprob	
-			A <- A - log2(sum(2^A))	
+			A <- A - log2(sum(2^A, na.rm=TRUE))	
 		} # end while
 		# now we have an A, an E and a gammaprime for the first experiment
 		# save the gammaprime
@@ -164,7 +164,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	thetaprime <- Liktmp$theta
 	Lik[Lik == Inf] <- 0
 	Lik[Lik == -Inf] <- 0
-	Lik <- sum(Lik,na.rm=T)
+	Lik <- sum(Lik,na.rm=TRUE)
 	aic <- get.aic(phi.n, Lik)
 	bic <- get.bic(phi.n, Lik, length(dat))
 	L.res <- list(datx=dat, phix=phi.n, stimx=stimuli,

@@ -52,7 +52,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 	thetax <- Ltmplist$theta
 	Ltmp[Ltmp==Inf] <- 0
 	Ltmp[Ltmp==-Inf] <- 0
-	Lnew <- sum(Ltmp)
+	Lnew <- sum(Ltmp, na.rm=TRUE)
 	bicnew <- get.bic(phi.n,Lnew,length(dat))
 	aicnew <- get.aic(phi.n,Lnew)
 	if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform"))
