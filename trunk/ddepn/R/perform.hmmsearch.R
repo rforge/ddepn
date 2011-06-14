@@ -32,6 +32,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	stimuli <- bestmodel$stimuli
 	dat <- bestmodel$dat
 	hmmiterations <- bestmodel$hmmiterations
+	scale_lik <- bestmodel$scale_lik
 	gamprimetotal <- NULL
 	gamposstotal <- NULL
 	# separate HMM for each experiment, i.e. each stimulus
@@ -69,7 +70,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			it <- it + 1
 			## total likelihood
 			Lold <- sum(Lik,na.rm=TRUE)
-			Liktmp <- likl(datx,gamprime)
+			Liktmp <- likl(datx,gamprime,scale_lik=scale_lik)
 			Lik <- Liktmp$L
 			thetaprime <- Liktmp$theta
 			Lik[Lik == Inf] <- 0
@@ -159,7 +160,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		gamprimetotal <- cbind(gamprimetotal, gamprime)
 		gamposstotal <- cbind(gamposstotal, gammaposs)
 	} # end outer for loop
-	Liktmp <- likl(dat,gamprimetotal)
+	Liktmp <- likl(dat,gamprimetotal,scale_lik=scale_lik)
 	Lik <- Liktmp$L
 	thetaprime <- Liktmp$theta
 	Lik[Lik == Inf] <- 0
@@ -171,6 +172,6 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			gammax=gamprimetotal, thetax=thetaprime,
 			replicates=R, Likl=Lik,aic=aic,bic=bic,
 			statespace_maxiterations=hmmiterations, 
-			gammaposs=gamposstotal)
+			gammaposs=gamposstotal,scale_lik=scale_lik)
 	return(L.res)
 }

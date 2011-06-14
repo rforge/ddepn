@@ -6,7 +6,7 @@
 
 samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
 		hmmiterations=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL,
-		it=NULL, K=NULL, priortype="none") {
+		it=NULL, K=NULL, priortype="none",scale_lik=FALSE) {
 	if(phiasis) {
 		phi.n <- phi
 	} else {
@@ -47,7 +47,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 			gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps[sti])
 		gammax <- cbind(gammax, gx)
 	}
-	Ltmplist <- likl(dat,gammax)
+	Ltmplist <- likl(dat,gammax,scale_lik)
 	Ltmp <- Ltmplist$L
 	thetax <- Ltmplist$theta
 	Ltmp[Ltmp==Inf] <- 0
@@ -62,7 +62,7 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 	if(searchstatespace) {
 		bestmodel <- list(phi=phi.n,L=Lnew,aic=aicnew,bic=bicnew,dat=dat,
 				theta=thetax, gamma=gammax, gammaposs=gammaposs, tps=tps, stimuli=stimuli, reps=reps,
-				hmmiterations=hmmiterations, lastmove="addactivation", coords=c(1,1),fanin=fanin)
+				hmmiterations=hmmiterations, lastmove="addactivation", coords=c(1,1),fanin=fanin,scale_lik=scale_lik)
 		L.res <- perform.hmmsearch(phi.n, bestmodel)	
 		gammax <- matrix(L.res$gammax,nrow=nrow(bestmodel$gamma),ncol=ncol(bestmodel$gamma),dimnames=dimnames(bestmodel$gamma))
 		thetax <- matrix(L.res$thetax,nrow=nrow(bestmodel$theta),ncol=ncol(bestmodel$theta),dimnames=dimnames(bestmodel$theta))
@@ -77,13 +77,13 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 		postnew <- NULL
 	}
 	return(list(phi.n=phi.n,gammax=gammax,thetax=thetax,posterior=postnew,Lnew=Lnew,bicnew=bicnew,aicnew=aicnew,
-					gammaposs=gammaposs,lambda=lambda,B=B,Z=Z,gam=gam,it=it,K=K,pr=prnew,priortype=priortype))
+					gammaposs=gammaposs,lambda=lambda,B=B,Z=Z,gam=gam,it=it,K=K,pr=prnew,priortype=priortype,scale_lik=scale_lik))
 }
 
 
 initialphi <- function(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
 		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL,
-		gam=NULL, it=NULL, K=NULL, priortype="none") {
+		gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE) {
 	phimax <- phi
 	thetamax <- thetax
 	gammamax <- gammax
@@ -96,9 +96,9 @@ initialphi <- function(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
 			cat(".")
 		
 		if(multicores) {
-			jobs[[i]] <- parallel(samplephi(phimax,stimuli, antibodies, tps, reps, dat, lambda=lambda, B=B, Z=Z, gam=gam, it=it, K=K, priortype=priortype))	
+			jobs[[i]] <- parallel(samplephi(phimax,stimuli, antibodies, tps, reps, dat, lambda=lambda, B=B, Z=Z, gam=gam, it=it, K=K, priortype=priortype, scale_lik=scale_lik))	
 		} else {
-			jobs[[i]] <- samplephi(phimax,stimuli, antibodies, tps, reps, dat, lambda=lambda, B=B, Z=Z, gam=gam, it=it, K=K, priortype=priortype)
+			jobs[[i]] <- samplephi(phimax,stimuli, antibodies, tps, reps, dat, lambda=lambda, B=B, Z=Z, gam=gam, it=it, K=K, priortype=priortype, scale_lik=scale_lik)
 		}
 	}
 	if(multicores)
@@ -123,6 +123,6 @@ initialphi <- function(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
 	}
 	return(list(phi=phimax, L=Lmax, aic=aicmin, bic=bicmin, posterior=posteriormax, thetax=thetamax,
 				gammax=gammamax, gammaposs=gammaposs, lambda=lambda, B=B, Z=Z, gam=gam, it=it, K=K,
-				pr=prmax, priortype=priortype))
+				pr=prmax, priortype=priortype,scale_lik=scale_lik))
 }
 

@@ -10,12 +10,14 @@ matrix \code{theta} and compute the Likelihood of the data \eqn{p(D|gammax,theta
 all normal densities of each data point with the corresponding parameter chosen from theta. 
 }
 \usage{
-likl(dat,gammax)
+likl(dat,gammax,scale_lik=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{dat}{Data matrix as described in \link{ddepn}.}
   \item{gammax}{Matrix containing state vectors in the columns. Must have same dimensions as \code{dat}.}
+  \item{scale_lik}{Boolean.Scale likelihood according to number of data points from which the 
+    overall likelihood is calculated.}
 }
 \value{
 	A list containing the likelihood matrix L and the parameter matrix theta.

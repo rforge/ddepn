@@ -12,10 +12,10 @@ Internal function.
 \usage{
 samplephi(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
 		hmmiterations=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4,
-		gam=NULL, it=NULL, K=NULL, priortype="none")
+		gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE)
 initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
 		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL,
-		gam=NULL, it=NULL, K=NULL, priortype="none")
+		gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE)
 }
 \arguments{
   \item{dat}{The data matrix}
@@ -39,7 +39,9 @@ initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
   \item{gam}{Prior influence strength in scalefree prior.}
   \item{it}{Number of iterations to generate background distribution in scalefree prior.}
   \item{k}{Scaling factor in scalefree prior}
-  \item{priortype}{Character. Type of prior to be used.} 
+  \item{priortype}{Character. Type of prior to be used.}
+  \item{scale_lik}{Boolean.Scale likelihood according to number of data points from which the 
+    overall likelihood is calculated.}
 }
 \details{
 Used for initializing random networks. Called internally.

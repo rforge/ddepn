@@ -18,7 +18,8 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
       lambda=NULL, B=NULL, samplelambda=NULL,
       hmmiterations=100, fanin=4,
       gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-      debug=FALSE, burnin=1000, thin=FALSE, plotresults=TRUE)
+      debug=FALSE, burnin=1000, thin=FALSE, plotresults=TRUE,
+      always_sample_sf=FALSE, scale_lik=FALSE)
 }
 \arguments{
   \item{dat}{
@@ -108,7 +109,11 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
   \item{thin}{Boolean. If TRUE, makes sure that the MCMC return objects are
    shortened to at most 10000 iterations. Defaults to FALSE.}
   \item{plotresults}{Boolean. If TRUE, the resulting network(s) and in case of
-   MCMC sampling, the score traces are plotted.} 
+   MCMC sampling, the score traces are plotted.}
+  \item{always_sample_sf}{Boolean. Update scaling factor in inhibMCMC sampling through the whole sampling
+   if TRUE. Keep scaling factor fixed after burn-in if FALSE.}
+  \item{scale_lik}{Boolean. Perform scaling of the likelihood according to how 
+   many data points were used to calculate the overall likelihood.}
 }
 \details{
   \describe{

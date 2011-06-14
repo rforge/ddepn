@@ -7,7 +7,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, hmmiterations=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile=NULL,fanin=4,
-		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5, priortype="none", plotresults=TRUE) {
+		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5, priortype="none", plotresults=TRUE,
+		scale_lik=FALSE) {
   dat[is.na(dat)] <- 0
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
@@ -27,9 +28,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  	X[[2]] <- phireference
 	  }
 	  if(multicores) {
-		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype, mc.preschedule=FALSE,mc.cores=cores)		
+		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, mc.preschedule=FALSE,mc.cores=cores)		
 	  } else {
-		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype)
+		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik)
 	  }
   }
   ## check if all individuals are set correctly
@@ -41,7 +42,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  browser()
 	  }	  
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
-		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype)
+		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik)
 	  }
   }  
   if(any(sapply(P, class)!="list")) {

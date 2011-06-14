@@ -16,11 +16,11 @@ mcmc_ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
     usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
     samplelambda=NULL, hmmiterations=30, fanin=4,
     gam=NULL, it=NULL, K=NULL, burnin=1000, priortype="laplaceinhib",
-    plotresults=TRUE)
+    plotresults=TRUE,always_sample_sf=FALSE, scale_lik=FALSE)
     
 runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
 		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,priortype,
-    plotresults=TRUE)
+    plotresults=TRUE,always_sample_sf=FALSE, scale_lik=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -57,6 +57,10 @@ runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
    \code{netga}, \code{usebics=FALSE, priortype="none"} means optimising the likelihood 
    directly, for \code{mcmc_ddepn}, \code{none} is not allowed.} 
   \item{plotresults}{Boolean. If TRUE, some statistics are plotted while inhibMCMC is running.} 
+  \item{always_sample_sf}{Boolean. Update scaling factor in inhibMCMC sampling through the whole sampling
+   if TRUE. Keep scaling factor fixed after burn-in if FALSE.}
+  \item{scale_lik}{Boolean. Perform scaling of the likelihood according to how 
+   many data points were used to calculate the overall likelihood.}
 }
 \details{
 Usually this function is called internally by \code{\link{ddepn}}.

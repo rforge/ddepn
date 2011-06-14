@@ -10,7 +10,7 @@
 }
 \usage{
 getfirstphi(x, dat, stimuli, V, tps, reps, hmmiterations,
- lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL, priortype="none")
+ lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,6 +29,7 @@ getfirstphi(x, dat, stimuli, V, tps, reps, hmmiterations,
   \item{it}{Number of iterations to generate background distribution in scalefree prior.}
   \item{k}{Proportionality factor in scalefree prior}
   \item{priortype}{Character. Type of prior to be used.} 
+  \item{scale_lik}{Boolean. Scale liklihood according to number of data points.}
 }
 \details{
 Usually called internally.

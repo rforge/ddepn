@@ -4,12 +4,12 @@
 ###############################################################################
 runmcmc <- function(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
 		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,
-		priortype,plotresults=TRUE) {
+		priortype,plotresults=TRUE,always_sample_sf=FALSE,scale_lik=FALSE) {
 	ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=x$phi, stimuli=stimuli,
 			th=th, multicores=multicores, outfile=x$outfile, maxiterations=maxiterations,
 			usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 			hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K,
-			burnin=burnin,priortype=priortype,plotresults=plotresults)
+			burnin=burnin,priortype=priortype,plotresults=plotresults,always_sample_sf=always_sample_sf,scale_lik=scale_lik)
 	ret
 }
 
@@ -17,7 +17,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		th=0.8, multicores=FALSE, outfile=NULL, maxiterations=10000,
 		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
 		samplelambda=NULL, hmmiterations=30, fanin=4,
-		gam=NULL, it=NULL, K=NULL, burnin=1000,priortype="laplaceinhib",plotresults=TRUE) {
+		gam=NULL, it=NULL, K=NULL, burnin=1000,priortype="laplaceinhib",plotresults=TRUE,
+		always_sample_sf=FALSE,scale_lik=FALSE) {
 	if(!is.null(outfile))
 		outfile <- sub("\\.pdf","_stats.pdf", outfile)
 	if(!is.null(B))
@@ -36,7 +37,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps[sti])
 		gammax <- cbind(gammax, gx)
 	}
-	Ltmp <- likl(dat,gammax)
+	Ltmp <- likl(dat,gammax,scale_lik)
 	Linit <- Ltmp$L
 	thetax <- Ltmp$theta
 	Linit[Linit==Inf] <- 0
@@ -64,7 +65,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			hmmiterations=hmmiterations, lastmove="addactivation", coords=c(1,1),
 			lambda=lambda,B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,
 			gam=gam,it=it,K=K,phi.orig=phiorig, burnin=burnin,priortype=priortype,pr=prinit
-			,mu_run=mu_run,Qi=Qi,sd_run=NA,freqa=freqa,freqi=freqi,eoccur=eoccur,scalefac=0.005)
+			,mu_run=mu_run,Qi=Qi,sd_run=NA,freqa=freqa,freqi=freqi,eoccur=eoccur,scalefac=0.005,scale_lik=scale_lik)
 	## setup a matrix holding the statistics
 	## TODO if thin==TRUE, this matrix
 	## is of size maxiterations/x=10000, i.e. store every xth element
@@ -136,7 +137,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		### sf is fixed after the burnin
 		## to lie around 0.4. don't know if this is a reasonable level for acceptance rates,
 		## suggested in Gelman 2003, chapter 11.10, recommended posterior simulation strategy
-		###if(it<=burnin) {
+		if(it<=burnin | always_sample_sf==TRUE) {
 			## find scale factor that holds acpt around .4, see gelman 2003 for explanation
 			if((posteriorratio+proposalratio)==0)
 				if(it==1 || all(stats[1:it,"scalefac"]==Inf)) ## some fallback scalefactor
@@ -145,10 +146,10 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 					scalefac <- median(stats[1:it,"scalefac"])
 			else
 				scalefac <- min(abs(log(0.4))/abs(posteriorratio+proposalratio),1) ## is kept smaller 1	
-		###} else {
-		###	sf <- stats[1:burnin,"scalefac"]
-		###	scalefac <- max(0.001,median(sf[sf!=Inf],na.rm=TRUE))
-		###}
+		} else {
+			sf <- stats[1:burnin,"scalefac"]
+			scalefac <- max(0.001,median(sf[sf!=Inf],na.rm=TRUE))
+		}
 		bestmodel$scalefac <- scalefac
 		bestmodel[["it"]] <- it
 		

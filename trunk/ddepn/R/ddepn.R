@@ -24,7 +24,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				  lambda=NULL, B=NULL, samplelambda=NULL, #"fixed",
 				  hmmiterations=100, fanin=4,
 				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-				  debug=FALSE,burnin=1000, thin=FALSE, plotresults=TRUE) {
+				  debug=FALSE,burnin=1000, thin=FALSE, plotresults=TRUE,
+				  always_sample_sf=FALSE,scale_lik=FALSE) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
@@ -114,9 +115,9 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				X[[i]] <- phi[[i]]
 			}
 			if(multicores) {
-				P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype, mc.preschedule=FALSE,mc.cores=cores)		
+				P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, mc.preschedule=FALSE,mc.cores=cores)		
 			} else {
-				P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype)
+				P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik)
 			}
 		} else if(inference=="mcmc") {
 			## if a list of networks is given, create a named list that is used for mcmc_ddepn
@@ -189,7 +190,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						p=p,q=q,m=m,multicores=multicores,usebics=usebics,
 						cores=cores,lambda=lambda,B=B,Z=Z,hmmiterations=hmmiterations,
 						scorefile=scorefile,fanin=fanin,
-						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype, plotresults=plotresults))
+						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype, plotresults=plotresults,scale_lik=scale_lik))
 		P <- retnetga$P
 		scorestats <- retnetga$scorestats
 		rm(retnetga)
@@ -244,7 +245,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
-						priortype=priortype, plotresults=plotresults,
+						priortype=priortype, plotresults=plotresults,always_sample_sf=always_sample_sf,scale_lik=scale_lik,
 						mc.preschedule=FALSE,mc.cores=cores)
 				### experimental
 				if(debug)
@@ -267,7 +268,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
-						priortype=priortype, plotresults=plotresults)
+						priortype=priortype, plotresults=plotresults,always_sample_sf=always_sample_sf,scale_lik=scale_lik)
 				## convert the return value to a list, to keep it in the same format
 				## as for the multicore==TRUE case
 				retlist <- list()
