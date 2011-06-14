@@ -14,11 +14,13 @@ are used for parallel MCMC runs.
 mcmc_ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
     th=0.8, multicores=FALSE, outfile=NULL, maxiterations=10000,
     usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
-    samplelambda=TRUE, hmmiterations=30, fanin=4,
-    gam=NULL, it=NULL, K=NULL, burnin=1000, priortype="laplaceinhib")
+    samplelambda=NULL, hmmiterations=30, fanin=4,
+    gam=NULL, it=NULL, K=NULL, burnin=1000, priortype="laplaceinhib",
+    plotresults=TRUE)
     
 runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
-		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,priortype)
+		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,priortype,
+    plotresults=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -32,7 +34,10 @@ runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
   \item{maxiterations}{Integer. Maximum number of MCMC iterations.}
   \item{usebics}{Use bics for model selection.}
   \item{cores}{Not used here.}
-  \item{lambda}{Strength of prior influence.}
+  \item{lambda}{NULL, Numeric or NA. The Prior influence hyperparameter for the laplace prior. If 
+   numeric, used as fixed prior strength or starting value for prior strength sampling
+   (when \code{samplelambda} is numeric, too). If NA, lambda is integrated out in the 
+   calculation of the prior. If NULL, no laplace prior is used.}
   \item{B}{The Prior information matrix. See \code{\link{prior}} for details.}
   \item{Z}{Normalisation factor for prior.}
   \item{hmmiterations}{Maximum iterations in the HMM.}
@@ -40,8 +45,9 @@ runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
   \item{gam}{Prior influence strength in scalefree prior.}
   \item{it}{Number of iterations to generate background distribution in scalefree prior.}
   \item{K}{Proportionality factor in scalefree prior}
-  \item{samplelambda}{Boolean. TRUE if laplace prior hyperparameter \code{lambda} should be sampled.
-    FALSE if fixed \code{lambda} is to be used. Unused if \code{lambda} or \code{B} equal zero.}
+  \item{samplelambda}{Numeric or NULL. If NULL, the Laplace hyperparameter \code{lambda} is 
+    kept fix during the MCMC inference. If numeric, \code{lambda} is sampled uniformly around the 
+    initial value of \code{lambda}, with an interval size defined by \code{samplelambda}.}
   \item{x}{List containing two items: An adjacency matrix \code{phi} and a string \code{outfile} describing
     a path.}
   \item{burnin}{Integer. Specifies the number of iterations used as burnin phase for
@@ -50,6 +56,7 @@ runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
    \code{scalefree} for use of the respective prior type. Ignored if \code{usebics=TRUE}. For 
    \code{netga}, \code{usebics=FALSE, priortype="none"} means optimising the likelihood 
    directly, for \code{mcmc_ddepn}, \code{none} is not allowed.} 
+  \item{plotresults}{Boolean. If TRUE, some statistics are plotted while inhibMCMC is running.} 
 }
 \details{
 Usually this function is called internally by \code{\link{ddepn}}.

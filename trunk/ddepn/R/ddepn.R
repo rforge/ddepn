@@ -21,10 +21,10 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
 				  usebics=TRUE, cores=2, 
 				  priortype="laplaceinhib",
-				  lambda=NULL, B=NULL, samplelambda=TRUE,
+				  lambda=NULL, B=NULL, samplelambda=NULL, #"fixed",
 				  hmmiterations=100, fanin=4,
 				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-				  debug=FALSE,burnin=1000, thin=FALSE) {
+				  debug=FALSE,burnin=1000, thin=FALSE, plotresults=TRUE) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
@@ -33,6 +33,16 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 	## check if number of time points is the same across all experiments
 	if(length(unique(table(tmp[2,])))!=1) {
 		stop("ERROR: Found differing number of time points across experiments.")
+	}
+	## check if samplelambda is either numeric or NULL
+	if(!(mode(samplelambda)=="numeric" | is.null(samplelambda))) {
+		stop("ERROR: Please specify argument samplelambda either as numeric value or NULL.")	
+	}
+	## check if samplelambda is either numeric or NULL
+	if(!is.null(lambda)) {
+		if(!(mode(lambda)=="numeric" | is.na(lambda))) {
+			stop("ERROR: Please specify argument lambda either as numeric value, NULL or NA.")	
+		}
 	}
 	exps <- unique(tmp[1,])
 	#stims <- sapply(exps, function(x) strsplit(x,"&")[[1]])
@@ -143,6 +153,9 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 	if(priortype %in% c("laplace", "laplaceinhib") && !usebics) {
 		if(is.null(lambda) | is.null(B))
 			stop("Please specify arguments lambda and B for use of laplaceinhib or laplace prior.")
+		## make sure the prior matrix only contains 0 and 1 entries when prior is 'laplace'
+		if(priortype=="laplace")
+			B <- detailed.to.simple.regulations(B)
 		## get normalisation factor for the networks
 		##print("Computing prior normalisation factor...")
 		##Z <- zlambda(B, lambda)
@@ -157,6 +170,12 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		B <- NULL
 		lambda <- 0
 	}
+	## if integration should be performed over lambda, set
+	## to NA, which is recognized in the prior function
+	## and integration is performed there.
+	#if(samplelambda=="integrate") {
+	#	lambda <- NA
+	#}
 	## if GA should be used
 	if(inference=="netga") {
 		if(!is.null(outfile)) {
@@ -170,7 +189,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						p=p,q=q,m=m,multicores=multicores,usebics=usebics,
 						cores=cores,lambda=lambda,B=B,Z=Z,hmmiterations=hmmiterations,
 						scorefile=scorefile,fanin=fanin,
-						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype))
+						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype, plotresults=plotresults))
 		P <- retnetga$P
 		scorestats <- retnetga$scorestats
 		rm(retnetga)
@@ -195,7 +214,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 					weights.tc=weights.tc, stats=result, conf.act=conf.act,conf.inh=conf.inh,
 					stimuli=stimuli) #, resultep=resultep)
         ret <- get.phi.final(ret,th)
-        plotrepresult(ret,outfile)
+		if(plotresults)
+        	plotrepresult(ret,outfile)
         ret[["P"]] <- P
 		ret[["scorestats"]] <- scorestats
 	} else {
@@ -224,7 +244,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
-						priortype=priortype,
+						priortype=priortype, plotresults=plotresults,
 						mc.preschedule=FALSE,mc.cores=cores)
 				### experimental
 				if(debug)
@@ -247,7 +267,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 						th=th, multicores=multicores, outfile=outfile, maxiterations=maxiterations,
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
-						priortype=priortype)
+						priortype=priortype, plotresults=plotresults)
 				## convert the return value to a list, to keep it in the same format
 				## as for the multicore==TRUE case
 				retlist <- list()
@@ -257,7 +277,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 			ltraces <- as.matrix(sapply(retlist,function(x) x$stats[,"MAP"]))
 			## thinning: make sure ltraces has less than 10000 rows
 			## TODO: change such that only 10000 rows are recorded (i.e. in mcmc_ddepn),
-			## otherwise it doesn't really make sense
+			## otherwise it doesn't help to save memory for the trace storage
 			if(nrow(ltraces)>10000 && thin == TRUE){
 				ss <- seq(1,nrow(ltraces),by=nrow(ltraces)/10000)
 				ltraces <-  as.matrix(ltraces[ss,])
@@ -267,17 +287,16 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 			## plot results
 			if(!is.null(outfile)) {
 				pdf(outfile,onefile=TRUE)
-			} else {
-				x11()
-				par(mfrow=c(1,2))
 			}
-			plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
-			if(ncol(ltraces)>1)
-				sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)
-			## get the final network from all cores inferences and plot
-			for(netnr in 1:length(retlist)) {
-				ret2 <- retlist[[netnr]]
-				plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
+			if(plotresults) {
+				plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
+				if(ncol(ltraces)>1)
+					sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)
+				## get the final network from all cores inferences and plot
+				for(netnr in 1:length(retlist)) {
+					ret2 <- retlist[[netnr]]
+					plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
+				}
 			}
 			if(!is.null(outfile))
 				dev.off()

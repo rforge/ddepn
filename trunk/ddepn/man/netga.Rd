@@ -15,7 +15,7 @@ netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, hmmiterations=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile=NULL, fanin = 4,
-		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,priortype="none")
+		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,priortype="none", plotresults=TRUE)
 }
 \arguments{
   \item{dat}{
@@ -67,7 +67,8 @@ netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   \item{priortype}{Character. One of \code{none}, \code{laplaceinhib}, \code{laplace} or
    \code{scalefree} for use of the respective prior type. Ignored if \code{usebics=TRUE}. For 
    \code{netga}, \code{usebics=FALSE, priortype="none"} means optimising the likelihood 
-   directly, for \code{mcmc_ddepn}, \code{none} is not allowed.} 
+   directly, for \code{mcmc_ddepn}, \code{none} is not allowed.}
+  \item{plotresults}{Boolean. If TRUE, some statistics are plotted while netga is running.}  
 }
 \details{
 Usually this function is called internally by \code{\link{ddepn}}.

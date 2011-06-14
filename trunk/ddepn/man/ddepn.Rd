@@ -15,10 +15,10 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
       outfile=NULL, multicores=FALSE, maxiterations=1000,
       p=500, q=0.3, m=0.8, P=NULL,
       usebics=TRUE, cores=2, priortype="laplaceinhib",
-      lambda=NULL, B=NULL, samplelambda=TRUE,
+      lambda=NULL, B=NULL, samplelambda=NULL,
       hmmiterations=100, fanin=4,
       gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-      debug=FALSE, burnin=1000, thin=FALSE)
+      debug=FALSE, burnin=1000, thin=FALSE, plotresults=TRUE)
 }
 \arguments{
   \item{dat}{
@@ -70,7 +70,10 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
 	 independent MCMC runs are started.}
 	\item{hmmiterations}{Integer. Maximum number of iterations in the HMM
 	 search.}
-	\item{lambda}{The Prior influence hyperparameter for the laplace prior.}
+	\item{lambda}{NULL, Numeric or NA. The Prior influence hyperparameter for the laplace prior. If 
+	 numeric, used as fixed prior strength or starting value for prior strength sampling
+	 (when \code{samplelambda} is numeric, too). If NA, lambda is integrated out in the 
+	 calculation of the prior. If NULL, no laplace prior is used.}
   \item{B}{The Prior information matrix. See \code{\link{prior}} for details.}
   \item{fanin}{Integer: maximal indegree for each node.}
   \item{gam}{Prior influence strength for scalefree prior. Also used as exponent
@@ -85,9 +88,9 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
   \item{quantBIC}{Quantile of Population BIC, used as selection
    threshold in \code{netga}. Note that the BIC is minimised, so all
     networks with BIC \emph{less} than the threshold are selected.}
-  \item{samplelambda}{Boolean. TRUE if laplace prior hyperparameter
-   \code{lambda} should be sampled, too. FALSE if fixed \code{lambda}
-   is to be used. Unused if \code{lambda} or \code{B} equal zero.}
+  \item{samplelambda}{Numeric or NULL. If NULL, the Laplace hyperparameter \code{lambda} is 
+    kept fix during the MCMC inference. If numeric, \code{lambda} is sampled uniformly around the 
+    initial value of \code{lambda}, with an interval size defined by \code{samplelambda}.}
   \item{debug}{Boolean. If TRUE, print extra informational messages.}
   \item{burnin}{Integer. Specifies the number of iterations used as
    burnin phase for \code{\link{mcmc_ddepn}}.}
@@ -104,6 +107,8 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
    about its type. \code{scalefree} assumes scale-free network architectures.} 
   \item{thin}{Boolean. If TRUE, makes sure that the MCMC return objects are
    shortened to at most 10000 iterations. Defaults to FALSE.}
+  \item{plotresults}{Boolean. If TRUE, the resulting network(s) and in case of
+   MCMC sampling, the score traces are plotted.} 
 }
 \details{
   \describe{

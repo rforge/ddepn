@@ -7,7 +7,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		q=0.3, m=0.8, hmmiterations=30, multicores=FALSE, usebics=FALSE, cores=2,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile=NULL,fanin=4,
-		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5, priortype="none") {
+		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5, priortype="none", plotresults=TRUE) {
   dat[is.na(dat)] <- 0
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
@@ -118,34 +118,36 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	#########################
 	### plot some population diagnostics
 	if(iter %% 10 == 1 & iter>1) {
-		if(!is.null(scorefile)) {
-			pdf(scorefile,width=8,height=10)			
-		}
-		layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
-		## score trace
-		opts <- scorestats[1:(iter-1),"score"]
-		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Score trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
-		plot(diff(opts), type='l', ylab="difference median scores", xlab="generation", main=paste("Median score diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))
-		## liklihood trace
-		opts <- scorestats[1:(iter-1),"liklihood"]
-		plot(opts, type='l', ylab="liklihood", xlab="generation", main=paste("Liklihood trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
-		plot(diff(opts), type='l', ylab="difference liklihood", xlab="generation", main=paste("Median liklihood diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))
-		## prior trace
-		opts <- scorestats[1:(iter-1),"prior"]
-		plot(opts, type='l', ylab="prior", xlab="generation", main=paste("Prior trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
-		plot(diff(opts), type='l', ylab="difference liklihood", xlab="generation", main=paste("Median prior diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))	
-#		layout(matrix(c(1,1,2,3,4,5), 3, 2, byrow = TRUE))
-#		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Median score trace: min: ", round(min(opts),3), " max: ", round(max(opts),3)))
-#		autoc <- acf(opts, main="Autocorrelation of median scores",ci.type="ma")
-#		abline(h=-2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
-#		abline(h=2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
-#		pautoc <- pacf(opts, main="Partial autocorrelation of median scores")
-#		abline(h=-2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
-#		abline(h=2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
-#		plot(diff(opts), type='b', ylab="differences avg scores (t-1 -> t)",xlab="generation i+1", pch="*")
-#		plot(diffpercent, type='l', ylab="percent optimumscore - avgscore", xlab="generation",main=paste("optimum(minimum difference): ",min(diffpercent)))
-		if(!is.null(scorefile)) {
-			dev.off()	
+		if(plotresults) {	
+			if(!is.null(scorefile)) {
+				pdf(scorefile,width=8,height=10)			
+			}
+			layout(matrix(c(1,2,3,4,5,6), 3, 2, byrow = TRUE))
+			## score trace
+			opts <- scorestats[1:(iter-1),"score"]
+			plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Score trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
+			plot(diff(opts), type='l', ylab="difference median scores", xlab="generation", main=paste("Median score diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))
+			## liklihood trace
+			opts <- scorestats[1:(iter-1),"liklihood"]
+			plot(opts, type='l', ylab="liklihood", xlab="generation", main=paste("Liklihood trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
+			plot(diff(opts), type='l', ylab="difference liklihood", xlab="generation", main=paste("Median liklihood diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))
+			## prior trace
+			opts <- scorestats[1:(iter-1),"prior"]
+			plot(opts, type='l', ylab="prior", xlab="generation", main=paste("Prior trace: min: ", round(min(opts),2), " max: ", round(max(opts),2)))
+			plot(diff(opts), type='l', ylab="difference liklihood", xlab="generation", main=paste("Median prior diffs; min:",round(min(diff(opts)),digits=2),"max:",round(min(diff(opts)),digits=2)))	
+	#		layout(matrix(c(1,1,2,3,4,5), 3, 2, byrow = TRUE))
+	#		plot(opts, type='l', ylab="median scores", xlab="generation", main=paste("Median score trace: min: ", round(min(opts),3), " max: ", round(max(opts),3)))
+	#		autoc <- acf(opts, main="Autocorrelation of median scores",ci.type="ma")
+	#		abline(h=-2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
+	#		abline(h=2*sqrt(autoc$n.used)/autoc$n.used,col="orange",lty=4)
+	#		pautoc <- pacf(opts, main="Partial autocorrelation of median scores")
+	#		abline(h=-2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
+	#		abline(h=2*sqrt(pautoc$n.used)/pautoc$n.used,col="orange",lty=4)
+	#		plot(diff(opts), type='b', ylab="differences avg scores (t-1 -> t)",xlab="generation i+1", pch="*")
+	#		plot(diffpercent, type='l', ylab="percent optimumscore - avgscore", xlab="generation",main=paste("optimum(minimum difference): ",min(diffpercent)))
+			if(!is.null(scorefile)) {
+				dev.off()	
+			}
 		}
 	}
     # select only the better models, i.e. maximise the likelihoods

@@ -1,5 +1,6 @@
 \name{prior}
 \alias{prior}
+\alias{calcpr}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Calculate a structure prior. Usually called internally.
@@ -12,6 +13,8 @@ node degrees.
 \usage{
 prior(phi, lambda = NULL, B = NULL, Z = NULL,
    gam = NULL, it = NULL, K = NULL, priortype = "laplaceinhib")
+   
+calcpr(lambda, B, phi, gam)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -62,7 +65,9 @@ changed to an s-shaped curve with a plateau at the upper bound of
 \eqn{P(phi_{ij}|lambda,gam,B)} and an exponential decay when a certain threshold of 
 \eqn{|phi_{ij}-B_{ij}|} is reached.\cr
 
-See also the references for a description of the priors.
+See also the references for a description of the priors.\cr\cr
+
+The \code{calcpr} function is a helper that calculates the laplace prior probability.
 %\section{laplaceinhib}{TODO}
 %\section{laplace}{TODO}
 %\section{scalefree}{TODO}

@@ -7,6 +7,7 @@
 kegggraph.to.detailed.adjacency <- function(gR) {
 	phi <- as(gR,"matrix")
 	kedges <- edges(gR)
+	kEDat <- getKEGGedgeData(gR)
 	for(i in 1:length(kedges)) {
 		ed <- kedges[[i]]
 		from <- names(kedges[i])
@@ -15,7 +16,7 @@ kegggraph.to.detailed.adjacency <- function(gR) {
 		}
 		for(j in 1:length(ed)) {
 			to <- ed[j]
-			ked <- getKEGGedgeData(gR,paste(from,to,sep="~"))
+			ked <- kEDat[[paste(from, to, sep = "~")]]
 			stype <- getSubtype(ked)
 			if(class(stype)=="list" & length(stype)>0) {
 				st <- getSubtype(ked)$subtype@name
