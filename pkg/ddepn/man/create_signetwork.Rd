@@ -1,5 +1,6 @@
 \name{create_signetwork}
 \alias{create_signetwork}
+\alias{create_signetwork_cv}
 \alias{perform_network_tests}
 \alias{perform_edge_test}
 \alias{draw_segments}
@@ -13,7 +14,9 @@ of independent MCMC runs (performed by passing \code{inference="mcmc"} to the \c
 function call.
 }
 \usage{
-create_signetwork(ret, alpha = 0.001, adj.method = "BY", plot = FALSE, type = "wilcox", alternative = "one.sided", paired = FALSE, ord = NULL)
+create_signetwork(ret, alpha = 0.05, adj.method = "BY", plot = FALSE, type = "wilcox", alternative = "one.sided", paired = FALSE, ord = NULL)
+
+create_signetwork_cv(ret, alpha = 0.05, adj.method = "BY", plot = FALSE, type = "wilcox", alternative = "one.sided", paired = FALSE, ord = NULL, sel_policy = "strict")
 
 perform_network_tests(ret, alpha=0.05, plot=FALSE, type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL)
 
@@ -62,7 +65,11 @@ draw_segments(tx, rng, alpha)
   \item{rng}{
     The range of the values that were tested against each other.
   }
-  
+  \item{sel_policy}{
+    String. If \code{"strict"}, an edge is included in the final network
+    if it occurred in all CV runs. If \code{"medium"}, an edge is included if it occurs in more than half of the 
+    CV runs. If \code{"lenient"}, an edge is included if it occurs in any of the CV runs.
+  }  
 }
 
 \details{
@@ -72,7 +79,12 @@ For each edge, the number of sampled activations and inhibitions is counted in e
 of sampled edges, resulting in a 'confidence' for each edge for each run. To find significant edges, a statistical 
 test is performed (usually Wilcoxon Rank Sum test) to test the NULL that the means of the \emph{L} activation confidences (c_a)
 equal the mean of the \emph{L} inhibition confidences (c_i). The alternatives \eqn{c_a > c_i} and \eqn{c_a < c_i} are 
-used to determine the type of interaction.\cr\cr
+used to determine the type of interaction.\cr
+
+In \code{create_signetwork_cv} a leave-one-out crossvalidation is performed to test for significant edges, i.e. every MCMC chain is 
+left out once and the \code{create_signetwork} is called for the remaining runs. A final network is assembled from the CV networks
+according to the edge selection policy given in argument \code{sel_policy}. Note that at least 4 independent inhibMCMC chains have
+to be present to use this function.\cr\cr 
 
 The functions \code{perform_network_tests}, \code{perform_edge_test} and \code{draw_segments} are usually not called directly.
 }
@@ -132,7 +144,8 @@ par(mfrow=c(1,2))
 plotdetailed(net, main="inferred", stimuli=ret$samplings[[1]]$stimuli )
 plotdetailed(ret$samplings[[1]]$phi.orig, main="prior", stimuli=ret$samplings[[1]]$stimuli )
 
-
+## use the LOO crossvalidation for finding edges
+net2 <- create_signetwork_cv(ret, alpha=0.05, adj.method="none", plot=FALSE, type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL, sel_policy="strict")
 
 }
 }

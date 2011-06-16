@@ -3,7 +3,42 @@
 # Author: benderc
 ###############################################################################
 
-create_signetwork <- function(ret, alpha=0.001, adj.method="BY", plot=FALSE, type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL) {
+
+create_signetwork_cv <- function(ret, alpha=0.05, adj.method="BY", plot=FALSE, type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL,
+		sel_policy="strict") {
+	## check if only the samplings list is given, or the whole mcmc return object
+	if(!is.null(ret$samplings)) {
+		ret <- ret$samplings
+	}
+	if(length(ret)<=3) {
+		stop(paste("Caution: Only", length(ret), "parallel MCMC chain(s) found. Please run at least 4 parallel chains if", 
+						"crossvalidation should be used in edge identification."))
+	}
+	L <- length(ret)
+	N <- nrow(ret[[1]]$phi.orig)
+	DN <- dimnames(ret[[1]]$phi.orig)
+	overlapa <- overlapi <- matrix(0, nrow=N, ncol=N, dimnames=DN)
+	for(j in 1:L) {
+		## select all but the j'th entry in samplings
+		tmp <- ret[-j]
+		prior <- tmp[[1]]$phi.orig
+		stimuli <- tmp[[1]]$stimuli
+		stimnodes <- unique(names(unlist(stimuli)))
+		inferred <- create_signetwork(tmp, alpha=alpha, adj.method=adj.method, plot=plot, type=type, alternative=alternative, paired=paired, ord=ord)
+		overlapa <- overlapa + ifelse(inferred==1,1,0)
+		overlapi <- overlapi + ifelse(inferred==2,1,0)
+	}
+	## if strict: use only edges that are found in each CV run
+	##    medium: use edges that are found in more than half of the CV runs
+	##    lenient: use edges occurring in any CV run
+	switch(sel_policy,
+			strict=inferred <- ifelse(overlapa==L,1,0)+ifelse(overlapi==L,2,0),
+			medium=inferred <- ifelse(overlapa>=ceiling(L/2),1,0)+ifelse(overlapi>=ceiling(L/2),2,0),
+			lenient=inferred <- ifelse(overlapa!=0,1,0)+ifelse(overlapi!=0,2,0))	
+	inferred
+}
+
+create_signetwork <- function(ret, alpha=0.05, adj.method="BY", plot=FALSE, type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL) {
 	## check if only the samplings list is given, or the whole mcmc return object
 	if(!is.null(ret$samplings)) {
 		ret <- ret$samplings
@@ -28,6 +63,8 @@ create_signetwork <- function(ret, alpha=0.001, adj.method="BY", plot=FALSE, typ
 	inferred[setdiff(inhs, acts)] <- 2
 	inferred
 }
+
+
 ## calls perform_edge_test for each pair of from/to nodes
 #
 #ord=c("EGF","H","P","E","HRG","AKT","ERBB1","ERBB2","ERBB3","ERK12","GSK3","MEK12", 

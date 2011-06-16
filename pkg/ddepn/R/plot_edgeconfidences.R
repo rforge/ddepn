@@ -29,27 +29,30 @@ plot_edgeconfidences <- function(ret, start=1, stop=NULL, act="conf.act", inh="c
 	if(!is.null(ret$samplings)) {
 		ret <- ret$samplings
 	}
+	L <- length(ret)
+	N <- nrow(ret[[1]][[act]])
 	## get the confidences/counts for each edge
 	sampa <- lapply(ret, function(x) x[[act]])
 	sampi <- lapply(ret, function(x) x[[inh]])
 	## transform to data frame for lattice plotting
 	dfa <- make_edge_df(sampa)
 	dfi <- make_edge_df(sampi)
-	type <- paste(c(as.character(dfa[,"src"]),as.character(dfi[,"src"])),c(rep("+",nrow(dfa)),rep("-",nrow(dfi))),sep="_")
+	type <- paste(c(as.character(dfa[,"src"]),as.character(dfi[,"src"])),c(rep("+",nrow(dfa)),rep("-",nrow(dfi))),sep="")
 	df <- cbind(rbind(dfa, dfi),type)
 	legendX <- simpleKey(c("activation (+)","inhibition (-)"),points=FALSE,rectangles=TRUE,lines=FALSE,coL=c("#0000FF","#FF0000"))
 	legendX$corner <- c(1,1)
 	legendX$x <- 0.9
-	legendX$y <- 0.9
+	legendX$y <- -0.1 # at the bottom, below the panels
 	legendX$rectangles$col <- c("#0000FF","#FF0000")
 	legendX$text$cex <- 2
 	## make a lattice boxplot figure
-	bwplot(y ~ type | dest, data=df, pch=NULL, main=list(label="Confidences of activation/inhibition edges over 10 MCMC runs (counted after burnin phase)",cex=2),
+	labeltxt <- paste("Confidences of activation/inhibition edges over ",L," MCMC runs.")
+	bwplot(y ~ type | dest, data=df, pch=NULL, main=list(label=labeltxt,cex=2),
 			ylab=list(label="confidence",cex=2),xlab=list(label="source node", cex=2),
 			scales=list(rot=90,alternating=3,cex=1.5),
 			panel=function(...) {
-				panel.grid(h = 0, v = 17, col="#111111aa", lty=3, lwd=2)
-				panel.bwplot(...,fill=rep(c("blue","red"),18))
+				panel.grid(h = 0, v = N-1, col="#111111aa", lty=3, lwd=2)
+				panel.bwplot(...,fill=rep(c("blue","red"),N))
 			},
 			key=legendX,
 			par.settings=list(layout.heights=list(bottom.padding=10)))
