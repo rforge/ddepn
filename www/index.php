@@ -32,7 +32,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <!-- get project title  -->
 <!-- own website starts here, the following may be changed as you like -->
 
-<h1 align="left"> Welcome to the ddepn project.</h1>
+<!-- h1 align="left"> Welcome to the ddepn project.</h1 -->
 
 
 
@@ -71,8 +71,7 @@ The method is described in the following publications:<br>
   <dt>PhD Thesis</dt>
     <dd>Bender, C.</dd>
     <dd><a href="http://www.dkfz.de/mga2/people/bender/files/BenderThesis.pdf" target="_blank">
-             Dynamic deterministic effects propagation networks: learning signalling pathways from longitudinal
-	     protein array data.</a></dd> 
+    	   Systematic analysis of time resolved high-throughput data using stochastic network inference methods</a></dd> 
     <dd><em>University of Heidelberg, Combined Faculties for the Natural Sciences and for Mathematics, </em><b>2011</b></dd>
   </dl>
 </ul>
