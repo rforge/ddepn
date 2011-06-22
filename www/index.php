@@ -13,7 +13,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 <!DOCTYPE html
 	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en   ">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="EN">
 
   <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -44,7 +44,8 @@ while (!feof($handle)) {
 fclose($handle);
 echo $contents; } ?>
 
-<!-- end of project description --> <p> This project contains the
+<!-- end of project description --> 
+<p> This project contains the
 method 'Dynamic Deterministic Effects Propagation Networks',
 implemented in the R-package 'ddepn'. The package provides a network
 inference engine for high-throughput genomic or proteomic expression
@@ -52,12 +53,13 @@ data, generated after external intervention (inhibitions or
 stimulations). Two main parts are implemented: an MCMC network
 structure sampling approach and a Genetic Algorithm network
 optimisation. Further biological prior knowledge can be included using
-different prior models.<br>
+different prior models.</p><br/>
 
-The method is described in the following publications:<br>
+<!-- dl: definition list, dt: definition title, dd: definition
+description -->
+
+The method is described in the following publications:<br/>
 <ul>
-  <!-- dl: definition list, dt: definition title, dd: definition
-  description -->
   <li><dl>
   <dt>Article</dt>
     <dd>Bender, C., Henjes, F., Fr&ouml;hlich, H., Wiemann, S., Korf, U. &amp; Bei&szlig;barth, T.</dd>
@@ -65,15 +67,15 @@ The method is described in the following publications:<br>
 	   target="_blank">Dynamic deterministic effects propagation
 	     networks: learning signalling pathways from longitudinal
 	     protein array data.</a></dd> 
-    <dd><em>Bioinformatics, </em><b>2010</b>, Vol. 26(18), pp. i596-i602</dd>
-  </dl>
+    <dd><em>Bioinformatics, </em><strong>2010</strong>, Vol. 26(18), pp. i596-i602</dd>
+  </dl></li>
   <li><dl>
   <dt>PhD Thesis</dt>
     <dd>Bender, C.</dd>
     <dd><a href="http://www.dkfz.de/mga2/people/bender/files/BenderThesis.pdf" target="_blank">
     	   Systematic analysis of time resolved high-throughput data using stochastic network inference methods</a></dd> 
-    <dd><em>University of Heidelberg, Combined Faculties for the Natural Sciences and for Mathematics, </em><b>2011</b></dd>
-  </dl>
+    <dd><em>University of Heidelberg, Combined Faculties for the Natural Sciences and for Mathematics, </em><strong>2011</strong></dd>
+  </dl></li>
 </ul>
 
 <p> The <strong>project summary page</strong>
