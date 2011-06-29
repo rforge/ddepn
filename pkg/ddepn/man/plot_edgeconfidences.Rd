@@ -38,9 +38,13 @@ make_edge_df(samp)
   \item{samp}{
     List. Contains the sampling runs from each MCMC chain. Note that the number of chains \eqn{L:=length(samp)}.
 }
+  \item{cex.axis}{
+    Numeric. Scale factor for the axis labels.
+}
   \item{\dots}{
     Further plotting options passed to the lattice \code{panel.bwplot} function.
 }
+
 }
 \details{
 Create a summary plot of edge confidences or counts over \emph{L} MCMC runs. Assume that \emph{N} is the number 

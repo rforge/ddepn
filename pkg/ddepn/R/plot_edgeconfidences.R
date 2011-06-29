@@ -23,7 +23,7 @@ make_edge_df <- function(samp) {
 	df
 }
 
-plot_edgeconfidences <- function(ret, start=1, stop=NULL, act="conf.act", inh="conf.inh",...) {
+plot_edgeconfidences <- function(ret, start=1, stop=NULL, act="conf.act", inh="conf.inh", cex.axis=1.5, ...) {
 	#stopifnot(require(lattice))
 	## check if only the samplings list is given, or the whole mcmc return object
 	if(!is.null(ret$samplings)) {
@@ -49,7 +49,7 @@ plot_edgeconfidences <- function(ret, start=1, stop=NULL, act="conf.act", inh="c
 	labeltxt <- paste("Confidences of activation/inhibition edges over ",L," MCMC runs.")
 	bwplot(y ~ type | dest, data=df, pch=NULL, main=list(label=labeltxt,cex=2),
 			ylab=list(label="confidence",cex=2),xlab=list(label="source node", cex=2),
-			scales=list(rot=90,alternating=3,cex=1.5),
+			scales=list(rot=90,alternating=3,cex=cex.axis),
 			panel=function(...) {
 				panel.grid(h = 0, v = N-1, col="#111111aa", lty=3, lwd=2)
 				panel.bwplot(...,fill=rep(c("blue","red"),N))

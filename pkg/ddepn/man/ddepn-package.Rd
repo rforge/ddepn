@@ -37,7 +37,8 @@ Bender et. al. 2010: Dynamic deterministic effects propagation networks: learnin
 }
 \keyword{ package }
 \seealso{
-\code{\link{ddepn}}, \code{\link{netga}}
+\code{\link{ddepn}}, \code{\link{netga}}\cr
+Visit also the project page on R-forge: \url{http://ddepn.r-forge.r-project.org/}.
 }
 \examples{
 \dontrun{

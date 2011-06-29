@@ -111,6 +111,7 @@ mcmc_move <- function(bestmodel, type) {
 		it <- bestmodel$it
 		K <- bestmodel$K
 		priortype <- bestmodel$priortype
+		allow.stim.off <- bestmodel$allow.stim.off
 		counter <- 1
 		numbettermodel <- 1
 		bettermodels <- list()
@@ -133,7 +134,7 @@ mcmc_move <- function(bestmodel, type) {
 				revswitch=phi.n <- reverse.direction(phi.n,i,switchtype=TRUE))
 		## debug me if constraints are violated
 		if(any(colSums(detailed.to.simple.regulations(phi.n))>fanin)) {
-			print("Oops, mcmc_move seems to produce more incoming edges that allowed according to fanin-setting.")
+			print("Oops, mcmc_move seems to produce more incoming edges than allowed, according to fanin-setting.")
 			browser()
 		}
 		## HMM for the proposed network
@@ -157,7 +158,7 @@ mcmc_move <- function(bestmodel, type) {
 				reps=reps, hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove=type, coords=cds,
 				lambda=lambda, B=B, Z=Z, pegm=pegm, pegmundo=pegmundo,nummoves=bestmodel$nummoves,fanin=fanin,
 				gam=gam, it=it, K=K,phi.orig=phiorig,priortype=priortype,pr=pr.n,
-				mu_run=bestmodel$mu_run,Qi=bestmodel$Qi,sd_run=bestmodel$sd_run, scale_lik=scale_lik)
+				mu_run=bestmodel$mu_run,Qi=bestmodel$Qi,sd_run=bestmodel$sd_run, scale_lik=scale_lik, allow.stim.off=allow.stim.off)
 				#,mean_thetax=bestmodel$mean_thetax, mean_squared_thetax=bestmodel$mean_squared_thetax,
 				#sd_thetax=bestmodel$sd_thetax)	
 		numbettermodel <- numbettermodel + 1

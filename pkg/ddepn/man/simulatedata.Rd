@@ -14,7 +14,8 @@ simulatedata(phi, mu.bg=0, sd.bg=0.1,
 		mu.signal.a=1, sd.signal.a=0.5,
 		mu.signal.i=-1, sd.signal.i=0.5,
 		stimulus=sample(nrow(phi),2),TT=10,R.t=4,R.b=3,
-		plot=FALSE,stimuli=NULL)}
+		plot=FALSE,stimuli=NULL, allow.stim.off=TRUE) 
+}
 \arguments{
   \item{phi}{The network for which data should be simulated.}
   \item{mu.bg}{mean for passive state.}
@@ -29,6 +30,7 @@ simulatedata(phi, mu.bg=0, sd.bg=0.1,
   \item{R.b}{Number of biological replicates.}
   \item{plot}{Should a plot be generated after data generation.}
   \item{stimuli}{List of input stimuli.}
+  \item{allow.stim.off}{Boolean. Allow the stimuli to become inactive at some point. See also \code{\link{ddepn}}.}
 }
 \details{
 TODO

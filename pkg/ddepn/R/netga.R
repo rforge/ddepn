@@ -8,7 +8,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile=NULL,fanin=4,
 		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5, priortype="none", plotresults=TRUE,
-		scale_lik=FALSE) {
+		scale_lik=FALSE, allow.stim.off=TRUE,debug=0) {
   dat[is.na(dat)] <- 0
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
@@ -28,9 +28,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  	X[[2]] <- phireference
 	  }
 	  if(multicores) {
-		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, mc.preschedule=FALSE,mc.cores=cores)		
+		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, mc.preschedule=FALSE,mc.cores=cores, allow.stim.off=allow.stim.off)		
 	  } else {
-		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik)
+		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off)
 	  }
   }
   ## check if all individuals are set correctly
@@ -42,7 +42,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  browser()
 	  }	  
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
-		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik)
+		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off)
 	  }
   }  
   if(any(sapply(P, class)!="list")) {
@@ -93,8 +93,22 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   #####################
   ### GA Main loop
   #####################
+  cls()
+  if(debug==0) {
+	print("###########################")
+	print("# Using genetic algorithm #")
+	print("###########################")
+  	pb <- txtProgressBar(min = 0, max = maxiterations, style = 3)
+  }
   for(iter in 1:maxiterations) {
-	pdiff <- "x"
+	if(debug==0) {
+		#cls() # clear the screen
+		#pcnt <- round(iter/maxiterations * 100)
+		#print(paste("[",pcnt, "%] done.",sep=""))
+		setTxtProgressBar(pb, iter)
+		
+	}
+	#pdiff <- "x"
 	# terminate criterion: 50x equal optimal score, then return
 	if(old_score_quantile==score_quantile) {
 		numequalscore <- numequalscore + 1
@@ -115,7 +129,10 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     ################
 	diffpercent <- c(diffpercent,abs(round(((min(wks) - mean(wks))/min(wks)*100), digits=3)))
 	#opts <- c(opts, score_quantile)
-    print(paste("selection ",iter, "diff(opt,avg): ", diffpercent[length(diffpercent)], " Diffs in Opts==0? ", pdiff))
+	if((debug==1 & iter%%50==1) | debug==2) { # print info depending on debug level
+		print(paste("Iteration ",iter))
+    	print(paste("   Selection step. Difference optimum to average: ", diffpercent[length(diffpercent)]))
+	}
 	#########################
 	### plot some population diagnostics
 	if(iter %% 10 == 1 & iter>1) {
@@ -173,14 +190,16 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	Pprime <- c(Pprime, P[selection])
     # define barrier that must be exceeded in the next run
 	# optimum before crossover and mutation
-	if(usebics) {
-		print(paste("Selected: ", length(Pprime), " models with bic < ", old_score_quantile, ". New minbic: ", score_quantile))
-	} else {
-		if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {
-		#if(laplace || scalefree) {
-			print(paste("Selected: ", length(Pprime), " models with post > ", old_score_quantile, ". New maxPosterior: ", score_quantile))
+	if((debug==1 & iter%%50==1) | debug==2) { # print info depending on debug level
+		if(usebics) {
+			print(paste("      Selected: ", length(Pprime), " models with bic < ", old_score_quantile, ". New minbic: ", score_quantile))
 		} else {
-			print(paste("Selected: ", length(Pprime), " models with L > ", old_score_quantile, ". New maxL: ", score_quantile))
+			if(priortype %in% c("laplaceinhib","laplace","scalefree","uniform")) {
+			#if(laplace || scalefree) {
+				print(paste("      Selected: ", length(Pprime), " models with post > ", old_score_quantile, ". New maxPosterior: ", score_quantile))
+			} else {
+				print(paste("      Selected: ", length(Pprime), " models with L > ", old_score_quantile, ". New maxL: ", score_quantile))
+			}
 		}
 	}
 	old_score_quantile <- score_quantile
@@ -193,7 +212,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     ## crossover  ##
     ################
 	################
-    print(paste("crossover",iter))
+	if((debug==1 & iter%%50==1) | debug==2) { # print info depending on debug level
+    	print(paste("   Crossover step."))
+	}
 	# sample randomly number of crossings individuals, i.e. numcrossings/2 pairs
 	# take preferrably the most fit individuals for crossingover
     crossing <- matrix(sample(1:p, numcrossings, prob=probs, replace=FALSE), nrow=2)
@@ -303,7 +324,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
     # select the individuals proportional to their likelihood?
     #mutation <- sample(1:p, (p*m), prob=(1-probs)) ## mutate the worst ones
 	mutation <- sample(1:p, (p*m), prob=probs) ## mutate the best ones
-    print(paste("mutation",iter))
+	if((debug==1 & iter%%50==1) | debug==2) { # print info depending on debug level
+    	print(paste("   Mutation step."))
+	}
 	counter <- 1
 	oldphis <- list()
 	oldedges <- newedges <- NULL
@@ -331,7 +354,9 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		Pprime[[k]]$phi <- phi.n
 		counter <- counter + 1
 	}
-	cat("performing ", length(mutation), " mutations..")
+	if(debug==2) { # print info depending on debug level
+		print(paste("      Performing ", length(mutation), " mutations."))
+	}
 	if(multicores) {
 		ret <- mclapply(Pprime[mutation], function(x){perform.hmmsearch(x$phi, x)}, mc.preschedule=FALSE,mc.cores=cores)	
 	} else {
@@ -378,7 +403,11 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		}
 		# if score is better, than accept the new parameters, state matrix etc.
 		if(scorenew > scoreold) {
-			print(paste("Improved score by mutation: old edge: ", oldedges[k], " new edge: ",newedges[k], "oldscore: ", scoreold, "newscore: ", scorenew))
+			#if((debug==1 & iter%%50==1) | debug==2) { # print info depending on debug level
+			if(debug==2) { # print info depending on debug level
+				#print(paste("Improved score by mutation: old edge: ", oldedges[k], " new edge: ",newedges[k], "oldscore: ", scoreold, "newscore: ", scorenew))
+				print(paste("   Improved score: oldscore: ", scoreold, "newscore: ", scorenew))
+			}
 			bestmodel$gamma <- matrix(L.res$gammax,nrow=nrow(bestmodel$gamma),ncol=ncol(bestmodel$gamma),dimnames=dimnames(bestmodel$gamma))
 			bestmodel$theta <- matrix(L.res$thetax,nrow=nrow(bestmodel$theta),ncol=ncol(bestmodel$theta),dimnames=dimnames(bestmodel$theta))
 			bestmodel$L <- L.res$Likl
@@ -430,6 +459,12 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	scorestats[iter,"score_mad"] <- mad(wks)
     P <- Pprime
 	garbage <- gc(verbose=FALSE)
-  } # end main loop
+	if(debug==1)
+		cat(".")
+  } # end main loop	
+  if(debug==0) {	  
+ 	 close(pb)
+	 print("done.")
+  }
   return(list(P=P,scorestats=scorestats))
 }

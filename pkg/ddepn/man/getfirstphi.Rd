@@ -10,7 +10,8 @@
 }
 \usage{
 getfirstphi(x, dat, stimuli, V, tps, reps, hmmiterations,
- lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE)
+ lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE,
+ allow.stim.off=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -30,6 +31,7 @@ getfirstphi(x, dat, stimuli, V, tps, reps, hmmiterations,
   \item{k}{Proportionality factor in scalefree prior}
   \item{priortype}{Character. Type of prior to be used.} 
   \item{scale_lik}{Boolean. Scale liklihood according to number of data points.}
+  \item{allow.stim.off}{Boolean. Allow the stimuli to become inactive at some point. See also \code{\link{ddepn}}.}
 }
 \details{
 Usually called internally.

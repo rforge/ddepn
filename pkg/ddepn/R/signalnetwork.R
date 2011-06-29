@@ -68,7 +68,7 @@ signalnetwork <- function(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=N
 	counter <- 1
 	broke <- FALSE
 	while(ccl!=1 && counter<=200) {
-		cat(":")
+		#cat(":")
 		newstimtmp <- NULL
 		for(st in stimtmp) {
 			tosample <- setdiff(1:n,union(unlist(stimuli),stimtmp))
@@ -82,7 +82,7 @@ signalnetwork <- function(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=N
 				degprob = degprob/sum(degprob)
 			}
 			while(1==1) {
-				cat(";")
+				cat("-")
 				newedges <- NULL
 				for(dp in 1:length(tosample)) {
 					et <- sample(c(0,1), 1, prob=c((1-degprob[dp]), degprob[dp]))
