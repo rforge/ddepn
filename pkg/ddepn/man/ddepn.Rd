@@ -19,7 +19,7 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
       hmmiterations=100, fanin=4,
       gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
       debug=0, burnin=1000, thin=FALSE, plotresults=TRUE,
-      always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=TRUE)
+      always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE)
 }
 \arguments{
   \item{dat}{

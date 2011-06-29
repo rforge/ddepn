@@ -8,13 +8,14 @@ mcmc_accept - accept move or not
 Computes acceptance rates for the move as well as for the prior strength parameter lambda.
 }
 \usage{
-mcmc_accept(bestmodel, bettermodels, newlambda)
+mcmc_accept(bestmodel, bettermodels, newlambda, debug=0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{bestmodel}{The current model. }
   \item{bettermodels}{The proposed model. }
   \item{newlambda}{The proposed prior strength. }
+  \item{debug}{Numeric. The debug level to be used.}
 }
 \details{
 TODO

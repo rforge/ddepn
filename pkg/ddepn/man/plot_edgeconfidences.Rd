@@ -9,7 +9,7 @@ Boxplots of edge confidences obtained in inhibMCMC.
 Plot the confidences for each edge, obtained from \emph{L} independent MCMC chains.
 }
 \usage{
-plot_edgeconfidences(ret, start = 1, stop = NULL, act = "conf.act", inh = "conf.inh", ...)
+plot_edgeconfidences(ret, start = 1, stop = NULL, act = "conf.act", inh = "conf.inh", cex.axis = 1.5, ...)
 
 make_edge_df(samp)
 }
