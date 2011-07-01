@@ -29,7 +29,7 @@ get_theta_consensus <- function(ret) {
 	thetafin
 }
 plot_profiles <- function(ret, log=FALSE, ord=NULL,
-		mfrow=c(2,2), plothist=FALSE, selection.criterion="aic") {
+		mfrow=c(4,4), plotcurves=TRUE, plothist=TRUE, selection.criterion="aic") {
 	if(class(ret)=="list") {
 		P <- ret$P
 		## mcmc or netga?
@@ -101,31 +101,33 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 			ddmat <- rbind(ddmat, pred)
 		}		
 		yl <- ifelse(log,"log2","")
-		## plot the data for each experiment, teh fits and parameters
-		for(i in 1:length(expers.fac)) {
-			expf <- expers.fac[i]
-			## the splines
-			plot(xn, ddmat[i,],type="l",
-					ylab=paste(yl,"Intensity"),xlab="time [min]",ylim=range(ddmat),
-					main=c(paste("Stimulus:",expf),paste("Protein:",rownames(dat)[j])))
-			ind <- which(expers==expf)
-			y <- dat[j,ind]
-			tp <- as.numeric(sapply(colnames(dat)[ind], function(x) strsplit(x,"_")[[1]][2]))
-			mt <- match(time, unique(tp))
-			mt <- mt[!is.na(mt)]
-			at <- time[mt]
-			## the data
-			boxplot(y~tp,add=TRUE,at=at,border="#08080850", axes=FALSE)
-			## the parameters
-			if(!is.null(theta)) {
-				abline(h=theta[j,1],col="red")
-				abline(h=theta[j,1]+theta[j,2],lty=3,col="red")
-				abline(h=theta[j,1]-theta[j,2],lty=3,col="red")
-				text(1,theta[j,1],"mu active")
-				abline(h=theta[j,3],col="green")
-				abline(h=theta[j,3]+theta[j,4],lty=3,col="green")
-				abline(h=theta[j,3]-theta[j,4],lty=3,col="green")
-				text(1,theta[j,3],"mu passive")
+		if(plotcurves) {
+			## plot the data for each experiment, teh fits and parameters
+			for(i in 1:length(expers.fac)) {
+				expf <- expers.fac[i]
+				## the splines
+				plot(xn, ddmat[i,],type="l",
+						ylab=paste(yl,"Intensity"),xlab="time [min]",ylim=range(ddmat),
+						main=c(paste("Stimulus:",expf),paste("Protein:",rownames(dat)[j])))
+				ind <- which(expers==expf)
+				y <- dat[j,ind]
+				tp <- as.numeric(sapply(colnames(dat)[ind], function(x) strsplit(x,"_")[[1]][2]))
+				mt <- match(time, unique(tp))
+				mt <- mt[!is.na(mt)]
+				at <- time[mt]
+				## the data
+				boxplot(y~tp,add=TRUE,at=at,border="#08080850", axes=FALSE)
+				## the parameters
+				if(!is.null(theta)) {
+					abline(h=theta[j,1],col="red")
+					abline(h=theta[j,1]+theta[j,2],lty=3,col="red")
+					abline(h=theta[j,1]-theta[j,2],lty=3,col="red")
+					text(1,theta[j,1],"mu active")
+					abline(h=theta[j,3],col="green")
+					abline(h=theta[j,3]+theta[j,4],lty=3,col="green")
+					abline(h=theta[j,3]-theta[j,4],lty=3,col="green")
+					text(1,theta[j,3],"mu passive")
+				}
 			}
 		}
 	}

@@ -39,11 +39,11 @@ plot_edgeconfidences <- function(ret, start=1, stop=NULL, act="conf.act", inh="c
 	dfi <- make_edge_df(sampi)
 	type <- paste(c(as.character(dfa[,"src"]),as.character(dfi[,"src"])),c(rep("+",nrow(dfa)),rep("-",nrow(dfi))),sep="")
 	df <- cbind(rbind(dfa, dfi),type)
-	legendX <- simpleKey(c("activation (+)","inhibition (-)"),points=FALSE,rectangles=TRUE,lines=FALSE,coL=c("#0000FF","#FF0000"))
+	legendX <- simpleKey(c("activation (+)","inhibition (-)"),points=FALSE,rectangles=TRUE,lines=FALSE,col=c("#FF0000","#0000FF"))
 	legendX$corner <- c(1,1)
 	legendX$x <- 0.9
 	legendX$y <- -0.1 # at the bottom, below the panels
-	legendX$rectangles$col <- c("#0000FF","#FF0000")
+	legendX$rectangles$col <- c("#FF0000","#0000FF")
 	legendX$text$cex <- 2
 	## make a lattice boxplot figure
 	labeltxt <- paste("Confidences of activation/inhibition edges over ",L," MCMC runs.")

@@ -12,8 +12,8 @@ estimations obtained in the inference are laid over the plots to show the active
 passive states. 
 }
 \usage{
-plot_profiles(ret, log=FALSE, ord=NULL, mfrow=c(2,2), 
-              plothist=FALSE, selection.criterion="aic")
+plot_profiles(ret, log=FALSE, ord=NULL, mfrow=c(4,4), 
+              plotcurves=TRUE, plothist=TRUE, selection.criterion="aic")
 
 get_theta_consensus(ret)
 }
@@ -33,6 +33,9 @@ get_theta_consensus(ret)
   \item{mfrow}{
     Vector of numerics. Two values giving the number of rows and columns in which the output plot should be
     arranged.
+}
+\item{plotcurves}{
+    Boolean. Show the data profiles and fitted splines or not.
 }
   \item{plothist}{
     Boolean. Show additional histogram representation of the data or not.
