@@ -18,7 +18,7 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
       lambda=NULL, B=NULL, samplelambda=NULL,
       hmmiterations=100, fanin=4,
       gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-      debug=0, burnin=1000, thin=FALSE, plotresults=TRUE,
+      debug=0, burnin=500, thin=FALSE, plotresults=TRUE,
       always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE)
 }
 \arguments{
@@ -137,6 +137,9 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
       ERK \tab 1.33 \tab 1.7 \tab  1.57 \tab 1.3  \tab 0.68 \tab 0.34 \tab 0.62 \tab 0.47 \cr
       MEK \tab 0.45 \tab 0.8 \tab  0.99 \tab 0.6  \tab 0.78 \tab 0.8  \tab 0.56 \tab 0.58 \cr  
       }
+      For example, \code{EGF_1} means EGF treatment at time 1, \code{EGF&X_2} means simultaneous treatment with EGF and X at time 2
+      etc. One could use function \code{\link{addstimuli}} to automatically add the additional rows for the 
+      treatments to the data matrix, if they are not present.
     }
   }
 }
@@ -161,7 +164,12 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga",
    function call to \code{ddepn}.} 
 	\item{conf.act}{Matrix. Calculated as phi.activation.count/p}
 	\item{conf.inh}{Matrix. Calculated as phi.inhibition.count/p}
-	\item{stimuli}{List. The given list of input stimuli.}
+	\item{stimuli}{
+	  List. The list of the input stimuli in format \code{list(c(Stim1=1),c(Stim1=1,Stim2=2))}. 
+	  The first element in this example list is a single stimulus, the second a 
+	  combinatorial stimulus of Stim1 and Stim2. The numbers are the indices identifying the
+	  nodes, i.e. the index in \code{rownames(dat)}. This is generated automatically from the 
+	  formatted data matrix (see section \emph{details}).}
   \item{P}{List. The population of networks that was inferred, i.e. the
    return list of \code{\link{netga}}.}
   \item{scorestats}{Matrix. Contains traces of the scores during the genetic
@@ -185,6 +193,9 @@ Bender et. al. 2010: Dynamic deterministic effects propagation networks: learnin
 %  for Reconstructing Protein Signaling Networks from Multiple Interventions\cr 
 
 \emph{Laplace prior}\cr
+Bender, C. 2011: Systematic analysis of time resolved high-throughput data using stochastic network inference methods;
+ PhD Thesis, University of Heidelberg, Combined Faculties for the Natural Sciences and for Mathematics, 2011\cr
+ 
 Froehlich et. al. 2007, Large scale statistical inference of signaling pathways from RNAi
 and microarray data; BMC Bioinformatics, Vol. 8(11), pp. 386ff\cr
 

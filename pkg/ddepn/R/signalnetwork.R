@@ -13,53 +13,56 @@
 
 
 
-signalnetwork <- function(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=NULL) {
+signalnetwork <- function(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=NULL,V=NULL,stimuli=NULL) {
 	## initialise
-	V <- paste("X",1:n,sep="")
+	if(is.null(V))
+		V <- paste("X",1:n,sep="")
 	phi <- matrix(0,nrow=n, ncol=n, dimnames=list(V,V))
-	stim <- sample(1:n, nstim)
-	names(stim) <- V[stim]
-	stimuli <- list()
-	for(i in 1:length(stim)) {
-		stimuli[[i]] <- stim[i]
-	}
-	# now the combinatorial stimuli
-	if(cstim > 0) {
-		lstim <- length(stimuli)
-		k <- 2
-		combs <- choose(nstim,k)
-		while(combs < cstim) {
-			k <- k+1
-			if(k>nstim) {
-				stop(paste("You want too many combinatorial stimuli. For ",nstim, "stimuli, only ", combs, " combinations are possible. Aborting."))
-			}
-			combs <- combs + choose(nstim,k)	
+	if(is.null(stimuli)) {
+		stim <- sample(1:n, nstim)
+		names(stim) <- V[stim]
+		stimuli <- list()
+		for(i in 1:length(stim)) {
+			stimuli[[i]] <- stim[i]
 		}
-		tuples <- singlestim <- names(unlist(stimuli))
-		for(kprime in 2:k) {
-			kprime <- kprime + 1
-			newtuples <- NULL
-			for(i in 1:nstim) {
-				for(j in 1:length(tuples)) {
-					if(!is.na(match(singlestim[i],strsplit(tuples[j],"-")[[1]])))
-						next
-					tup <- paste(singlestim[i], tuples[j], sep="-")
-					newtuples <- c(newtuples, tup)
-				}
-			}
-			newtuples <- unique(t(sapply(newtuples, function(x) paste(sort(strsplit(x,"-")[[1]]),sep="-"))))
-			for(l in 1:nrow(newtuples)) {
-				vec <- as.numeric(match(newtuples[l,],V))
-				names(vec) <- as.character(newtuples[l,])
-				stimuli[[(lstim+l)]] <- vec
-				if(length(stimuli)==(nstim+cstim)) {
-					kprime <- k+1
-					break				
-				}
-			}
+		# now the combinatorial stimuli
+		if(cstim > 0) {
 			lstim <- length(stimuli)
-			#tuples <- apply(newtuples, 1, paste, collapse="")
-			tuples <- apply(newtuples, 1, paste, collapse="-")
+			k <- 2
+			combs <- choose(nstim,k)
+			while(combs < cstim) {
+				k <- k+1
+				if(k>nstim) {
+					stop(paste("You want too many combinatorial stimuli. For ",nstim, "stimuli, only ", combs, " combinations are possible. Aborting."))
+				}
+				combs <- combs + choose(nstim,k)	
+			}
+			tuples <- singlestim <- names(unlist(stimuli))
+			for(kprime in 2:k) {
+				kprime <- kprime + 1
+				newtuples <- NULL
+				for(i in 1:nstim) {
+					for(j in 1:length(tuples)) {
+						if(!is.na(match(singlestim[i],strsplit(tuples[j],"-")[[1]])))
+							next
+						tup <- paste(singlestim[i], tuples[j], sep="-")
+						newtuples <- c(newtuples, tup)
+					}
+				}
+				newtuples <- unique(t(sapply(newtuples, function(x) paste(sort(strsplit(x,"-")[[1]]),sep="-"))))
+				for(l in 1:nrow(newtuples)) {
+					vec <- as.numeric(match(newtuples[l,],V))
+					names(vec) <- as.character(newtuples[l,])
+					stimuli[[(lstim+l)]] <- vec
+					if(length(stimuli)==(nstim+cstim)) {
+						kprime <- k+1
+						break				
+					}
+				}
+				lstim <- length(stimuli)
+				#tuples <- apply(newtuples, 1, paste, collapse="")
+				tuples <- apply(newtuples, 1, paste, collapse="-")
+			}
 		}
 	}
 	# simulate the network now

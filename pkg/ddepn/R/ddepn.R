@@ -24,7 +24,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				  lambda=NULL, B=NULL, samplelambda=NULL,
 				  hmmiterations=100, fanin=4,
 				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
-				  debug=0,burnin=1000, thin=FALSE, plotresults=TRUE,
+				  debug=0,burnin=500, thin=FALSE, plotresults=TRUE,
 				  always_sample_sf=FALSE,scale_lik=FALSE,allow.stim.off=FALSE) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations
 	# works if format of dat is like:
@@ -45,42 +45,13 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 			stop("ERROR: Please specify argument lambda either as numeric value, NULL or NA.")	
 		}
 	}
-	exps <- unique(tmp[1,])
-	#stims <- sapply(exps, function(x) strsplit(x,"&")[[1]])
-	## create a stimuli list
-	allstim <- as.character(unique(unlist(sapply(exps, function(x) strsplit(x,"&")[[1]]))))
-	stimuli <- list()
-	#allstim <- NULL
-	for(i in 1:length(exps)) {
-		expsi <- exps[i]
-		stims <- as.character(sapply(expsi, function(x) strsplit(x,"&")[[1]]))
-		stimsid <- NULL
-		for(j in 1:length(stims)) {
-			el <- stims[j]
-			x <- match(el,rownames(dat))	
-			# or define a number 
-			if(any(is.na(x)))
-				x <- match(el,allstim)
-			names(x) <- el
-			stimsid <- c(stimsid, x)		
-		}
-		names(stimsid) <- stims
-		stimuli[[i]] <- stimsid	
-	}
-	# add the stimuli as dummy data rows, if they are missing
-	stimm <- match(unique(names(unlist(stimuli))),rownames(dat))
-	if(any(is.na(stimm))) {
-		xx <- unlist(stimuli)
-		xxmat <- unique(cbind(xx,names(xx)))
-		toattach <- matrix(0.0,nrow=nrow(xxmat),ncol=ncol(dat),dimnames=list(xxmat[,2],colnames(dat)))
-		## remove stimulus that is already there, to get the order right
-		prune <- stimm[!is.na(stimm)]
-		if(length(prune)>0)
-			dat <- dat[-prune,]
-		dat <- rbind(toattach,dat)
-	}
-	n <- nrow(dat)
-	phinames <- rownames(dat)
+	tmp2 <- addstimuli(dat)
+	dat <- tmp2$dat
+	stimuli <- tmp2$stimuli
+	rm(tmp2)
+	N <- nrow(dat)
+	NC <- ncol(dat)
+	V <- rownames(dat)
 	
 	## check if seeds are provided properly
 	if(!is.null(phi)) {
@@ -89,8 +60,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 			if(class(phi)=="list" && length(phi)!=p) {
 				stop(paste("Error: length of seed network list must be the same as p =",p))
 			} else if(class(phi)=="matrix") {
-				if(dim(phi)!=c(nrow(dat),nrow(dat))) {
-					stop(paste("Error: dimension of seed network must be",nrow(dat),"x",nrow(dat),"."))
+				if(dim(phi)!=c(N,N)) {
+					stop(paste("Error: dimension of seed network must be",N,"x",N,"."))
 				}
 				tmp <- vector("list",p)
 				for(i in 1:p)
@@ -98,7 +69,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				phi <- tmp
 				rm(tmp)
 			} else if(is.null(phi)) {
-				phi <- matrix(0, nrow=nrow(dat), ncol=ncol(dat), dimnames=list(rownames(dat),rownames(dat)))
+				phi <- matrix(0, nrow=N, ncol=NC, dimnames=list(rownames(dat),rownames(dat)))
 				tmp <- vector("list",p)
 				for(i in 1:p)
 					tmp[[i]] <- phi
@@ -107,9 +78,9 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 			} else {
 				stop("Error: please provide either a list of or a single seed network in argument phi, or leave it as NULL.")
 			}
-			V <- rownames(dat)
-			tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
-			reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
+			#V <- rownames(dat)
+			tps <- unique(sapply(cols, function(x) strsplit(x,"_")[[1]][2]))
+			reps <- table(sub("_[0-9].*$","",cols)) / length(tps)
 			X <- vector("list",p)
 			for(i in 1:p) {
 				X[[i]] <- phi[[i]]
@@ -131,8 +102,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 			} else if(class(phi)=="matrix") {
 				## if a matrix is given, create a list of cores copies
 				## for cores independent mcmc runs.
-				if(dim(phi)!=c(nrow(dat),nrow(dat))) {
-					stop(paste("Error: dimension of seed network must be",nrow(dat),"x",nrow(dat),"."))
+				if(dim(phi)!=c(N,N)) {
+					stop(paste("Error: dimension of seed network must be",N,"x",N,"."))
 				}
 				if(multicores==TRUE) {
 					## create list of start nets, copy the 
@@ -196,7 +167,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		P <- retnetga$P
 		scorestats <- retnetga$scorestats
 		rm(retnetga)
-		phi.activation.count <- phi.inhibition.count <- weights.tc <- matrix(0,nrow=nrow(dat),ncol=nrow(dat),dimnames=list(rownames(dat),rownames(dat))) 
+		phi.activation.count <- phi.inhibition.count <- weights.tc <- matrix(0,nrow=N,ncol=N,dimnames=list(rownames(dat),rownames(dat))) 
 		# now compare all graphs to the original
         result <- NULL
 		resultep <- NULL
@@ -229,7 +200,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				## networks
 				if(is.null(P)) {
 					P <- list()
-					phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
+					phistart <- matrix(0, nrow=N, ncol=N, dimnames=list(V,V))
 					for(cr in 1:cores) {
 						P[[cr]] <- list(phi=phistart)
 					}
@@ -256,7 +227,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 				#phistart <- matrix(sample(c(0,1,2),n*n,replace=T), nrow=n, ncol=n, dimnames=list(phinames,phinames))
 				if(is.null(phi)) {
 					## create empty start net, if phi==NULL
-					phistart <- matrix(0, nrow=n, ncol=n, dimnames=list(phinames,phinames))
+					phistart <- matrix(0, nrow=N, ncol=N, dimnames=list(V,V))
 				} else {
 					## otherwise, take the first net from phi
 					if(class(phi)=="list")

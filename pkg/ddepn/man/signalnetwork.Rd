@@ -8,7 +8,7 @@ Sample a random signalling network.
 For \eqn{n} nodes, sample a network with \eqn{nstim} stimuli and \eqn{cstim} combinatorial stimuli.
 }
 \usage{
-signalnetwork(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=NULL)
+signalnetwork(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=NULL,V=NULL,stimuli=NULL)
 }
 \arguments{
   \item{n}{Integer. Number of nodes.}
@@ -19,7 +19,9 @@ signalnetwork(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=NULL)
   \item{plot}{Boolean. If TRUE, a plot of the generated graph is drawn.}
   \item{gamma}{Double. Strength of power law decay. Used for simulating the
     number of outgoing edges.}
-  \item{B}{The prior edge probability matrix}
+  \item{B}{The prior edge probability matrix.}
+  \item{V}{Vector of strings. Names of the nodes.}
+  \item{stimuli}{List. See \code{\link{ddepn}} for an explanation.} 
 }
 \details{
 	Simulates an artificial signalling network. Starts at \eqn{nstim} random stimuli and 
