@@ -54,7 +54,8 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		#A <- matrix((1/(M*M)),nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
 		## random transition matrix
 		A <- matrix(runif(M*M,0,1),nrow=M,ncol=M,dimnames=list(Adimn,Adimn))
-		A <- A/sum(A,na.rm=TRUE)
+		A <- A/rowSums(A,na.rm=TRUE) ## valid transition matrix has row sums of 1
+		#A <- A/sum(A,na.rm=TRUE)
 		pseudocount <- 1
 		pseudocountsum <- M
 		A <- log2(A)
@@ -153,8 +154,9 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			ind <- match(as.numeric(sapply(names(transall), function(x) strsplit(x, split="_")[[1]][1])),as.numeric(names(trans)))	
 			transprob <- log2((transall+pseudocount)) - log2(trans[ind]+pseudocountsum)
 			indices <- sapply(names(transprob), function(x,rows) (as.numeric(strsplit(x, "_")[[1]])-c(0,1)) %*% c(1,rows),rows=nrow(A))
-			A[indices] <- transprob	
-			A <- A - log2(sum(2^A, na.rm=TRUE))	
+			A[indices] <- transprob
+			A <- A - log2(rowSums(2^A, na.rm=TRUE))
+			#A <- A - log2(sum(2^A, na.rm=TRUE))	
 		} # end while
 		# now we have an A, an E and a gammaprime for the first experiment
 		# save the gammaprime

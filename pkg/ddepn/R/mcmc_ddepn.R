@@ -152,7 +152,9 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		### sf is fixed after the burnin
 		## to lie around 0.4. don't know if this is a reasonable level for acceptance rates,
 		## suggested in Gelman 2003, chapter 11.10, recommended posterior simulation strategy
-		if(it<=burnin | always_sample_sf==TRUE) {
+		## sample the scaling factor up to half of the burn-in, then hold fixed and let 
+		## the sampler mix until the end of the burn-in
+		if(it<=(burnin/2) | always_sample_sf==TRUE) {
 			## find scale factor that holds acpt around .4, see gelman 2003 for explanation
 			if((posteriorratio+proposalratio)==0)
 				if(it==1 || all(stats[1:it,"scalefac"]==Inf)) ## some fallback scalefactor
@@ -160,10 +162,10 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 				else
 					scalefac <- median(stats[1:it,"scalefac"])
 			else
-				scalefac <- min(abs(log(0.4))/abs(posteriorratio+proposalratio),1) ## is kept smaller 1	
+				scalefac <- min(abs(log(0.4))/abs(posteriorratio+proposalratio),1) ## is kept smaller 1, log 0.4 yields sfs around .6
 		} else {
-			sf <- stats[1:burnin,"scalefac"]
-			scalefac <- max(0.001,median(sf[sf!=Inf],na.rm=TRUE))
+			sf <- stats[1:(min(it,burnin)),"scalefac"]
+			scalefac <- max(1e-20,median(sf[sf!=Inf],na.rm=TRUE))
 		}
 		bestmodel$scalefac <- scalefac
 		bestmodel[["it"]] <- it
