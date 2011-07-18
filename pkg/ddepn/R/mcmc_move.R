@@ -9,6 +9,9 @@ mcmc_move <- function(bestmodel, type) {
 	nummoves <- bestmodel$nummoves
 	phiorig <- bestmodel$phi.orig
 	scale_lik <- bestmodel$scale_lik
+	samplelambda <- bestmodel$samplelambda
+	burnin <- bestmodel$burnin
+	always_sample_sf <- bestmodel$always_sample_sf
 	numposs <- 0
 	fanin <- bestmodel$fanin
 	if(type %in% c("addinhibition","addactivation","add")) {
@@ -109,6 +112,7 @@ mcmc_move <- function(bestmodel, type) {
 		Z <- bestmodel$Z
 		gam <- bestmodel$gam
 		it <- bestmodel$it
+		iter <- bestmodel$iter
 		K <- bestmodel$K
 		priortype <- bestmodel$priortype
 		allow.stim.off <- bestmodel$allow.stim.off
@@ -157,8 +161,9 @@ mcmc_move <- function(bestmodel, type) {
 				theta=theta.n, gamma=gamma.n, gammaposs=gammaposs.n, tps=tps, stimuli=stimuli,
 				reps=reps, hmmiterations=hmmiterations, TSA=NULL, Tt=NULL, lastmove=type, coords=cds,
 				lambda=lambda, B=B, Z=Z, pegm=pegm, pegmundo=pegmundo,nummoves=bestmodel$nummoves,fanin=fanin,
-				gam=gam, it=it, K=K,phi.orig=phiorig,priortype=priortype,pr=pr.n,
-				mu_run=bestmodel$mu_run,Qi=bestmodel$Qi,sd_run=bestmodel$sd_run, scale_lik=scale_lik, allow.stim.off=allow.stim.off)
+				gam=gam, it=it, K=K,phi.orig=phiorig,burnin=burnin,priortype=priortype,pr=pr.n,
+				mu_run=bestmodel$mu_run,Qi=bestmodel$Qi,sd_run=bestmodel$sd_run, scale_lik=scale_lik, allow.stim.off=allow.stim.off,iter=iter,
+				samplelambda=samplelambda,always_sample_sf=always_sample_sf)
 				#,mean_thetax=bestmodel$mean_thetax, mean_squared_thetax=bestmodel$mean_squared_thetax,
 				#sd_thetax=bestmodel$sd_thetax)	
 		numbettermodel <- numbettermodel + 1

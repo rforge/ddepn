@@ -75,7 +75,7 @@ rm(list=ls())
 %approach.
 %\end{abstract}
 This document describes the package 'ddepn' implementing our proposed 
-network reconstruction algorithm (\cite{Bender2010}). Section \ref{sec:quickstart}
+network reconstruction algorithm (\cite{Bender2010,Bender2011,Bender2011a}). Section \ref{sec:quickstart}
 gives a quick introduction on how to use the package. Section \ref{sec:formatdata}
 shows how to format the input arguments for the ddepn function. Section 
 \ref{sec:prior} gives an overview on how to include prior knowledge on 
@@ -151,10 +151,10 @@ The destination file of the output of the \emph{netga} function can be specified
 for the GA inference of figure \ref{fig:resultga}.
 
 
-\subsection{Running Markov Chain Monte Carlo Sampling (MCMC)}
-An example run for MCMC sampling follows. Here, the package \emph{multicore} is needed, 
-since two parallel and independent MCMC runs are performed. If \emph{multicore} is not available
-on the machine, just set \emph{multicores=FALSE} to perform sampling for a single chain.
+\subsection{Running Markov Chain Monte Carlo Sampling (inhibMCMC)}
+An example run for MCMC sampling follows. Here, the package \emph{multicore} is needed, since two 
+parallel and independent MCMC runs are performed. If \emph{multicore} is not available on the 
+machine, just set \emph{multicores=FALSE} to perform sampling for a single chain.
 
 <<MCMCsampling, echo=TRUE, results=hide, eval=FALSE>>=
 # use the original network as prior probability matrix
@@ -190,13 +190,11 @@ corresponds to one trace. Output diagnostics can be produced using the R-package
 figure \ref{fig:mcmcoutput} for some example plots.
 
 <<MCMC output, echo=TRUE, results=hide, eval=FALSE>>=
-if(require(coda)) {
 mcmc1 <- mcmc(data=ret$ltraces[-c(1:burnin,mi),1])
 mcmc2 <- mcmc(data=ret$ltraces[-c(1:burnin,mi),2])
 mcmcl <- mcmc.list(mcmc1,mcmc2)
 plot(mcmcl)
 gelman.plot(mcmcl)
-}
 @
 \begin{figure}[h]
 \centering
@@ -206,10 +204,96 @@ Distributionplot of the sampling; C: gelman.plot of two MCMC samplings}
 \label{fig:mcmcoutput}
 \end{figure}
 
+To check for convergence, Gelman's potential scale reduction can be computed with the function 
+\emph{gelman\_diag} (a wrapper for the gelman.diag function in the coda package). Note that 
+multiple chains have to be run for using this convergence statistic.
+
+<<Gelmans potential scale reduction as convergence diagnostic, echo=TRUE, results=hide, eval=FALSE>>=
+gelman_diag(ret)
+@
+
+
+Further, the output of the MCMC sampler can be analysed using the \emph{plot\_edgeconfidences} 
+function. For each possible interaction, the number of activating and inhibiting edges 
+(normalised to the total number of sampled edges) is shown as boxplot. If the counts 
+for activations are significantly higher than the counts for inhibitions, an inclusion of 
+this activation is suggested for generating a final network (and vice versa). If there is no 
+difference in the number of activating and inhibiting edges, it is suggested to not include 
+any interaction between the two nodes. Figure \ref{fig:mcmcedgeconf} shows the output of the 
+\emph{plot\_edgeconfidences} function.  
+
+<<Plotting edge confidences, echo=TRUE, results=hide, eval=FALSE>>=
+plot_edgeconfidences(ret)
+@
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=12cm,height=8cm]{mcmcedgeconf}
+\caption{In each of the inhibMCMC chains, activation and inhibition edges are sampled. The boxes 
+show the frequencies of activations (marked in red) and inhibitions (marked in blue) to the
+total number of sampled edges (denoted as confidence, counted after the burn-in phase). Each 
+panel represents the destination node of an edge. For example, in the upper left panel, all 
+edges pointing to node X4 are shown. The box in the first column (denoted by X1-) represents 
+the inhibition from X1 to X4, the box in the fourth column (denoted by X2+) the activation
+from X2 to X4. The higher the difference between activation and inhibition, the more support
+is found in the data for the respective edge.}
+\label{fig:mcmcedgeconf}
+\end{figure}
+
+This information is used in the function \emph{create\_signetwork}, which creates a network 
+from all significant interactions using statistical tests (wilcoxon rank-sum or t-test) 
+for each interaction. Note that multiple parallel chains have to be run for valid testing 
+(say at least 4 chains):
+ 
+<<Plotting edge confidences, echo=TRUE, results=hide, eval=FALSE>>=
+net <- create_signetwork_cv(ret, alpha=0.05, adj.method="none", plot=FALSE, type="wilcox",
+		alternative="one.sided", paired=FALSE, ord=NULL, sel_policy="strict")
+@
+
+
+Also, the distributions of the data and the inferred active and passive state parameters can 
+be visualised by the function \emph{plot\_profiles(ret)}. The plot is shown in 
+figure \ref{fig:mcmcprofiles}.
+
+<<Plotting the profiles and parameters, echo=TRUE, results=hide, eval=FALSE>>=
+plot_profiles(ret,mfrow=c(3,4))
+@
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=10cm,height=10cm]{mcmcprofiles}
+\caption{Visualisation of the inferred model parameters for active and passive protein state. 
+Shown are the data (as boxplots) and a spline fit for each protein over time (upper two rows), 
+as well as the data and parameters as histogram plot (lower row).}
+\label{fig:mcmcprofiles}
+\end{figure}
+
+
 As in \emph{netga}, the destination file of the output of the \emph{mcmc\_ddepn} function can
-be specified by argument \emph{outfile}. Figure \ref{fig:scoremcmcoutput} at the end of 
-this document shows the output of one sampling run for the MCMC inference in figure
- \ref{fig:resultmcmc}.
+be specified by argument \emph{outfile}. Figure \ref{fig:resultmcmc} at the end of 
+this document shows the output of one sampling run for the MCMC inference.
+
+
+\subsection{Resuming the inference}
+
+After an inference run is finished, it might be necessary or useful to resume the inference and 
+continue, for example an MCMC run that did not converge. To do so, the function 
+\emph{resume\_ddepn} can be used. For example, resume an inhibMCMC run and add another 100
+iterations:
+
+<<Resuming inference of inhibMCMC, echo=TRUE, results=hide, eval=FALSE>>=
+## resuming the inference from an inhibMCMC run and add another 100 iterations
+ret4 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc", maxiterations=100,
+		burnin=30, lambda=0.01, B=B, priortype="laplaceinhib", usebics=FALSE)
+ret4 <- resume_ddepn(ret4,maxiterations=100)
+@
+
+Or resume a GA run and add another 30 iterations:
+<<Resuming inference of netga, echo=TRUE, results=hide, eval=FALSE>>=
+## resuming the inference from an netga run and add another 30 iterations
+ret5 <- ddepn(dataset$datx,phiorig=phit, inference="netga", maxiterations=20, p=10, q=0.3, m=0.8, lambda=0.01, B=B, priortype="laplaceinhib", usebics=FALSE)
+ret5 <- resume_ddepn(ret5,maxiterations=30)
+@
 
 
 \section{Notes on formatting constraints for the arguments of \emph{ddepn}}

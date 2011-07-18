@@ -9,9 +9,9 @@
 inhibMCMC Analysis: find significant edges from independent MCMC chains
 }
 \description{
-Uses statistical tests (Wilcox Rank-Sum or Ttest) to find significant edges from a number
+Uses statistical tests (Wilcox Rank-Sum or T-test) to find significant edges from a number
 of independent MCMC runs (performed by passing \code{inference="mcmc"} to the \code{\link{ddepn}}
-function call.
+function call).
 }
 \usage{
 create_signetwork(ret, alpha = 0.05, adj.method = "BY", plot = FALSE, type = "wilcox", alternative = "one.sided", paired = FALSE, ord = NULL)

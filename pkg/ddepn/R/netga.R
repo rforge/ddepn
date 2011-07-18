@@ -8,7 +8,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile=NULL,fanin=4,
 		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5, priortype="none", plotresults=TRUE,
-		scale_lik=FALSE, allow.stim.off=TRUE,debug=0) {
+		scale_lik=FALSE, allow.stim.off=TRUE,debug=0,retobj=NULL) {
   dat[is.na(dat)] <- 0
   V <- rownames(dat)
   tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
@@ -44,6 +44,12 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
 		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off)
 	  }
+	  # store the GA parameters
+	  #P[[i]]$q <- q
+	  #P[[i]]$m <- m
+	  #P[[i]]$usebics <- usebics
+	  #P[[i]]$quantBIC <- quantBIC
+	  #P[[i]]$quantL <- quantL
   }  
   if(any(sapply(P, class)!="list")) {
 	  print("netga.R: Some elements in the network list P seem to be empty.")
@@ -75,21 +81,24 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   #diffpercent <- opts <- NULL
   numequalscore <- 0
   autoc <- list(acf=rep(0,5),n.used=10)
+  start <- 1
   ## define a matrix holding some statistics on the development of the scores
   scorestats <- matrix(NA, nrow=maxiterations, ncol=18)
   colnames(scorestats) <- c("dL_total","dP_total",
-		  				"dL_crossover","dL_mutation",
-						"dP_crossover","dP_mutation",
-						"dL_total_abs","dP_total_abs",
-						"dL_crossover_abs","dL_mutation_abs",
-						"dP_crossover_abs","dP_mutation_abs",
-						"liklihood","prior",
-						"liklihood_mad","prior_mad",
-						"score", "score_mad")
+			  "dL_crossover","dL_mutation",
+			  "dP_crossover","dP_mutation",
+			  "dL_total_abs","dP_total_abs",
+			  "dL_crossover_abs","dL_mutation_abs",
+			  "dP_crossover_abs","dP_mutation_abs",
+			  "liklihood","prior",
+			  "liklihood_mad","prior_mad",
+			  "score", "score_mad")
   rownames(scorestats) <- 1:maxiterations
-  #scorestats[iter,"score"] <- score_quantile
-  #scorestats[iter,"score_mad"] <- mad(wks)
-  
+  ## if retobj is given, the GA should be resumed
+  if(!is.null(retobj)) {
+	start <- nrow(retobj$scorestats)+1
+	scorestats[1:(start-1),] <- retobj$scorestats
+  }
   #####################
   ### GA Main loop
   #####################
@@ -100,7 +109,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	print("###########################")
   	pb <- txtProgressBar(min = 0, max = maxiterations, style = 3)
   }
-  for(iter in 1:maxiterations) {
+  for(iter in start:maxiterations) {
 	if(debug==0) {
 		#cls() # clear the screen
 		#pcnt <- round(iter/maxiterations * 100)
@@ -461,7 +470,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	garbage <- gc(verbose=FALSE)
 	if(debug==1)
 		cat(".")
-  } # end main loop	
+  } # end main loop		
   if(debug==0) {	  
  	 close(pb)
 	 print("done.")

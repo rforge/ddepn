@@ -17,7 +17,7 @@
 # Author: benderc
 ###############################################################################
 
-ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfile=NULL,
+ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfile=NULL,
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
 				  usebics=TRUE, cores=2, 
 				  priortype="laplaceinhib",
@@ -186,7 +186,12 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 					phi.inhibition.count=phi.inhibition.count,
 					phi.orig=phiorig, phi=NULL, weights=NULL,
 					weights.tc=weights.tc, stats=result, conf.act=conf.act,conf.inh=conf.inh,
-					stimuli=stimuli) #, resultep=resultep)
+					stimuli=stimuli,
+					quantBIC=quantBIC,quantL=quantL,q=q,m=m,usebics=usebics)
+					#p=p,q=q,m=m,multicores=multicores,usebics=usebics,
+					#cores=cores,lambda=lambda,B=B,Z=Z,hmmiterations=hmmiterations,
+					#fanin=fanin, gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype,
+					#scale_lik=scale_lik, allow.stim.off=allow.stim.off,debug=debug)
         ret <- get.phi.final(ret,th)
 		if(plotresults)
         	plotrepresult(ret,outfile)
@@ -276,5 +281,153 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.5, inference="netga", outfil
 		}
 	}
 	ret
+}
+
+## uses a returned object from netga or inhibMCMC and resumes the sampling/optimisation
+resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL) {
+	## close all x11 connections
+	graphics.off()
+	if(is.null(ret$samplings)) {
+		if(is.null(cores))
+			cores <- 1
+		mc <- cores>1
+		iter <- nrow(ret$scorestats)
+		maxiterations <- iter + maxiterations
+		## restore inference state
+		p <- length(ret$P)
+		q <- ret$q
+		m <- ret$m
+		quantBIC <- ret$quantBIC
+		quantL <- ret$quantL
+		usebics <- ret$usebics
+		pp <- ret$P[[1]]
+		lambda <- pp$lambda
+		B <- pp$B
+		Z <- pp$Z
+		hmmiterations <- pp$hmmiterations
+		fanin <- pp$fanin
+		gam <- pp$gam
+		it <- pp$it
+		K <- pp$K
+		priortype <- pp$priortype
+		scale_lik <- pp$scale_lik
+		allow.stim.off <- pp$allow.stim.off
+		N <- nrow(pp$phi)
+		dat <- ret$dat
+		stimuli <- ret$stimuli
+		phiorig <- ret$phi.orig
+		P <- ret$P
+		if(!is.null(outfile)) {
+			bname <- basename(outfile)
+			dname <- dirname(outfile)
+			scorefile <- paste(dname,paste("score",sub("\\.pdf","",bname),".pdf",sep=""),sep="/")
+		} else {
+			scorefile <- NULL
+		}
+		stime <- system.time(retnetga <- netga(dat,stimuli,P=P,maxiterations=maxiterations,
+						p=length(ret$P),q=q,m=m,multicores=mc,usebics=usebics,
+						cores=cores,lambda=lambda,B=B,Z=Z,hmmiterations=hmmiterations,
+						scorefile=scorefile,fanin=fanin,
+						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype,
+						plotresults=plotresults,scale_lik=scale_lik, allow.stim.off=allow.stim.off,
+						debug=debug,retobj=ret))
+		P <- retnetga$P
+		scorestats <- retnetga$scorestats
+		rm(retnetga)
+		phi.activation.count <- phi.inhibition.count <- weights.tc <- matrix(0,nrow=N,ncol=N,dimnames=list(rownames(dat),rownames(dat))) 
+		# now compare all graphs to the original
+		result <- NULL
+		resultep <- NULL
+		for(i in 1:length(P)) {
+			if(!is.null(phiorig))
+				result <- rbind(result, cbind(compare.graphs.tc(phiorig, P[[i]]$phi,ignore.type=FALSE),t(as.matrix(stime))))
+			#resultep <- rbind(resultep, cbind(compare.graphs.ep(phiorig, P[[i]]$phi,tps=1:50,stimuli=stimuli), t(as.matrix(stime))))
+			phi.activation.count[which(P[[i]]$phi==1)] <- phi.activation.count[which(P[[i]]$phi==1)] + 1
+			phi.inhibition.count[which(P[[i]]$phi==2)] <- phi.inhibition.count[which(P[[i]]$phi==2)] + 1
+			weights.tc <- weights.tc + detailed.to.simple.regulations(P[[i]]$phi)
+		}
+		conf.act <- round(phi.activation.count/length(P),digits=3)
+		conf.inh <- round(phi.inhibition.count/length(P),digits=3)
+		weights.tc <- round(weights.tc/length(P),digits=3)
+		ret <- list(dat=dat, phi.activation.count=phi.activation.count,
+				phi.inhibition.count=phi.inhibition.count,
+				phi.orig=phiorig, phi=NULL, weights=NULL,
+				weights.tc=weights.tc, stats=result, conf.act=conf.act,conf.inh=conf.inh,
+				stimuli=stimuli,
+				quantBIC=quantBIC,quantL=quantL,q=q,m=m,usebics=usebics)
+		ret <- get.phi.final(ret,th)
+		if(plotresults)
+			plotrepresult(ret,outfile)
+		ret[["P"]] <- P
+		ret[["scorestats"]] <- scorestats
+	} else {
+		if(!is.null(cores)) {
+			print("NOTE: Argument cores is derived from the previous run. Omitting the given function argument cores.")
+			Sys.sleep(3)
+		}
+		## find out if multicores have to be used
+		cores <- ncol(ret$ltraces)
+		mc <- cores>1
+		## get the actual networks and the output file list
+		X <- list()
+		for(cr in 1:cores) {
+			if(!is.null(outfile))
+				filename <- paste(sub("\\.pdf","",outfile),"_",cr,".pdf",sep="")
+			else
+				filename <- NULL
+			retobj <- ret$samplings[[cr]]
+			X[[cr]] <- list(phi=retobj$phi, outfile=filename, retobj=retobj)
+		}
+		rs <- ret$samplings[[1]]
+		usebics <- rs$posterior>0
+		## phi is not used in runmcmc
+		## outfile is not used in runmcmc
+		## samplelambda in bestmodel! DONE
+		## it in bestmodel ist für scalefree prior, iter als neues element für die iteration! DONE
+		## always_sample_sf in bestmodel! DONE
+		if(mc) {
+			retlist <- mclapply(X, runmcmc, dat=rs$dat, phiorig=rs$phi.orig, phi=NULL, stimuli=rs$stimuli,
+						th=th, multicores=mc, outfile=NULL, maxiterations=maxiterations,
+						usebics=usebics, cores=cores, lambda=rs$lambda, B=rs$B, Z=rs$Z, samplelambda=rs$samplelambda,
+						hmmiterations=rs$hmmiterations,fanin=rs$fanin, gam=rs$gam, it=rs$it, K=rs$K, burnin=rs$burnin,
+						priortype=rs$priortype, plotresults=plotresults,always_sample_sf=rs$always_sample_sf,scale_lik=rs$scale_lik,
+						allow.stim.off=rs$allow.stim.off,debug=debug,
+						mc.preschedule=FALSE,mc.cores=cores)
+		} else {
+			ret <- runmcmc(X[[1]],rs$dat,rs$phi.orig,phi=NULL,rs$stimuli,th,mc,outfile=NULL,maxiterations,
+						usebics,cores,rs$lambda,rs$B,Z=NULL,samplelambda=rs$samplelambda,rs$hmmiterations,rs$fanin,rs$gam,rs$it,rs$K,burnin=rs$burnin,
+						rs$priortype,plotresults=plotresults,always_sample_sf=rs$always_sample_sf,rs$scale_lik,rs$allow.stim.off,debug=debug)
+			retlist <- list()
+			retlist[[1]] <- ret	
+		}
+		## get the likelihood traces
+		ltraces <- as.matrix(sapply(retlist,function(x) x$stats[,"MAP"]))
+		## thinning: make sure ltraces has less than 10000 rows
+		## TODO: change such that only 10000 rows are recorded (i.e. in mcmc_ddepn),
+		## otherwise it doesn't help to save memory for the trace storage
+		if(nrow(ltraces)>10000 && thin == TRUE){
+			ss <- seq(1,nrow(ltraces),by=nrow(ltraces)/10000)
+			ltraces <-  as.matrix(ltraces[ss,])
+		}
+		colors <- rainbow(ncol(ltraces))
+		ret <- list(samplings=retlist,ltraces=ltraces)
+		## plot results
+		if(!is.null(outfile)) {
+			pdf(outfile,onefile=TRUE)
+		}
+		if(plotresults) {
+			plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
+			if(ncol(ltraces)>1)
+				sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)
+			## get the final network from all cores inferences and plot
+			for(netnr in 1:length(retlist)) {
+				ret2 <- retlist[[netnr]]
+				plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
+			}
+		}
+		if(!is.null(outfile))
+			dev.off()
+	}
+	return(ret)
 }
 

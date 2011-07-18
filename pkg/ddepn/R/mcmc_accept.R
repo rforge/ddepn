@@ -10,6 +10,7 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda, debug=0) {
 	Z <- bestmodel$Z
 	gam <- bestmodel$gam
 	it <- bestmodel$it
+	iter <- bestmodel$iter
 	K <- bestmodel$K
 	priortype <- bestmodel$priortype
 	scalefac <- bestmodel$scalefac #0.005
@@ -51,14 +52,14 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda, debug=0) {
 				revswitch=type.txt<-"revswitch")
 		## getting better
 		if(bestmodel$posterior < bestproposal$posterior) {
-			m <- paste("Iteration: ",it, " [Accept] Improve ", type.txt)
+			m <- paste("Iteration: ",iter, " [Accept] Improve ", type.txt)
 		} else { ## getting worse
-			m <- paste("Iteration: ",it, " [Accept] Subopt  ", type.txt)		
+			m <- paste("Iteration: ",iter, " [Accept] Subopt  ", type.txt)		
 		}
 	} else {
 		## if not taken, keep everything as it is.
 		bestproposal <- bestmodel
-		m <- paste("Iteration: ",it, " [Reject]         ")
+		m <- paste("Iteration: ",iter, " [Reject]         ")
 	}
 	if(debug==1)
 		m <- paste(m, " MAP old/new: ", signif(pold,digits=7), " / ", signif(pnew,digits=7))
@@ -93,7 +94,7 @@ mcmc_accept <- function(bestmodel, bettermodels, newlambda, debug=0) {
 		}
 		m <- paste(m, " scale: ",scalefac,sep="")
 	}
-	if(debug==1 & it%%10==1 | debug==2)
+	if(debug==1 & iter%%10==1 | debug==2)
 	#if(debug!=0)
 		print(m)
 	return(list(bestproposal=bestproposal, acpt=acpt, lacpt=lacpt))

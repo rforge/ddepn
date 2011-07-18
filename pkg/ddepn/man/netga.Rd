@@ -16,7 +16,7 @@ netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile=NULL, fanin = 4,
 		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,priortype="none", plotresults=TRUE,
-		scale_lik=FALSE, allow.stim.off=TRUE,debug=0)
+		scale_lik=FALSE, allow.stim.off=TRUE,debug=0,retobj=NULL)
 }
 \arguments{
   \item{dat}{
@@ -78,6 +78,8 @@ netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
   \item{debug}{Numeric. If 0, a status bar indicates the progress of the algorithm. If 1 or 2, 
     extra information is printed to the console (for \code{debug=2} more information than 
     for \code{debug=1}).}
+  \item{retobj}{List. The output generated during a GA run (see function \code{\link{ddepn}} for argument
+    \code{inference="netga"}). Passed by function \code{resume_ddepn} to resume the inference.}
 }
 \details{
 Usually this function is called internally by \code{\link{ddepn}}.
