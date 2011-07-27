@@ -76,6 +76,15 @@ The method is described in the following publications:<br/>
     	   Systematic analysis of time resolved high-throughput data using stochastic network inference methods</a></dd> 
     <dd><em>University of Heidelberg, Combined Faculties for the Natural Sciences and for Mathematics, </em><strong>2011</strong></dd>
   </dl></li>
+  <li><dl>
+  <dt>Article</dt>
+    <dd>Bender, C., Heyde, S. v.d., Henjes, F., Wiemann, S.,
+    Korf, U. &amp; Bei&szlig;barth, T.</dd>
+    <dd>Inferring signalling networks from longitudinal data
+    using sampling based approaches in the R package 'ddepn'
+    </dd> 
+    <dd><em>BMC Bioinformatics, </em><b>2011,</b><i> 12:291</i></dd>
+  </dl>
 </ul>
 
 <p> The <strong>project summary page</strong>

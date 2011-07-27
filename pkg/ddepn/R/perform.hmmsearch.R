@@ -78,6 +78,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			Lik[Lik == Inf] <- 0
 			Lik[Lik == -Inf] <- 0
 			Lik <- sum(Lik,na.rm=TRUE)
+			#print(paste("Lik:",Lik,"Lold:",Lold,"Diff Lik Lold: ",abs((abs(Lik)-abs(Lold)))))
 			if(Lold!=-Inf) {
 				if(abs((abs(Lik)-abs(Lold))) <= 1) 
 					break
@@ -85,7 +86,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 				diffsold[it] <- diff
 				## check for repeating patterns
 				if(diff %in% diffsold[-length(diffsold)]) {
-					if(length(which(diffsold==diff))>25) {
+					if(length(which(diffsold==diff))>10) {
 						equally <- 2
 						diff <- diffold
 					}
@@ -96,14 +97,16 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 					# don't know where this comes from
 					if(equally == 3) {
 						restarts <- restarts + 1
-						# only up to 5 restarts
-						if(restarts < 5){
+						# only up to a number of restarts
+						if(restarts < 3){
 							gamprime <- replicatecolumns(gammaposs[,sort(sample(M,T,replace=TRUE))],R)
-							it <- 0
+							#it <- 0
 							Lik <- -Inf
 							diffold <- -100
 							equally <- 0
 							next
+						} else {
+							break
 						}
 					}		
 				}
@@ -163,6 +166,7 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 		gamprimetotal <- cbind(gamprimetotal, gamprime)
 		gamposstotal <- cbind(gamposstotal, gammaposs)
 	} # end outer for loop
+	#print(paste("ITERATIONS PERFORMED:", it, " / ", hmmiterations))
 	Liktmp <- likl(dat,gamprimetotal,scale_lik=scale_lik)
 	Lik <- Liktmp$L
 	thetaprime <- Liktmp$theta
