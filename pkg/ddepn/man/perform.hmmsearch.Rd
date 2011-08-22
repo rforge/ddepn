@@ -2,7 +2,8 @@
 \alias{perform.hmmsearch}
 \alias{getE}
 \alias{replicatecolumns}
-
+\alias{perform.hmmsearch_R}
+\alias{perform.hmmsearch_C}
 \title{
 perform.hmmsearch - Do system state optimisation using a Hidden Markov Model. Usually not called directly.
 }
@@ -13,6 +14,8 @@ and doing some internal matrix operations. \code{perform.hmmsearch} is usually c
 }
 \usage{
 perform.hmmsearch(phi.n, bestmodel)
+perform.hmmsearch_R(phi.n, bestmodel)
+perform.hmmsearch_C(phi.n, bestmodel)
 getE(x, datx, thetaprime)
 replicatecolumns(mat, replicates=4)
 }
@@ -33,7 +36,9 @@ replicatecolumns(mat, replicates=4)
   }
 }
 \details{
-TODO
+\code{perform.hmmsearch} is called whenever an HMM is to be run. Depending on the global variable \code{USEC}, it decides whether 
+to use the R- or C-implementation of the HMM procedure. \code{USEC} can be set by passing command line argument \code{use_C} 
+in the function call to \code{\link{ddepn}}.
 }
 \value{
 TODO

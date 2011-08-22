@@ -19,6 +19,16 @@ replicatecolumns <- function(mat, replicates=4) {
 	rownames(mm) <- rownames(mat)
 	mm
 }
+perform.hmmsearch <- function(phi.n, bestmodel) {
+	## check if global variable USEC was set, if so, use the 
+	## c-implementation
+	use_C <- get("USEC", pos=globalenv())
+	if(use_C) {
+		return(perform.hmmsearch_C(phi.n, bestmodel))
+	} else {
+		return(perform.hmmsearch_R(phi.n, bestmodel))
+	}
+}
 ### only R
 ### dat: N x (T x R) matrix, N: number of proteins, T number of timepoints, R: number of replicates
 ### gammaprime: N x (T x R) matrix
@@ -26,7 +36,7 @@ replicatecolumns <- function(mat, replicates=4) {
 ### E: M x (T x R) matrix: Emission matrix
 ### A: M x M matrix: Transition matrix
 ### viterbi: M x T matrix: which path to take
-perform.hmmsearch <- function(phi.n, bestmodel) {
+perform.hmmsearch_R <- function(phi.n, bestmodel) {
 	#cat(".")
 	tps <- bestmodel$tps
 	stimuli <- bestmodel$stimuli
@@ -180,5 +190,59 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 			replicates=R, Likl=Lik,aic=aic,bic=bic,
 			statespace_maxiterations=hmmiterations, 
 			gammaposs=gamposstotal,scale_lik=scale_lik,allow.stim.off=allow.stim.off)
+	return(L.res)
+}
+
+#### uses c-library
+#### dat: N x (T x R) matrix, N: number of proteins, T number of timepoints, R: number of replicates
+#### gammaprime: N x (T x R) matrix
+#### gammaposs: N x M matrix, M: number of reachable states derived in effect propagation
+#### E: M x (T x R) matrix: Emission matrix
+#### A: M x M matrix: Transition matrix
+#### viterbi: M x T matrix: which path to take
+perform.hmmsearch_C <- function(phi.n, bestmodel) {
+	#cat(".")
+	tps <- bestmodel$tps
+	T <- length(tps)
+	stimuli <- bestmodel$stimuli
+	dat <- bestmodel$dat
+	hmmiterations <- bestmodel$hmmiterations
+	GS <- matrix(0, nrow=nrow(dat), ncol=ncol(dat), dimnames=dimnames(dat))
+	gammaposs <- NULL
+	for(s in stimuli) {
+		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
+		RR <- length(exind)/length(T)
+		datx <- dat[,exind]
+		gammaposs <- cbind(gammaposs,propagate.effect.simple(phi.n,stimulus=s,stimuli=stimuli))
+	}	
+	G <- gammaposs
+	G[G!=0] <- 0
+	TH <- matrix(0.0, nrow=nrow(dat), ncol=4, dimnames=dimnames(bestmodel$theta))
+	stimids <- unlist(stimuli)
+	stimnames <- names(stimids)
+	stimgrps <- sapply(stimuli, length)
+	numexperiments <- length(bestmodel$reps)
+	Lik <- 0
+	
+	# separate HMM for each experiment, i.e. each stimulus	
+	ret <- .C("perform_hmmsearch",P=as.integer(phi.n), N=as.integer(nrow(dat)),
+			T=as.integer(length(tps)), R=as.integer(bestmodel$reps), X=as.double(dat),
+			GS=as.integer(GS), G=as.integer(G), Glen=as.integer(length(G)),
+			TH=as.double(TH), 	tps=as.integer(tps), stimids=as.integer(stimids-1),
+			stimgrps=as.integer(stimgrps), numexperiments=as.integer(numexperiments),
+			Likx=as.double(Lik), hmmiterations=as.integer(bestmodel$hmmiterations), PACKAGE="ddepn")
+	
+	Lik <- ret$Likx
+	aic <- get.aic(phi.n, Lik)
+	bic <- get.bic(phi.n, Lik, length(dat))
+	gamprimetotal <- matrix(ret$GS, nrow=nrow(dat), ncol=ncol(dat), dimnames=dimnames(dat))
+	thetaprime <- matrix(ret$TH, nrow=nrow(TH), ncol=ncol(TH), dimnames=dimnames(TH))
+	gamposstotal <- matrix(ret$G, nrow=nrow(dat), ncol=ncol(G), dimnames=dimnames(G))
+	
+	L.res <- list(datx=dat, phix=phi.n, stimx=stimuli,
+			gammax=gamprimetotal, thetax=thetaprime,
+			replicates=bestmodel$reps, Likl=Lik,aic=aic,bic=bic,
+			statespace_maxiterations=hmmiterations, 
+			gammaposs=gamposstotal)
 	return(L.res)
 }

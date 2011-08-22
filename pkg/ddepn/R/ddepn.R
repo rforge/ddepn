@@ -25,7 +25,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 				  hmmiterations=100, fanin=4,
 				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
 				  debug=0,burnin=500, thin=FALSE, plotresults=TRUE,
-				  always_sample_sf=FALSE,scale_lik=FALSE,allow.stim.off=FALSE) {
+				  always_sample_sf=FALSE,scale_lik=FALSE,allow.stim.off=FALSE,
+				  use_C=TRUE) {
 	# get the experiments, i.e. the stimuli/inhibitor combinations
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
@@ -148,6 +149,12 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 	#if(samplelambda=="integrate") {
 	#	lambda <- NA
 	#}
+	## assign global variable use_C
+	if(use_C==TRUE)
+		assign("USEC", TRUE, .GlobalEnv)
+	else
+		assign("USEC", FALSE, .GlobalEnv)
+	
 	## if GA should be used
 	if(inference=="netga") {
 		if(!is.null(outfile)) {

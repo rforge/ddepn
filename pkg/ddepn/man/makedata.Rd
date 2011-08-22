@@ -7,7 +7,8 @@ Generate artificial dataset given a network and list of stimuli.
 Dataset generation using an input network, list of stimuli and various experiment parameters.
 }
 \usage{
-makedata(phi, stimuli, R.t = 3, R.b = 3, TT = 10, mu.bg = 0, sd.bg = 0.1, mu.signal.a = 2, sd.signal.a = 0.5, mu.signal.i = -2, sd.signal.i = 0.5)
+makedata(phi, stimuli, R.t = 3, R.b = 3, TT = 10, mu.bg = 0, sd.bg = 0.1, mu.signal.a = 2, sd.signal.a = 0.5, mu.signal.i = -2, sd.signal.i = 0.5,
+  allow.stim.off = FALSE)
 }
 \arguments{
   \item{phi}{Adjacency matrix.The input network.
@@ -34,6 +35,8 @@ makedata(phi, stimuli, R.t = 3, R.b = 3, TT = 10, mu.bg = 0, sd.bg = 0.1, mu.sig
   }
   \item{sd.signal.i}{Double. Sd for inhibition intensity.
   }
+  \item{allow.stim.off}{Boolean. If TRUE, a stimulus can become inactive at some 
+    time point, if FALSE, the stimulus will be always active.}
 }
 \details{
 Generates a dataset from the given network, stimuli and parameters.

@@ -20,7 +20,7 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga",
       hmmiterations=100, fanin=4,
       gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
       debug=0, burnin=500, thin=FALSE, plotresults=TRUE,
-      always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE)
+      always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE, use_C = TRUE)
       
 resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL)
 
@@ -127,6 +127,8 @@ resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=
     the propagation, but with the stimulus node set to 0.}
   \item{ret}{List. The output generated during an \code{\link{netga}} or \code{\link{mcmc_ddepn}} run. Used
     in function \code{resume_ddepn} to resume the inference.}
+  \item{use_C}{Boolean. If TRUE, use the C-implementation, if FALSE, use the R-implementation of 
+    \code{\link{perform.hmmsearch}}}.
 }
 \details{
   \describe{
