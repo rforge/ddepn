@@ -1,6 +1,8 @@
 \name{plot_profiles}
 \alias{plot_profiles}
 \alias{get_theta_consensus}
+\alias{get_gamma_consensus}
+\alias{heatmapcolors}
 
 \title{
 Plot the data and inferred model parameters.
@@ -16,6 +18,11 @@ plot_profiles(ret, log=FALSE, ord=NULL, mfrow=c(4,4),
               plotcurves=TRUE, plothist=TRUE, selection.criterion="aic")
 
 get_theta_consensus(ret)
+
+get_gamma_consensus(ret)
+
+heatmapcolors(dat,ncol,lowcol="green",highcol="red",middlecol="white")
+
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -45,13 +52,31 @@ get_theta_consensus(ret)
     \code{"bic"} or \code{"pvalue"} (for Akaike Information Criterion, Bayesian Information Criterion or 
     p-value selection. This will affect how many degrees of freedom are used for the spline fit. 
 }
+  \item{dat}{
+    The data to be represented by the colour values. Is used to retrieve the range of values for which 
+    the colour palette is created. 
+}
+  \item{ncol}{
+    Integer. The number of colours in the panel.
+}
+  \item{lowcol}{
+    A colour string, either keyword or hex-representation. Defining the colour used for the passive state.
+}
+  \item{middlecol}{
+    A colour string, either keyword or hex-representation. Defining the colour in the middle of the palette.
+}
+  \item{highcol}{
+    A colour string, either keyword or hex-representation. Defining the colour used for the active state.
+}
 }
 \details{
 Plots for each protein and experiment the data points along the time axis (as boxplots). Fits a smoothing spline to 
 the data (see \code{\link{bestgam}}), using model selection criterion \code{selection.criterion} for deciding 
 on the number of degrees of freedom. If \code{ret} is a list (from GA or inhibMCMC inference), the estimated
 model parameters for the Gaussian active and passive distributions are extracted and shown in the timecourse 
-plots (active: red, passive:green). If \code{ret} is a numeric matrix, only the data will be plotted. 
+plots (active: red, passive:green). If \code{ret} is a numeric matrix, only the data will be plotted. Boxplots
+are coloured using a diverging colourpanel (created by \code{heatmapcolors} from green to red, indicating the state of the node at the 
+respective time point.
 }
 \value{
 none
@@ -97,11 +122,11 @@ ret2 <- ddepn(dataset$datx, phiorig=phit, maxiterations=20, p=15, q=0.3, m=0.8, 
 
 ## plot the data and fits
 ## mcmc
-plot_profiles(ret, mfrow=c(2,4))
+plot_profiles(ret, mfrow=c(3,4))
 ## netga
-plot_profiles(ret2, mfrow=c(2,4))
+plot_profiles(ret2, mfrow=c(3,4))
 ## data only
-plot_profiles(ret2$dat, mfrow=c(2,4))
+plot_profiles(ret2$dat, mfrow=c(3,4))
 
 
 

@@ -20,9 +20,10 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga",
       hmmiterations=100, fanin=4,
       gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
       debug=0, burnin=500, thin=FALSE, plotresults=TRUE,
-      always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE, use_C = TRUE)
+      always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE, implementation="C")
       
-resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL)
+resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL,
+      implementation="C")
 
 }
 \arguments{
@@ -127,8 +128,10 @@ resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=
     the propagation, but with the stimulus node set to 0.}
   \item{ret}{List. The output generated during an \code{\link{netga}} or \code{\link{mcmc_ddepn}} run. Used
     in function \code{resume_ddepn} to resume the inference.}
-  \item{use_C}{Boolean. If TRUE, use the C-implementation, if FALSE, use the R-implementation of 
-    \code{\link{perform.hmmsearch}}}.
+  \item{implementation}{String. One of \code{"C","R","R_globalest"}. Different implementations of the HMM in 
+    \code{\link{perform.hmmsearch}}. If \code{"R"}, the original pure R-implementation is 
+    used, if \code{"C"}, a ported C-implementation is used. If \code{"R_globalest"}, an experimental version of
+    the parameter estimation is used in the HMM. See \code{details} for a description.}
 }
 \details{
   \describe{
@@ -152,6 +155,15 @@ resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=
       treatments to the data matrix, if they are not present. See the vignette for more details on the format 
       of the data matrix.
     }
+    \item{implementation}{Several implementations are provided, differing in the way that the Gaussian parameters are 
+      estimated in the HMM. The \code{"R"} and \code{"C"} implementations derive separate optimal state matrices
+      for each provided experiment. The state matrices are then concatenated to estimate the Gaussians. An alternative 
+      experimental implementation \code{"R_globalest"} is available, which derives a single state matrix for all experiments 
+      in the HMM. For separate derivation, the corresponding gaussians for each experiment can be rather different, 
+      leading to rather inhomogeneous parameter estimates with large variances. Using only one HMM for all experiments
+      overcomes this problem, since the states are chosen with respect to all experiments. However, deriving the combined 
+      state matrix leads to higher number of possible system states to be regarded in the viterbi algorithm, and this will slow down
+      the HMM. The default is to use the \code{"C"} implementation.}
   }
 }
 \value{

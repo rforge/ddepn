@@ -15,27 +15,74 @@ get_theta_consensus <- function(ret) {
 	reps <- length(rets)
 	mufinal <- array(NA, dim=c(nr,nc,reps))
 	for(i in 1:length(rets)) {
-		ret <- rets[[i]]
+		retX <- rets[[i]]
 		## mu_run holds the running mean of the parameters
 		## sd_run holds the running sd of the parameters -> don't use it yet
 		## think about how to use these deviations
-		mutmp <- ret$theta
+		mutmp <- retX$theta
 		#mutmp <- ret$mu_run
 		mufinal[,,i] <- mutmp
 	}
 	thetafin <- apply(mufinal, c(1,2), median, na.rm=TRUE)
-	colnames(thetafin) <- colnames(mutmp)
-	rownames(thetafin) <- rownames(mutmp)
-	thetafin
+	sdfin <- apply(mufinal, c(1,2), mad, na.rm=TRUE)
+	colnames(thetafin) <- colnames(sdfin) <- colnames(mutmp)
+	rownames(thetafin) <- rownames(sdfin) <- rownames(mutmp)
+	list(theta=thetafin,sd=sdfin)
 }
+
+get_gamma_consensus <- function(ret) {
+	rets <- ret$samplings
+	nr <- nrow(rets[[1]]$gamma)
+	nc <- ncol(rets[[1]]$gamma)
+	reps <- length(rets)
+	mufinal <- array(NA, dim=c(nr,nc,reps))
+	for(i in 1:length(rets)) {
+		mufinal[,,i] <- rets[[i]]$gamma
+	}
+	
+	gfin <- apply(mufinal, c(1,2), sum, na.rm=TRUE)
+	colnames(gfin) <- colnames(rets[[i]]$dat)
+	rownames(gfin) <- rownames(rets[[i]]$dat)
+	gfin
+}
+
+heatmapcolors <- function(dat,ncol,lowcol="green",highcol="red",middlecol="white") {
+	# define color palette, set the 0 to 'black' if possible
+	# if all values negative, only take blue values, if all positive, only take red values
+	# generates ncol color steps
+	rng <- range(dat,na.rm=T)
+	if(rng[1]<0){
+		# all negative
+		if(rng[2]<0) {
+			border=ncol
+		} else {
+			border <- round(abs(rng[1])/abs(rng[2]-rng[1])*ncol)
+		}
+	} else { # all positive
+		border <- 0
+	}
+	colors <- c(colorpanel(border,low=lowcol,high=middlecol),colorpanel(ncol-border,low=middlecol,high=highcol))
+	return(colors)
+}
+
 plot_profiles <- function(ret, log=FALSE, ord=NULL,
 		mfrow=c(4,4), plotcurves=TRUE, plothist=TRUE, selection.criterion="aic") {
 	if(class(ret)=="list") {
 		P <- ret$P
+		actprof <- NULL
 		## mcmc or netga?
 		if(is.null(P)) { #mcmc
 			dat <- ret$samplings[[1]]$dat
-			theta <- get_theta_consensus(ret)
+			tmp <- get_theta_consensus(ret)
+			theta <- tmp$theta
+			thsd <- tmp$sd
+			## get a consensus gamma
+			gammax <- get_gamma_consensus(ret)
+			## get an activity profile from gammax: sum up the numbers of 
+			## activities in each row, the higher the number, the more consistent
+			## the activity is
+			actprof <- apply(gammax, 1, function(xx) tapply(xx, names(xx), sum))
+			actprof <- t(actprof[match(unique(colnames(gammax)),rownames(actprof)),])
 		} else { # netga
 			dat <- ret$dat
 			thetas <- NULL
@@ -68,6 +115,8 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 	constants <- NULL
 	ddmats <- NULL
 	cnt <- 1
+	acol <- "red"
+	pcol <- "blue"
 	## Spline fits and plots through the data for each protein
 	for(j in 1:nrow(dat)) {
 		print(rownames(dat)[j])
@@ -102,12 +151,21 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 		}		
 		yl <- ifelse(log,"log2","")
 		if(plotcurves) {
-			## plot the data for each experiment, teh fits and parameters
+			## plot the data for each experiment, the fits and parameters
 			for(i in 1:length(expers.fac)) {
+				if(!is.null(actprof)) {
+					actcols <- heatmapcolors(actprof, 5, lowcol="green", highcol="red", middlecol="green")
+				} else {
+					actcols <- rep("white", 5)
+				}
+				pad <- rep(actcols[length(actcols)], (reps[i]-5))
+				actcols <- c(actcols, pad) 
 				expf <- expers.fac[i]
+				actprofexpers <- gsub("_[0-9]*$","",colnames(actprof))
+				actprofind <- which(actprofexpers==expf)
 				## the splines
-				plot(xn, ddmat[i,],type="l",
-						ylab=paste(yl,"Intensity"),xlab="time [min]",ylim=range(ddmat),
+				plot(xn, ddmat[i,],type="n",
+						ylab=paste(yl,"Intensity"),xlab="time [min]",ylim=range(dat[j,]),
 						main=c(paste("Stimulus:",expf),paste("Protein:",rownames(dat)[j])))
 				ind <- which(expers==expf)
 				y <- dat[j,ind]
@@ -116,17 +174,19 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 				mt <- mt[!is.na(mt)]
 				at <- time[mt]
 				## the data
-				boxplot(y~tp,add=TRUE,at=at,border="#08080850", axes=FALSE)
+				bcol <- actcols[((actprof[j,actprofind]/reps[i])+1)]
+				boxplot(y~tp,add=TRUE,at=at,border="#08080850", axes=FALSE,col=bcol)
+				lines(xn, ddmat[i,],lwd=2)
 				## the parameters
 				if(!is.null(theta)) {
-					abline(h=theta[j,1],col="red")
-					abline(h=theta[j,1]+theta[j,2],lty=3,col="red")
-					abline(h=theta[j,1]-theta[j,2],lty=3,col="red")
-					text(1,theta[j,1],"mu active")
-					abline(h=theta[j,3],col="green")
-					abline(h=theta[j,3]+theta[j,4],lty=3,col="green")
-					abline(h=theta[j,3]-theta[j,4],lty=3,col="green")
-					text(1,theta[j,3],"mu passive")
+					abline(h=theta[j,1],col=acol,lwd=2)
+					abline(h=theta[j,1]+theta[j,2],lty=3,lwd=1,col=acol)
+					abline(h=theta[j,1]-theta[j,2],lty=3,lwd=1,col=acol)
+					text(1,theta[j,1],"mu active",col=acol)
+					abline(h=theta[j,3],col=pcol,lwd=2)
+					abline(h=theta[j,3]+theta[j,4],lty=3,lwd=1,col=pcol)
+					abline(h=theta[j,3]-theta[j,4],lty=3,lwd=1,col=pcol)
+					text(1,theta[j,3],"mu passive",col=pcol)
 				}
 			}
 		}
@@ -144,11 +204,11 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 			if(!is.null(theta)) {
 				xx <- seq(min(h$breaks),max(h$breaks),length.out=1000)
 				yya <- dnorm(xx,theta[j,1],theta[j,2])
-				lines(xx, yya, col="red")
-				text(theta[j,1],max(yya),"active",col="red")
+				lines(xx, yya, col=acol,lwd=1.5)
+				text(theta[j,1],max(yya),"active",col=acol)
 				yyp <- dnorm(xx,theta[j,3],theta[j,4])
-				lines(xx, yyp,col="green")
-				text(theta[j,3],max(yyp),"passive",col="green")
+				lines(xx, yyp,col=pcol,lwd=1.5)
+				text(theta[j,3],max(yyp),"passive",col=pcol)
 			}
 		}
 	}

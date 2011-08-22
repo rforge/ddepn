@@ -26,7 +26,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 				  gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
 				  debug=0,burnin=500, thin=FALSE, plotresults=TRUE,
 				  always_sample_sf=FALSE,scale_lik=FALSE,allow.stim.off=FALSE,
-				  use_C=TRUE) {
+				  implementation="C") {
 	# get the experiments, i.e. the stimuli/inhibitor combinations
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
@@ -149,11 +149,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 	#if(samplelambda=="integrate") {
 	#	lambda <- NA
 	#}
-	## assign global variable use_C
-	if(use_C==TRUE)
-		assign("USEC", TRUE, .GlobalEnv)
-	else
-		assign("USEC", FALSE, .GlobalEnv)
+	## assign global variable IMPLEMENTATION
+	assign("IMPLEMENTATION", implementation, .GlobalEnv)
 	
 	## if GA should be used
 	if(inference=="netga") {
@@ -291,7 +288,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 }
 
 ## uses a returned object from netga or inhibMCMC and resumes the sampling/optimisation
-resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL) {
+resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL, implementation="C") {
+	assign("IMPLEMENTATION", implementation, .GlobalEnv)
 	## close all x11 connections
 	graphics.off()
 	if(is.null(ret$samplings)) {
