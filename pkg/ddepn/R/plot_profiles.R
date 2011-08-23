@@ -117,6 +117,8 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 	cnt <- 1
 	acol <- "red"
 	pcol <- "blue"
+	#actprof <- actprof/length(ret$samplings) ## divide by numer of runs
+	#actprof <- actprof/ ## divide by number of replicates
 	## Spline fits and plots through the data for each protein
 	for(j in 1:nrow(dat)) {
 		print(rownames(dat)[j])
@@ -150,18 +152,24 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 			ddmat <- rbind(ddmat, pred)
 		}		
 		yl <- ifelse(log,"log2","")
+#browser()
 		if(plotcurves) {
 			## plot the data for each experiment, the fits and parameters
 			for(i in 1:length(expers.fac)) {
 				if(!is.null(actprof)) {
-					actcols <- heatmapcolors(actprof, 5, lowcol="green", highcol="red", middlecol="green")
+					actp <- actprof/reps[i]
+					#actcols <- heatmapcolors(actprof, 5, lowcol="green", highcol="red", middlecol="green")
+					numcols <- length(ret$samplings)+1 #reps[i]+1
+					actcols <- heatmapcolors(actp, numcols, lowcol="green", highcol="red", middlecol="green")
+					#actcols <- heatmapcolors((actprof - (max(actprof)/2)), 5, lowcol="green", highcol="red", middlecol="white")
+					#actcols <- heatmapcolors(t(scale(t(scale(actprof)))), 5, lowcol="green", highcol="red", middlecol="white")
 				} else {
-					actcols <- rep("white", 5)
+					actcols <- rep("white", reps[i]+1)
 				}
-				pad <- rep(actcols[length(actcols)], (reps[i]-5))
-				actcols <- c(actcols, pad) 
+				#pad <- rep(actcols[length(actcols)], (reps[i]-5))
+				#actcols <- c(actcols, pad) 
 				expf <- expers.fac[i]
-				actprofexpers <- gsub("_[0-9]*$","",colnames(actprof))
+				actprofexpers <- gsub("_[0-9]*$","",colnames(actp))
 				actprofind <- which(actprofexpers==expf)
 				## the splines
 				plot(xn, ddmat[i,],type="n",
@@ -174,7 +182,8 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 				mt <- mt[!is.na(mt)]
 				at <- time[mt]
 				## the data
-				bcol <- actcols[((actprof[j,actprofind]/reps[i])+1)]
+				bcol <- actcols[actp[j,actprofind]+1] #/reps[i])+1)]
+				#bcol <- actcols[actprof[j,actprofind]+1]
 				boxplot(y~tp,add=TRUE,at=at,border="#08080850", axes=FALSE,col=bcol)
 				lines(xn, ddmat[i,],lwd=2)
 				## the parameters
