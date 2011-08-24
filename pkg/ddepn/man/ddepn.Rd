@@ -23,7 +23,7 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga",
       always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE, implementation="C")
       
 resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL,
-      implementation="C")
+      implementation="C", thin=FALSE)
 
 }
 \arguments{

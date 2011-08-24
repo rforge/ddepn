@@ -288,7 +288,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 }
 
 ## uses a returned object from netga or inhibMCMC and resumes the sampling/optimisation
-resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL, implementation="C") {
+resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL, implementation="C", thin=FALSE) {
 	assign("IMPLEMENTATION", implementation, .GlobalEnv)
 	## close all x11 connections
 	graphics.off()
