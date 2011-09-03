@@ -128,10 +128,11 @@ resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=
     the propagation, but with the stimulus node set to 0.}
   \item{ret}{List. The output generated during an \code{\link{netga}} or \code{\link{mcmc_ddepn}} run. Used
     in function \code{resume_ddepn} to resume the inference.}
-  \item{implementation}{String. One of \code{"C","R","R_globalest"}. Different implementations of the HMM in 
+  \item{implementation}{String. One of \code{"C","R","R_globalest","C_globalest"}. Different implementations of the HMM in 
     \code{\link{perform.hmmsearch}}. If \code{"R"}, the original pure R-implementation is 
     used, if \code{"C"}, a ported C-implementation is used. If \code{"R_globalest"}, an experimental version of
-    the parameter estimation is used in the HMM. See \code{details} for a description.}
+    the parameter estimation is used in the HMM, \code{"C_globalest"} is the C-port of 
+    this version. See \code{details} for a description.}
 }
 \details{
   \describe{

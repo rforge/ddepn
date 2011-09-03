@@ -12,8 +12,8 @@
 #include <time.h>    // for seed for random numbers
 #include <unistd.h>     // need for getpid() function
 #include <math.h>    // for pow function
+#include "utility_functions.h"
 #include "perform_hmmsearch.h"
-
 
 /**
  * Performs HMM for network P and experiment in data matrix X
@@ -39,7 +39,7 @@ perform_hmmsearch(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int *GSx,
   //srand(time(NULL) + getpid());
 
   // hmm search start
-  Lik = hmmsearch(Px, N, T, Rx, Xx, GSx, Gx, Glenx, THx, tpsx, stimidsx, stimgrpsx,
+  Lik = hmmsearch_singleest(Px, N, T, Rx, Xx, GSx, Gx, Glenx, THx, tpsx, stimidsx, stimgrpsx,
       numexperimentsx, hmmit);
   *Likx = Lik;
   //printf("\n\nSUCCESS\n");
@@ -50,7 +50,7 @@ perform_hmmsearch(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int *GSx,
  * For one network phi and one experiment extracted from the total data matrix X,
  * for one experiments states Gx use the viterbi algorithm
 */
-double hmmsearch(int *phi, const int N, const int T, const int *R,
+double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
     const double *X, int *GS,
     int *G, int *Glen, double *TH,
     const int *tps,
@@ -356,14 +356,12 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
   free(A);
 }
 
-
+/*
 void
 updateA(double *A, int *maxemissionind, const int M, const int T)
 {
   int *Anum = calloc(M * M, sizeof(int));
   int *Adenom = calloc(M, sizeof(int));
-  //int *pseudocounts = calloc(M * M, sizeof(int));
-  //int *pseudocountssum = calloc(M * M, sizeof(int));
   int t, src, dst;
 
   // go along maxemissionind and count the transitions
@@ -371,21 +369,10 @@ updateA(double *A, int *maxemissionind, const int M, const int T)
     {
       src = maxemissionind[t];
       dst = maxemissionind[t + 1];
-      //printf("trans %d_%d\n",src,dst); //,Anum[ind]);
       int ind = dst*M + src;
       Anum[ind] = Anum[ind] + 1;
-      //pseudocounts[ind] = 1;
-      //pseudocountssum[ind] = M;
       Adenom[src] = Anum[src] + 1;
     }
-  /*  printf("Anum:\n");
-  print_intmatrix(Anum, M, M);
-  printf("Adenom:\n");
-  print_intmatrix(Adenom, 1, M);
-  printf("A:\n");
-  print_matrix(A, M, M);
-  print_matrix_stats(A, M, M);
-*/
   // reset the transition probability to numocc / numtotaltransitionsfromsrc
   double rowsum;
   for (t = 0; t != (M * M); t++)
@@ -405,60 +392,12 @@ updateA(double *A, int *maxemissionind, const int M, const int T)
   double *Asums = calloc(M * M, sizeof(double));
   double *rowsums = calloc(M, sizeof(double));
   Asum = get_rowsums(A, M, M, rowsums);
-  //printf("%%%%%%%%%%\nA before: \n");
-  //print_matrix(A, M, M);
-  //print_matrix_stats(A, M, M);
-  // normalise the rows to sum to 1
   normalise_rows(A, M, M, rowsums);
-  //printf("&&&&&&&&&&\nA after: \n");
-  //print_matrix(A, M, M);
-  //print_matrix_stats(A, M, M);
-  //free(pseudocountssum);
-  //free(pseudocounts);
   free(Anum);
   free(Adenom);
   free(Asums);
 }
-/*
-
-  // now renormalise such that sum(A) = 1
-  for (t = 0; t != (M * M); t++)
-    {
-      // found the transition
-      A[t] = A[t] - log2(Asum);
-    }
 */
-void
-normalise_rows(double *x, int rows, int cols, double *rowsums)
-{
-  for (int i = 0; i != rows; ++i)
-    {
-      for (int j = 0; j != cols; ++j)
-        {
-          x[i + j * rows] -= log2(rowsums[i]);
-        }
-    }
-  return;
-}
-
-double
-get_rowsums(double *x, int rows, int cols, double *rsums)
-{
-  //double *rowsums = calloc(rows * cols, sizeof(double));
-  double sum = 0.0;
-  double rowsum;
-  for (int i = 0; i != rows; ++i)
-    {
-      rowsum = 0.0;
-      for (int j = 0; j != cols; ++j)
-        {
-          rowsum += pow(2,x[i + j * rows]);
-          sum += pow(2,x[i + j * rows]);
-        }
-      rsums[i] = rowsum;
-    }
-  return sum;
-}
 /*
  * initialisation of the state transition matrix
  * draw uniform probabilities
@@ -487,85 +426,7 @@ initialise_A(double *A, int M)
   double *Asums = calloc(M * M, sizeof(double));
   double *rowsums = calloc(M, sizeof(double));
   double Asum = get_rowsums(A, M, M, rowsums);
-
- /* printf("-------%%%%%%%%%%\nA before: \n");
-   print_matrix(A, M, M);
-   //print_matrix_stats(A, M, M);
-   normalise_rows(A, M, M, rowsums);
-   printf("--------&&&&&&&&&&\nA after: \n");
-   print_matrix(A, M, M);
-   //print_matrix_stats(A, M, M);
-*/
-  /* normalise to sum 1
-  for (int i = 0; i != M; ++i)
-    {
-      for (int j = 0; j != M; ++j)
-        {
-          A[(i * M + j)] = log2(A[(i * M + j)] / rnumsum);
-        }
-    }
-   */
-}
-/*
- * given a data vector and a state vector and the parameters theta,
- * get the emission probability p(x|gamma,th) = prod_i prod_r p(x_tir|gamma,th)
- */
-double
-getE(const double *X, int t, int *Gsub, int m, double *THsub, const int N,
-    const int R)
-{
-  int startind = t * N * R; // start position in X
-  int sel, gp;
-  double dp, mu, sd, emission = 0;
-  double dn1, dn2, mu1, mu2, sd1, sd2;
-
-  // for each replicate
-  for (int r = 0; r != R; ++r)
-    {
-      // for each protein
-      for (int i = 0; i != N; ++i)
-        {
-          sel = (int) (startind + r * N + i);
-          dp = X[sel]; // the measurement
-          gp = Gsub[(int) m * N + i]; // state
-          mu1 = THsub[(int) (i + N * 0)]; // mean active
-          sd1 = THsub[(int) (i + N * 1)]; // standard deviation active
-          mu2 = THsub[(int) (i + N * 2)]; // mean passive
-          sd2 = THsub[(int) (i + N * 3)]; // standard deviation passive
-          if (gp == 1)
-            {
-              dn1 = dnorm(dp, mu1, sd1);
-              dn2 = dnorm(dp, mu2, sd2);
-            }
-          else
-            {
-              dn1 = dnorm(dp, mu2, sd2);
-              dn2 = dnorm(dp, mu1, sd1);
-            }
-          // the emission probability log ratio
-          //double ret = dnorm(dp, mu, sd);
-          //double ret = dn1 - dn2;
-          double ret = dn1;
-          if(isnan(ret))
-            ret = 0.0;
-          emission += ret;
-        }
-    }
-  return (emission);
-}
-
-/*int
-find_double_diff(double diff, double *diffsold, int maxit)
-{
-  int occ = 0;
-  for (int i = 0; i != maxit; i++)
-    {
-      if (diffsold[i] == diff)
-        occ++;
-    }
-  return (occ);
-}
-*/
+ }
 int
 find_diff(double diff, double *diffsold, int maxit)
 {
@@ -744,16 +605,6 @@ is_stimulus(int x, int *stids, int lstids)
 }
 
 /*
- * get the basis 2 log
- */
-double
-log2(double x)
-{
-  double ret = log(x) / log(2);
-  return (ret);
-}
-
-/*
  * initialise the system state matrix that should be optimised
  * draw randomly M columns from Gsub in order of Gsub and
  * copy the element of these columns to GSsub
@@ -794,64 +645,6 @@ initialise_GS(int *GSsub, int *Gsub, int N, int T, int R, int M)
   free(rnums);
 }
 
-/*
- * print row sums and sum of a matrix
- */
-void
-print_matrix_stats(double *x, int rows, int cols)
-{
-  double *rowsums = calloc(rows * cols, sizeof(double));
-  double sum = 0.0;
-  printf("Matrix stats (rowsums and sum): ");
-  for (int i = 0; i != rows; ++i)
-    {
-      double rowsum = 0.0;
-      for (int j = 0; j != cols; ++j)
-        {
-          rowsum += pow(2,x[i + j * rows]);
-          sum += pow(2,x[i + j * rows]);
-        }
-      rowsums[i] = rowsum;
-      printf("\n %f ", rowsum);
-    }
-  printf("\nSum: %f", sum);
-  free(rowsums);
-  return;
-}
-/*
- * print a data matrix, passed as pointer
- */
-void
-print_matrix(double *x, int rows, int cols)
-{
-  //printf("X:\n\n");
-  for (int i = 0; i != rows; ++i)
-    {
-      for (int j = 0; j != cols; ++j)
-        {
-          printf("%f ", x[i + j * rows]);
-        }
-      printf("\n");
-    }
-  printf("\n");
-  return;
-}
-void
-print_intmatrix(int *x, int rows, int cols)
-{
-  //printf("X:\n\n");
-  for (int i = 0; i != rows; ++i)
-    {
-      for (int j = 0; j != cols; ++j)
-        {
-          printf("%d ", x[i + j * rows]);
-        }
-      printf("\n");
-    }
-  printf("\n");
-  return;
-}
-
 int
 compare_doubles(const void *a, const void *b)
 {
@@ -868,165 +661,4 @@ compare_ints(const void *a, const void *b)
   const int *ib = (const int *) b;
 
   return (*ia > *ib) - (*ia < *ib);
-}
-
-
-/*
- * estimate the normal density parameters
- */
-void
-estimate_theta(const double *X, int *GSsub, double *TH, const int N,
-    const int T, const int R)
-{
-  int a_n, p_n, kk;
-  double a, p, mua, mup, sda, sdp, tmp;
-  double *params = malloc(4 * sizeof(double));
-
-  // go through lines, i.e. proteins
-  for (int i = 0; i != N; ++i)
-    {
-      a = 0.0;
-      p = 0.0;
-      a_n = 0;
-      p_n = 0;
-
-      // means; go through columns, i.e. timepoints
-      for (int j = 0; j != T * R; ++j)
-        {
-          kk = i + j * N;
-          if (GSsub[kk] == 1)
-            {
-              a += X[kk];
-              a_n++;
-            }
-          else
-            {
-              p += X[kk];
-              p_n++;
-            }
-        }
-
-      mua, mup;
-      if (a_n > 0)
-        mua = a / a_n;
-      else
-        mua = HUGE_VAL;
-      if (p_n > 0)
-        mup = p / p_n;
-      else
-        mup = HUGE_VAL;
-
-      // sds;
-      a_n = 0;
-      p_n = 0;
-      a = 0.0;
-      p = 0.0;
-      for (int j = 0; j != T * R; ++j)
-        {
-          kk = i + j * N;
-          if (GSsub[kk] == 1)
-            {
-              tmp = X[kk] - mua;
-              a += (tmp * tmp);
-              a_n++;
-            }
-          else
-            {
-              tmp = X[kk] - mup;
-              p += (tmp * tmp);
-              p_n++;
-            }
-        }
-      sda, sdp;
-      a_n = a_n - 1;
-      p_n = p_n - 1;
-
-      if (a_n > 0 && !isnan(mua) && !isinf(mua))
-        sda = sqrt(a / a_n);
-      else
-        sda = HUGE_VAL;
-      if (p_n > 0 && !isnan(mup) && !isinf(mup))
-        sdp = sqrt(p / p_n);
-      else
-        sdp = HUGE_VAL;
-      params[0] = mua;
-      params[1] = sda;
-      params[2] = mup;
-      params[3] = sdp;
-
-      for (int j = 0; j != 4; ++j)
-        {
-          TH[i + j * N] = params[j];
-        }
-
-    } // end for
-  free(params);
-  return;
-}
-/*
- * Likelihood update
- */
-double
-calculate_likelihood(const double *X, int *GSsub, double *THsub, const int N,
-    const int T, const int R)
-{
-/*  printf("\t GSsub:\n");
-  print_intmatrix(GSsub, N, T*R);
-  printf("N: %d, T: %d, R: %d",N,T,R);
-  printf("\t TH:\n");
-  print_matrix(THsub, N, 4);
-*/  double dp, mu, sd, Lnew;
-  int gp;
-  Lnew = 0.0;
-  for (int i = 0; i != N; ++i) // rows
-    {
-      // penalise the likelihood by the negative logged absolute difference in means
-      double penalty = -1 * log(fabs(THsub[(int) (i + N * 0)] - THsub[(int) (i + N * 2)]));
-      for (int j = 0; j != T * R; ++j) // columns
-        {
-          dp = X[i + j * N];
-          gp = GSsub[i + j * N];
-          if (gp == 1)
-            {
-              mu = THsub[(int) (i + N * 0)];
-              sd = THsub[(int) (i + N * 1)];
-            }
-          else
-            {
-              mu = THsub[(int) (i + N * 2)];
-              sd = THsub[(int) (i + N * 3)];
-            }
-          double dn = dnorm(dp, mu, sd);
-          //printf("%f ",dn);
-          //if(i==4){
-          //  printf("%f %f %f %f %d\n",dn,mu,sd, dp, gp);
-          //}
-          if (!isnan(dn) && !isinf(dn))
-            {
-              if (!isnan(penalty) && !isinf(penalty))
-                {
-                  dn -= penalty;
-                }
-              Lnew += dn; // dnorm is logged data
-            }
-        }
-//      printf("\n");
-    }
-//  printf("Liklihood: %f", Lnew);
-  return Lnew;
-}
-/*
- * normal density function
- */
-double
-dnorm(double dp, double mu, double sd)
-{
-  //double pi = 4 * atan(1);
-  double factor = 1 / (sqrt(2 * M_PI) * sd);
-  double exponent = -0.5 * (((dp - mu) * (dp - mu)) / (sd * sd));
-  double density = factor * exp(exponent);
-  //density = log(density) / log(2); // log to base 2
-  density = log(density); // log to base 10
-  //printf("dp: %f, mu: %f, sd: %f, density %f\n\n", dp, mu, sd, density);
-  return (density);
 }

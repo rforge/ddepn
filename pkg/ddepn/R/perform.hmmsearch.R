@@ -12,6 +12,7 @@ getE <- function(x, datx, thetaprime) {
 	L <- colSums(L, na.rm=TRUE)
 	L
 }
+
 replicatecolumns <- function(mat, replicates=4) {
 	coln <- rep(colnames(mat), each=replicates)
 	mm <- matrix(apply(mat, 2, rep, times=replicates),nrow=nrow(mat))
@@ -19,23 +20,17 @@ replicatecolumns <- function(mat, replicates=4) {
 	rownames(mm) <- rownames(mat)
 	mm
 }
+
 perform.hmmsearch <- function(phi.n, bestmodel) {
 	## select implementation
 	implementation <- get("IMPLEMENTATION", pos=globalenv())
 	switch(implementation,
 			R=perform.hmmsearch_R(phi.n, bestmodel),
 			R_globalest=perform.hmmsearch_globalest(phi.n, bestmodel),
+			C_globalest=perform.hmmsearch_C_globalest(phi.n, bestmodel),
 			ret<-perform.hmmsearch_C(phi.n, bestmodel))
-#	if(implementation=="R_globalest") {
-#		return(perform.hmmsearch_globalest(phi.n, bestmodel))
-#	} else {
-#		if(implementation) {
-#			return(perform.hmmsearch_C(phi.n, bestmodel))
-#		} else {
-#			return(perform.hmmsearch_R(phi.n, bestmodel))
-#		}
-#	}
 }
+
 ### only R
 ### dat: N x (T x R) matrix, N: number of proteins, T number of timepoints, R: number of replicates
 ### gammaprime: N x (T x R) matrix
@@ -390,61 +385,52 @@ perform.hmmsearch_globalest <- function(phi.n, bestmodel) {
 		gamprime <- NULL
 		An <- A
 		for(s in stimuli) {
-			exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
-			gpind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(gamposstotal))
-			Aind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(A))
-			R <- length(exind)/length(tps)
-			datx <- dat[,exind,drop=FALSE]
-			gammaposs <- gamposstotal[,gpind,drop=FALSE]
-			M <- ncol(gammaposs)
-			Asel <- A[Aind,Aind,drop=FALSE] 
-			E <- t(apply(gammaposs, 2, getE, datx=datx, thetaprime=thetaprime))
-			dimnames(E) <- list(colnames(gammaposs),colnames(datx))
-			# transform to 3d array
-			sel <- rep(seq(1,T*R,by=R),R)
-			seladd <- rep(seq(0,R-1),each=T)
-			sel <- sel + seladd
-			E <- array(E[,sel,drop=F],dim=c(M,T,R))		
-			## viterbi maximum likelihood path		
-			viterbi <- matrix(0,nrow=M,ncol=T,dimnames=list(colnames(gammaposs),unique(colnames(datx))))
-			maxima <- rep(-Inf,T)
-			maxima.ind <- rep(0,T)
-			al <- -log2(M)
-			# j is position in datamatrix
-			for(j in 1:ncol(E)) {
-				# i ist state to which we jump
-				## inner loop
-				if(j == 1) {
-					vtcol <- rowSums(al + E[,j,,drop=FALSE]) 
+			toswitch <- which(!apply(thetaprime, 1, function(x) any(is.na(x))|all(x==0)))
+			thetaprime.backup <- thetaprime
+			done <- FALSE
+			## consistency loop
+			## if inconsitencies are found, then modify the thetaprime matrix
+			## the idea is that inconsitencies are found when active and passive 
+			## states are switched (whatever is active should be passive and vice 
+			## versa). Since the likelihood will be equal in both cases, we have 
+			## to use the structure of the network to conclude on which intensity
+			## levels belong to which state
+			##
+			## runtime will increase a lot when doing it for all possible substitutions
+			## in thetaprime, so just try one substitution of a random number of 
+			## switchable rows in thetaprime
+			while(TRUE) {
+				exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
+				gpind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(gamposstotal))
+				Aind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(A))
+				R <- length(exind)/length(tps)
+				datx <- dat[,exind,drop=FALSE]
+				gammaposs <- gamposstotal[,gpind,drop=FALSE]
+				M <- ncol(gammaposs)
+				Asel <- A[Aind,Aind,drop=FALSE] 
+				## viterbi algorithm
+				maxima.ind <- viterbi(gammaposs, datx, thetaprime, T, R, M, Asel)
+				## get new gamma suggestion and estimate parameters
+				tmp <- gammaposs[,maxima.ind]
+				colnames(tmp) <- colnames(datx)
+				ic <- is_consistent(phi.n, tmp)
+				## found inconsitencies?
+				## switch some of the active/passive state parameter values
+				if(ic$inc>0 && length(toswitch)>0 && !done) {
+					#print(paste("Inconsitensies in state series. Repeat HMM with modified thetaprime."))
+					thtmp <- thetaprime.backup
+					nselect <- sample(1:length(toswitch),1) # number of rows to switch
+					l2sw <- sample(toswitch,nselect,replace=FALSE)
+					thtmp[l2sw,c(1,2)] <- thetaprime.backup[l2sw, c(3,4)]
+					thtmp[l2sw,c(3,4)] <- thetaprime.backup[l2sw, c(1,2)]
+					thetaprime <- thtmp
+					done <- TRUE
 				} else {
-					vtcol <- apply(Asel, 2, function(Acol, viterbi, j) max(viterbi[,j-1,drop=FALSE] + Acol, na.rm=TRUE), viterbi=viterbi, j=j) + rowSums(E[,j,,drop=FALSE])
-				}
-				viterbi[,j] <- vtcol
-				vt <- max(vtcol)
-				i <- which(vtcol==vt)[1]
-				if(maxima[j]<vt) {
-					maxima[j] <- vt
-					maxima.ind[j] <- i # this is the optimal state series
+					break
 				}
 			}
-			maxima <- rep(maxima, each=R)
-			maxima.ind <- rep(maxima.ind, each=R)
-			## get new gamma suggestion and estimate parameters
-			tmp <- gammaposs[,maxima.ind]
-			colnames(tmp) <- colnames(datx)
 			gamprime <- cbind(gamprime,tmp)
-			## M-step
-			## maximize the transition matrices parameters
-			sel <- cbind(1:length(maxima.ind),2:(length(maxima.ind)+1))
-			## transitions hold the switchings from state i to state i+1 in the state sequence
-			transitions <- matrix(maxima.ind[sel],ncol=2)
-			## change the probabilities for transitions that were observerd
-			trans <- table(transitions[-nrow(transitions),1])
-			transall <- table(paste(transitions[-nrow(transitions),1], transitions[-nrow(transitions),2], sep="_"))		
-			ind <- match(as.numeric(sapply(names(transall), function(x) strsplit(x, split="_")[[1]][1])),as.numeric(names(trans)))	
-			transprob <- log2((transall+pseudocount)) - log2(trans[ind]+pseudocountsum)
-			indices <- sapply(names(transprob), function(x,rows) (as.numeric(strsplit(x, "_")[[1]])-c(0,1)) %*% c(1,rows),rows=nrow(Asel))
-			Asel[indices] <- transprob
+			Asel <- updateA(maxima.ind, pseudocount, M, Asel)
 			An[Aind,Aind] <- Asel
 		}
 		A <- An
@@ -466,3 +452,217 @@ perform.hmmsearch_globalest <- function(phi.n, bestmodel) {
 			gammaposs=gamposstotal,scale_lik=scale_lik,allow.stim.off=allow.stim.off)
 	return(L.res)
 }
+
+#### uses c-library with global parameter estimation
+#### dat: N x (T x R) matrix, N: number of proteins, T number of timepoints, R: number of replicates
+#### gammaprime: N x (T x R) matrix
+#### gammaposs: N x M matrix, M: number of reachable states derived in effect propagation
+#### E: M x (T x R) matrix: Emission matrix
+#### A: M x M matrix: Transition matrix
+#### viterbi: M x T matrix: which path to take
+perform.hmmsearch_C_globalest <- function(phi.n, bestmodel) {
+	#cat(".")
+	tps <- bestmodel$tps
+	T <- length(tps)
+	stimuli <- bestmodel$stimuli
+	dat <- bestmodel$dat
+	hmmiterations <- bestmodel$hmmiterations
+	GS <- matrix(0, nrow=nrow(dat), ncol=ncol(dat), dimnames=dimnames(dat))
+	gammaposs <- propagate.effect.set(phi.n, stimuli=stimuli)
+	G <- gammaposs
+	TH <- matrix(0.0, nrow=nrow(dat), ncol=4, dimnames=dimnames(bestmodel$theta))
+	stimids <- unlist(stimuli)
+	stimnames <- names(stimids)
+	stimgrps <- sapply(stimuli, length)
+	numexperiments <- length(bestmodel$reps)
+	Lik <- 0
+	## get the M_i: the number of possible states for each experiment, same dimension of R
+	Ms <- table(gsub("_[0-9]$","",colnames(gammaposs)))
+	## sort according to the experiments, as they are in the data matrices
+	Ms <- Ms[order(match(names(Ms), sub("_[0-9]$","",colnames(gammaposs))))]
+	
+	# separate HMM for each experiment, i.e. each stimulus	
+	ret <- .C("perform_hmmsearch_globalest",P=as.integer(phi.n), N=as.integer(nrow(dat)),
+			T=as.integer(length(tps)), R=as.integer(bestmodel$reps), X=as.double(dat),
+			GS=as.integer(GS), G=as.integer(G), Glen=as.integer(length(G)),
+			TH=as.double(TH), 	tps=as.integer(tps), stimids=as.integer(stimids-1),
+			stimgrps=as.integer(stimgrps), numexperiments=as.integer(numexperiments),
+			Likx=as.double(Lik), hmmiterations=as.integer(hmmiterations), 
+			Msx=as.integer(Ms), PACKAGE="ddepn")
+	
+	Lik <- ret$Likx
+	aic <- get.aic(phi.n, Lik)
+	bic <- get.bic(phi.n, Lik, length(dat))
+	gamprimetotal <- matrix(ret$GS, nrow=nrow(dat), ncol=ncol(dat), dimnames=dimnames(dat))
+	thetaprime <- matrix(ret$TH, nrow=nrow(TH), ncol=ncol(TH), dimnames=dimnames(TH))
+	gamposstotal <- matrix(ret$G, nrow=nrow(dat), ncol=ncol(G), dimnames=dimnames(G))
+	
+	L.res <- list(datx=dat, phix=phi.n, stimx=stimuli,
+			gammax=gamprimetotal, thetax=thetaprime,
+			replicates=bestmodel$reps, Likl=Lik,aic=aic,bic=bic,
+			statespace_maxiterations=hmmiterations, 
+			gammaposs=gamposstotal)
+	return(L.res)
+}
+
+## update the transition matrix
+updateA <- function(maxima.ind, pseudocount, M, A) {
+	sel <- cbind(1:length(maxima.ind),2:(length(maxima.ind)+1))
+	## transitions hold the switchings from state i to state i+1 in the state sequence
+	transitions <- matrix(maxima.ind[sel],ncol=2)
+	## change the probabilities for transitions that were observerd
+	trans <- table(transitions[-nrow(transitions),1])
+	transall <- table(paste(transitions[-nrow(transitions),1], transitions[-nrow(transitions),2], sep="_"))		
+	ind <- match(as.numeric(sapply(names(transall), function(x) strsplit(x, split="_")[[1]][1])),as.numeric(names(trans)))	
+	transprob <- log2((transall+pseudocount)) - log2(trans[ind]+M)
+	indices <- sapply(names(transprob), function(x,rows) (as.numeric(strsplit(x, "_")[[1]])-c(0,1)) %*% c(1,rows),rows=nrow(A))
+	A[indices] <- transprob
+	A
+}
+
+## the viterbi algorithm
+viterbi <- function(gammaposs, datx, thetaprime, T, R, M, A) {
+	E <- t(apply(gammaposs, 2, getE, datx=datx, thetaprime=thetaprime))
+	dimnames(E) <- list(colnames(gammaposs),colnames(datx))
+	# transform to 3d array
+	sel <- rep(seq(1,T*R,by=R),R)
+	seladd <- rep(seq(0,R-1),each=T)
+	sel <- sel + seladd
+	E <- array(E[,sel,drop=FALSE],dim=c(M,T,R))		
+	viterbi <- matrix(0,nrow=M,ncol=T,dimnames=list(colnames(gammaposs),unique(colnames(datx))))
+	maxima <- rep(-Inf,T)
+	maxima.ind <- rep(0,T)
+	al <- -log2(M)
+	# j is position in datamatrix
+	for(j in 1:ncol(E)) {
+		# i ist state to which we jump
+		## inner loop
+		if(j == 1) {
+			vtcol <- rowSums(al + E[,j,,drop=FALSE]) 
+		} else {
+			vtcol <- apply(A, 2, function(Acol, viterbi, j) max(viterbi[,j-1,drop=FALSE] + Acol, na.rm=TRUE), viterbi=viterbi, j=j) + rowSums(E[,j,,drop=FALSE])
+		}
+		viterbi[,j] <- vtcol
+		vt <- max(vtcol)
+		i <- which(vtcol==vt)[1]
+		if(maxima[j]<vt) {
+			maxima[j] <- vt
+				maxima.ind[j] <- i # this is the optimal state series
+		}
+	}
+	maxima <- rep(maxima, each=R)
+	maxima.ind <- rep(maxima.ind, each=R)
+	maxima.ind
+}
+
+## traverse from leaves up to the root
+## find inconsitency markers for each child depending on its parents
+##   inconsistency is found whenever:
+##   edge pa --> ch
+##        gammax[pa,t_i] == 1 # if the parent is active, then state switch from active to passive should not occur at the child
+##			gammax[ch, t_i] == 1 & gammax[ch, t_(i+1)] == 0 not possible
+##        gammax[pa,t_i] == 0 # if the parent is passive, then state switch from passive to active should not occur at the child
+##			gammax[ch, t_i] == 0 & gammax[ch, t_(i+1)] == 1 not possible
+##   edge pa --| ch
+##        gammax[pa,t_i] == 1 # if parent is active, then state switch from passive to active should not occur
+##			gammax[ch, t_i] == 0 & gammax[ch, t_(i+1)] == 1 not possible
+##        gammax[pa,t_i] == 0
+##			gammax[ch, t_i] == 1 & gammax[ch, t_(i+1)] == 0 not possible
+#is_consistent2 <- function(phi, gammax) {
+#	phix <- phi
+#	inc <- 0
+#	allchecks <- allpos <- list()
+#	cnt <- 0
+#	while(nrow(phix)>1){
+#		cnt <- cnt + 1
+#		## get the leafs
+#		leafs <- which(apply(phix, 1, function(x) all(x==0)))
+#		checks <- rep(1, ncol(gammax)-1)
+#		checkstab <- NULL
+#		for(i in 1:length(leafs)) {
+#			leaf <- leafs[i]
+#			parents <- which(phix[,leaf]!=0)
+#			if(length(parents)>0) {
+#				for(j in 1:length(parents)) {
+#					pa <- parents[j]
+#					consis <- checkC(phix, gammax, leaf, pa)
+#					checks <- pmin(checks, consis)
+#					checkstab <- cbind(checkstab, consis)
+#					#inc <- inc + checkC(phix, gammax, leaf, pa)	
+#				}
+#			} else {
+#				checks <- rep(1, ncol(gammax)-1) ## if no parents, all consistent
+#				checkstab <- cbind(checkstab, checks)
+#			}
+#		}
+#		allchecks[[cnt]] <- checkstab
+#		allpos[[cnt]] <- which(checks==0)
+#		#inc <- inc + sum(ifelse(checks==0,0,1))
+#		inc <- inc + sum(1-checks) #ifelse(checks==0,0,1))
+#		phix <- phix[-leafs,-leafs,drop=FALSE]
+#	}
+#	list(inc=inc, allchecks=allchecks, allpos=allpos)
+#}
+is_consistent <- function(phi, gammax) {
+	phix <- phi
+	inc <- 0
+	allchecks <- allpos <- list()
+	for(i in 1:nrow(phix)) {
+		nd <- rownames(phix)[i]
+		## get the parents
+		parents <- which(phix[,nd]!=0)
+		checks <- rep(1, ncol(gammax)-1)
+		checkstab <- NULL
+		if(length(parents)>0) {
+			for(j in 1:length(parents)) {
+				pa <- parents[j]
+				consis <- checkC(phix, gammax, nd, pa)
+				checks <- pmin(checks, consis, na.rm=TRUE)
+				checks[checks==-14] <- 1 ## special case
+				checkstab <- cbind(checkstab, consis)
+			}
+		} else {
+			checks <- rep(1, ncol(gammax)-1) ## if no parents, all consistent
+			checkstab <- cbind(checkstab, checks)
+		}
+		colnames(checkstab) <- rownames(phix)[parents]
+		allchecks[[i]] <- checkstab
+		allpos[[i]] <- which(checks==0)
+		inc <- inc + sum(1-checks) #ifelse(checks==0,0,1))
+	}
+	names(allchecks) <- names(allpos) <- rownames(phix)
+	list(inc=inc, allchecks=allchecks, allpos=allpos)
+}
+
+## checks the consistency of a child given one parent and returns the 
+## number of inconsistencies
+checkC <- function(phi, gammax, ch, pa) {
+	ed <- phi[pa,ch]
+	nc <- ncol(gammax)
+	gpa <- gammax[pa, -nc]
+	gch <- gammax[ch, -nc]
+	gch_shift <- gammax[ch, 2:nc] # shift left the child state vector
+	test <- paste(ed, gpa, gch, gch_shift, sep="_")
+	levs <- c("1_0_0_0","1_0_0_1","1_0_1_0","1_0_1_1",
+			  "1_1_0_0","1_1_0_1","1_1_1_0","1_1_1_1",
+			  "2_0_0_0","2_0_0_1","2_0_1_0","2_0_1_1",
+			  "2_1_0_0","2_1_0_1","2_1_1_0","2_1_1_1")
+	## consistent represented by value 1
+	## inconsistent by val 0, undetermined by NA
+	## forced consistencies:
+	##    1->0 if pa inhib is 1, marked as special case with -14
+	##      this is the only case that can override the inconsistency
+	##      at transition 1->0, for active activation parent
+	##      
+	## forced inconsistencies:
+	##    0->1 if pa inhib is 1
+	##    1->1 if pa inhib is 1
+	vals <- c(1, NA, 1, 1,
+			  1, 1, 0, 1,
+			  1, 1, 1, 1,
+			  1, 0, -14, 0)
+	testfac <- factor(test, ordered=TRUE, levels=levs)
+	vals[as.numeric(testfac)]		
+}
+
+
