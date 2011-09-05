@@ -219,7 +219,7 @@ double hmmsearch(int *phi, const int N, const int T, const int *R,
 		// check if diffvec is filled
 		if(it>=K) {
 			// check elements in diffvec
-			for(int k=0; k!=K; ++k) {
+			for(int k=0; k!=(K-1); ++k) {
 				if(k>0) {
 					if(fabs(diffvec[k]-difftmp)<=0.001) {
 						count++;
@@ -576,6 +576,8 @@ void viterbi(int T, int M, double *X, int *G, double *TH, int N, int R, double *
 	// M step: update transition probabilities for sub matrix
 	updateA(A, maxemissionind, M, T);
 
+	free(maxemissionind);
+	free(viterbi);
 	return;
 }
 
