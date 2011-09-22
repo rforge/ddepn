@@ -9,6 +9,8 @@ likl <- function(dat, gammax, scale_lik=FALSE) {
 	ieg1 <- ifelse(gammax==1,1,NA)
 	rMeans0=rowMeans(dat*ieg0, na.rm=TRUE)
 	rMeans1=rowMeans(dat*ieg1, na.rm=TRUE)
+	#if(!all(rMeans0==0 | is.na(rMeans0)) && !all(rMeans0==0 | is.na(rMeans0)))
+	#	browser()
 	rSds0=rowSds(dat*ieg0, na.rm=TRUE)
 	rSds1=rowSds(dat*ieg1, na.rm=TRUE)
 	# penalize the likelihood, small differences in means 

@@ -232,7 +232,7 @@ perform.hmmsearch_C <- function(phi.n, bestmodel) {
 			GS=as.integer(GS), G=as.integer(G), Glen=as.integer(length(G)),
 			TH=as.double(TH), 	tps=as.integer(tps), stimids=as.integer(stimids-1),
 			stimgrps=as.integer(stimgrps), numexperiments=as.integer(numexperiments),
-			Likx=as.double(Lik), hmmiterations=as.integer(bestmodel$hmmiterations), PACKAGE="ddepn")
+			Likx=as.double(Lik), hmmiterations=as.integer(bestmodel$hmmiterations), PACKAGE="ddepn", NAOK=TRUE)
 	
 	Lik <- ret$Likx
 	aic <- get.aic(phi.n, Lik)
@@ -480,7 +480,6 @@ perform.hmmsearch_C_globalest <- function(phi.n, bestmodel) {
 	Ms <- table(gsub("_[0-9]$","",colnames(gammaposs)))
 	## sort according to the experiments, as they are in the data matrices
 	Ms <- Ms[order(match(names(Ms), sub("_[0-9]$","",colnames(gammaposs))))]
-	
 	# separate HMM for each experiment, i.e. each stimulus	
 	ret <- .C("perform_hmmsearch_globalest",P=as.integer(phi.n), N=as.integer(nrow(dat)),
 			T=as.integer(length(tps)), R=as.integer(bestmodel$reps), X=as.double(dat),
@@ -488,7 +487,7 @@ perform.hmmsearch_C_globalest <- function(phi.n, bestmodel) {
 			TH=as.double(TH), 	tps=as.integer(tps), stimids=as.integer(stimids-1),
 			stimgrps=as.integer(stimgrps), numexperiments=as.integer(numexperiments),
 			Likx=as.double(Lik), hmmiterations=as.integer(hmmiterations), 
-			Msx=as.integer(Ms), PACKAGE="ddepn")
+			Msx=as.integer(Ms), PACKAGE="ddepn", NAOK=TRUE)
 	
 	Lik <- ret$Likx
 	aic <- get.aic(phi.n, Lik)

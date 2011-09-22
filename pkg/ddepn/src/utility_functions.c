@@ -14,8 +14,9 @@
 #include <unistd.h>     // need for getpid() function
 #include <math.h>    // for pow function
 #include <string.h>  // for memcpy function
-//#include "perform_hmmsearch_globalest.h"
+#include <R.h> // R definitions and macros, e.g. ISNA(x)
 #include "utility_functions.h"
+
 /*
  * estimate the normal density parameters
  */
@@ -26,6 +27,7 @@ estimate_theta(const double *X, int *GSsub, double *TH, const int N,
 	int a_n, p_n, kk;
 	double a, p, mua, mup, sda, sdp, tmp;
 	double *params = malloc(4 * sizeof(double));
+	double tmpval;
 
 	// go through lines, i.e. proteins
 	for (int i = 0; i != N; ++i)
@@ -34,20 +36,22 @@ estimate_theta(const double *X, int *GSsub, double *TH, const int N,
 		p = 0.0;
 		a_n = 0;
 		p_n = 0;
-
 		// means; go through columns, i.e. timepoints
 		for (int j = 0; j != T * R; ++j)
 		{
 			kk = i + j * N;
-			if (GSsub[kk] == 1)
-			{
-				a += X[kk];
-				a_n++;
-			}
-			else
-			{
-				p += X[kk];
-				p_n++;
+			tmpval = X[kk];
+			if(!ISNA(tmpval)) {
+                          if (GSsub[kk] == 1)
+                          {
+                                  a += tmpval;
+                                  a_n++;
+                          }
+                          else
+                          {
+                                  p += tmpval;
+                                  p_n++;
+                          }
 			}
 		}
 
@@ -69,18 +73,21 @@ estimate_theta(const double *X, int *GSsub, double *TH, const int N,
 		for (int j = 0; j != T * R; ++j)
 		{
 			kk = i + j * N;
-			if (GSsub[kk] == 1)
-			{
-				tmp = X[kk] - mua;
-				a += (tmp * tmp);
-				a_n++;
-			}
-			else
-			{
-				tmp = X[kk] - mup;
-				p += (tmp * tmp);
-				p_n++;
-			}
+                        tmpval = X[kk];
+                        if(!ISNA(tmpval)) {
+                          if (GSsub[kk] == 1)
+                          {
+                                  tmp = tmpval - mua;
+                                  a += (tmp * tmp);
+                                  a_n++;
+                          }
+                          else
+                          {
+                                  tmp = tmpval - mup;
+                                  p += (tmp * tmp);
+                                  p_n++;
+                          }
+                        }
 		}
 		sda, sdp;
 		a_n = a_n - 1;

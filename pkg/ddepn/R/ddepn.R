@@ -19,7 +19,7 @@
 
 ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfile=NULL,
                   multicores=FALSE, maxiterations=1000, p=500, q=0.3, m=0.8, P=NULL,
-				  usebics=TRUE, cores=2, 
+				  usebics=TRUE, cores=1, 
 				  priortype="laplaceinhib",
 				  lambda=NULL, B=NULL, samplelambda=NULL,
 				  hmmiterations=100, fanin=4,
