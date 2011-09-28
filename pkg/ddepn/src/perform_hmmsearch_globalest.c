@@ -43,7 +43,8 @@ perform_hmmsearch_globalest(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int 
 	const int numexperiments = *numexperimentsx;
 	double *TH = THx; // parameter matrix
 	int ix = 0, i, j;
-	double Lik = *Likx;
+	double Lik = 0.0;
+	*Likx = 0.0;
 
 	// hmm search start
 	Lik = hmmsearch(Px, N, T, Rx, Xx, GSx, Gx, Glen, THx, tpsx, stimidsx, stimgrpsx,

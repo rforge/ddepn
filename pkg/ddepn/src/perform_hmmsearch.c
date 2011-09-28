@@ -21,7 +21,7 @@
 void
 perform_hmmsearch(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int *GSx,
     int *Gx, int *Glenx, double *THx, int *tpsx, int *stimidsx, int *stimgrpsx,
-    int *numexperimentsx, double *Likx, int *hmmiterations)
+    int *numexperimentsx, double *Likx, int *hmmiterations, int *Msx)
 {
   // create all objects that are needed. the const objects are not changed during
   // the run. the non - const objects are passed as reference and will be overridden
@@ -32,16 +32,17 @@ perform_hmmsearch(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int *GSx,
   const double *X = Xx;
   double *TH = THx;
   int ix = 0, i, j;
-  double Lik = *Likx;
-
+  double Lik = 0.0; //*Likx;
+  *Likx = 0.0;
   // set the seed using the current time and the process ID
   // this ensures that every instance uses different seeds.
   //srand(time(NULL) + getpid());
 
   // hmm search start
   Lik = hmmsearch_singleest(Px, N, T, Rx, Xx, GSx, Gx, Glenx, THx, tpsx, stimidsx, stimgrpsx,
-      numexperimentsx, hmmit);
+      numexperimentsx, hmmit, Msx);
   *Likx = Lik;
+  //printf("Likx: %f\n",*Likx);
   //printf("\n\nSUCCESS\n");
   return;
 }
@@ -55,12 +56,12 @@ double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
     int *G, int *Glen, double *TH,
     const int *tps,
     const int *stimids, const int *stimgrps,
-    const int *numexperimentsx, const int hmmit)
+    const int *numexperimentsx, const int hmmit, int *Ms)
 {
   // fixed for the moment, number of iterations in the em-algorithm
   int lenofexp, allR=0;
   int start = 0, end; // start and end positions in the data and gamma matrix
-  int numstims, idstart=0, Gstart=0;
+  int numstims, idstart=0, Gstart=0, M;
 
   // extract each experiment from X according to R and stimgrps and run the hmm
   // indices of columns of X to be selected:
@@ -69,12 +70,12 @@ double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
   for(int rind=0; rind!=*numexperimentsx; rind++) {
     //printf("replicates: %d\n", R[rind]);
     allR += R[rind]; // count the total number of replicates
+    M = Ms[rind];
     // extract the stimuli for the rind'th experiment
     int lstids = stimgrps[rind];
     int *stids = (int*)malloc(lstids*sizeof (int));
 
     for(int st=0; st!=lstids; st++) {
-      //printf("STIMULUS ID: %d\n", stimids[idstart+st]);
       stids[st] = stimids[idstart+st];
     }
     //printf("lstids: %d  ", lstids);
@@ -87,11 +88,11 @@ double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
 
     // get the sub-data-matrix
     end=start+lenofexp;
-    //printf("idstart %d; lenofexp: %d, end %d\n", idstart, lenofexp, end);
+
     // run the viterbi algorithm
     // Gstart contains the position in the G matrix at which new states have to be inserted
     Gstart = runviterbi(phi, N, T, R[rind], X, GS, start, end, G, Glen,
-        stids, lstids, Gstart, hmmit);
+        stids, lstids, Gstart, hmmit, M);
     start+=lenofexp;
     free(stids);
   }
@@ -100,12 +101,8 @@ double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
   // update the theta matrix
   estimate_theta(X, GS, TH, N, T, allR);
 
-  //printf("\t TH:\n");
-  //print_matrix(TH, N, 4);
-
   // calculate the new likelihood
   double Lik = calculate_likelihood(X, GS, TH, N, T, allR); //Liktmp$L
-  //printf("LIK::::: %f\n", Lik);
   return(Lik);
 }
 
@@ -115,38 +112,39 @@ double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
 int
 runviterbi(int *phi, const int N, const int T, int R, const double *X, int *GS,
     int start, int end, int *G, int *Glen, int *stids,
-    int lstids, int Gstart, const int hmmit)
+    int lstids, int Gstart, const int hmmit, int M)
 {
-  //printf("\nRUNVITERBI : start %d, end %d; N=%d; T=%d; R=%d\n", start, end, N,
-  //    T, R);
   // perform state propagation to obtain the gamma matrix
-  int lenofmat = N * T * R, M=0, k, runningindex=0; //, pseudocountsum;
-  //printf("lenofmat: %d", lenofmat);
+  int lenofmat = N * T * R, k, runningindex=0; //, pseudocountsum;   M=0,
 
   // create the system state matrix
-  int *Gsub = malloc(lenofmat * sizeof(int));
-  int *GSsub = malloc(lenofmat * sizeof(int));
-
-  // here the Gsub matrix is filled with the system states
-  M = propagate_effect(phi, stids, lstids, Gsub, N);
-  //pseudocountsum=M;
-  //printf("BACK from propeffect: Found M=%d system states. Gstart: %d\n", M, Gstart);
-  // free the unused memory in Gsub
-  Gsub = realloc(Gsub, (M*N)*sizeof(int));
-  //printf("\t Gsub:\n");
+  //int *Gsub = malloc(lenofmat * sizeof(int));
+  int *Gsub = malloc(N*M * sizeof(int));
+  //printf("Gstart: %d, G orig: \n", Gstart);
+  //print_intmatrix(G, N, *Glen/N);
+  for(int i=0; i!=N*M; ++i) {
+      Gsub[i] = G[Gstart + i];
+  }
+  //printf("G subset: \n");
   //print_intmatrix(Gsub, N, M);
 
+  int *GSsub = calloc(lenofmat, sizeof(int));
+
+  // here the Gsub matrix is filled with the system states
+  //M = propagate_effect(phi, stids, lstids, Gsub, N);
+  //M = *Glen/N;
+  //printf("BACK from propeffect: Found M=%d system states. Gstart: %d\n", M, Gstart);
+
+  // free the unused memory in Gsub
+  //Gsub = realloc(Gsub, (M*N)*sizeof(int));
+
   // get a theta matrix
-  double *THsub = malloc(4*N * sizeof(double));
-  //TH = (double*)malloc(4*N * sizeof(double));
+  //double *THsub = malloc(4*N * sizeof(double));
+  double *THsub = calloc(4*N, sizeof(double));
+  estimate_theta(X, GSsub, THsub, N, T, R);
 
   // run the hmm
   hmm(X, Gsub, GSsub, THsub, N, T, R, M, hmmit);
-  /*printf("RUNVITERBI:\n");
-  print_intmatrix(GSsub, N, T*R);
-  printf("RUNVITERBI GS:\n");
-  print_intmatrix(GS, N, 2*T*R);
-  */
   // start, end denote the start and end *columns*, get the indices:
   int GSstart = start * N;
   int GSend = end * N;
@@ -155,8 +153,6 @@ runviterbi(int *phi, const int N, const int T, int R, const double *X, int *GS,
       GS[k] = GSsub[runningindex];
       runningindex++;
   }
-  //printf("RUNVITERBI GS:\n");
-  //print_intmatrix(GS, N, 2*T*R);
   int temp = (Gstart+M*N);
   // allocate more space if G wasn't big enough before
   if(temp>*Glen) {
@@ -164,14 +160,12 @@ runviterbi(int *phi, const int N, const int T, int R, const double *X, int *GS,
       printf("Warning: Too little memory allocated for G!\n");
   }
   //    printf("start: %d, end: %d, GSstart: %d, GSend: %d, Gstart: %d, temp: %d\n",start, end,GSstart, GSend, Gstart, temp);
-  runningindex = 0;
+  /*runningindex = 0;
   for(k=Gstart; k!=temp; k++) {
       G[k] = Gsub[runningindex];
       runningindex++;
   }
-  //printf("G, allM %d:\n",temp/N);
-  //print_intmatrix(G, N, (temp/N));
-
+  */
   free(GSsub);
   free(Gsub);
   free(THsub);
@@ -194,14 +188,13 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
 
   // the viterbi matrix as vector
   double *viterbi = malloc(M * T * R * sizeof(double));
-  //for(int ind=0; ind!=M*T*R; ++ind) {
-  //  viterbi[ind] = 0;
-  //}
+
   int *maxemissionind = malloc(T * sizeof(int));
 
   double Lik = infinity, Lold;
   int diffold = -100, equally = 0, it = 0, restarts = 0, tmp;
   double diff, diffsold[hmmit];
+  for(int i=0; i!=hmmit; ++i) { diffsold[i] = HUGE_VAL; }
 
   double Lnew = calculate_likelihood(X, GSsub, THsub, N, T, R);
   while (it <= hmmit)
@@ -215,9 +208,6 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
 
       // calculate the new likelihood
       Lik = calculate_likelihood(X, GSsub, THsub, N, T, R); //Liktmp$L
-      //printf("XXLik: %f ", fabs(Lik));
-      //printf("XXLold: %f ", fabs(Lold));
-      //printf("XXDIFF Lik Lold: %f\n", fabs((fabs(Lik) - fabs(Lold))));
 
       if (isinf(Lold) != 1)
         {
@@ -227,9 +217,6 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
           diffsold[it] = diff;
           // check for repeating patterns
           tmp = find_diff(diff, diffsold, it);
-          //printf("%d tmp: %d\n",it,tmp);
-          //print_intmatrix(diffsold,1,it);
-          //printf("%d DIFF: %d, EQUALLY: %d, RESTARTS: %d\n",it, diff, equally, restarts);
             if (tmp > 10)
               {
                 //printf("REPEAT FOUND!!\n");
@@ -256,19 +243,8 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
                         diffsold[ddd] = -1*it;
                       }
                       // again initialise the state matrix
-                      //printf("A:\n");
-                      //print_matrix(A, M, M);
-                      //print_matrix_stats(A, M, M);
-                      //srand(time(NULL) + getpid());
-                      // alternative restart
                       //initialise_A(A, M);
                       initialise_GS(GSsub, Gsub, N, T, R, M);
-                      //free(viterbi);
-                      //free(maxemissionind);
-                      //double *viterbi = malloc(M * T * R * sizeof(double));
-                      //int *maxemissionind = malloc(T * sizeof(int));
-                      //estimate_theta(X, GSsub, THsub, N, T, R);
-                      /*it = 0;*/
                       Lik = infinity;
                       diffold = -100;
                       equally = 0;
@@ -284,10 +260,6 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
           diffold = diff;
         } // end if(isinf(Lold)!=1)
 
-      // fill the viterbi matrix
-      //for(int ind=0; ind!=M*T*R; ++ind) {
-      //  viterbi[ind] = 0;
-      //}
       double maxemission = infinity, viterbibefore, newem, maxviterbi;
       for (int t = 0; t != T; ++t)
         { // all time points
@@ -318,19 +290,13 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
                 }
               // remember the maximal value in this time point + the
               // state from which the data point was generated
-              //printf("\n\t\tmaxemission: %f, viterbi: %f\n", maxemission, viterbi[ind]);
               if (viterbi[ind] >= maxemission)
                 {
-                  //printf("set maxemind\n");
                   maxemission = viterbi[ind];
                   maxemissionind[t] = m;
                 }
             }
         }
-     /* for(int xxx=0; xxx!=T; xxx++) {
-          printf("%d ",maxemissionind[xxx]);
-      }
-*/
       // fill the gammaprime matrix
       for (int t = 0; t != T; t++)
         {
@@ -349,55 +315,11 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
       // M step: update transition probabilities
       updateA(A, maxemissionind, M, T);
     } // end while()
-  //printf("ITERATIONS PERFORMED: %d / %d\n", it,hmmit);
-  //print_intmatrix(GSsub, N, T*R);
   free(maxemissionind);
   free(viterbi);
   free(A);
 }
 
-/*
-void
-updateA(double *A, int *maxemissionind, const int M, const int T)
-{
-  int *Anum = calloc(M * M, sizeof(int));
-  int *Adenom = calloc(M, sizeof(int));
-  int t, src, dst;
-
-  // go along maxemissionind and count the transitions
-  for (t = 0; t != (T - 1); t++)
-    {
-      src = maxemissionind[t];
-      dst = maxemissionind[t + 1];
-      int ind = dst*M + src;
-      Anum[ind] = Anum[ind] + 1;
-      Adenom[src] = Anum[src] + 1;
-    }
-  // reset the transition probability to numocc / numtotaltransitionsfromsrc
-  double rowsum;
-  for (t = 0; t != (M * M); t++)
-    {
-      rowsum = 0.0;
-      // found the transition
-      if (Anum[t] != 0)
-        {
-          A[t] = log2(Anum[t] + 1) - log2(Adenom[(t % M)] + M);
-        }
-      //Asum += pow(2, A[t]);
-    }
-  // is a wrong normalisation...
-  double Asum = 0.0;
-  // record the rowSums for normalisation: tranisition matrix
-  // is always normalised such that the rows sum to 1
-  double *Asums = calloc(M * M, sizeof(double));
-  double *rowsums = calloc(M, sizeof(double));
-  Asum = get_rowsums(A, M, M, rowsums);
-  normalise_rows(A, M, M, rowsums);
-  free(Anum);
-  free(Adenom);
-  free(Asums);
-}
-*/
 /*
  * initialisation of the state transition matrix
  * draw uniform probabilities
@@ -423,10 +345,12 @@ initialise_A(double *A, int M)
           A[(i * M + j)] = rnum;
         }
     }
-  double *Asums = calloc(M * M, sizeof(double));
+  //double *Asums = calloc(M * M, sizeof(double));
   double *rowsums = calloc(M, sizeof(double));
   double Asum = get_rowsums(A, M, M, rowsums);
- }
+  normalise_rows(A, M, M, rowsums);
+  free(rowsums);
+}
 int
 find_diff(double diff, double *diffsold, int maxit)
 {
@@ -461,12 +385,11 @@ propagate_effect(int *phi, int *stids, int lstids, int *Gsub, const int N)
         {
           Gsub[i] = 0;
         }
-      //printf("Gsub[Gstart+i]: %d, binsum: %d\n", Gsub[i], (int)(Gsub[i] * pow(2, i)));
       binsum += Gsub[i] * pow(2, i);
     }
 
   binsums[it++] = binsum;
-  //printf("binsums[it]: %d",binsums[(it-1)]);
+
   // create a new column for Gsub
   while (goon == 1)
     {
@@ -495,7 +418,6 @@ propagate_effect(int *phi, int *stids, int lstids, int *Gsub, const int N)
             {
               Gsub[(index + i)] = newcol[i];
             }
-          // print_intmatrix(Gsub, N, it + 2);
           it++;
         }
       index += N;
@@ -527,7 +449,6 @@ next_col(int *newcol, int *Gsub, int N, int *stids, int lstids, int *phi,
       if (is_stimulus(i, stids, lstids) == 1)
         {
           newcol[i] = 1;
-          //printf("newcol[i]: %d\n", newcol[i]);
           binsum += (int)(newcol[i] * pow(2, i));
           continue;
         }
@@ -564,7 +485,6 @@ next_col(int *newcol, int *Gsub, int N, int *stids, int lstids, int *phi,
             }
         }// second for
       // now newcol[i] is set, add to the binary sum for the column check
-      //printf("newcol[i]: %d\n", newcol[i]);
       binsum += (int)(newcol[i] * pow(2, i));
     }
   return (binsum);

@@ -27,15 +27,21 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 				  debug=0,burnin=500, thin=FALSE, plotresults=TRUE,
 				  always_sample_sf=FALSE,scale_lik=FALSE,allow.stim.off=FALSE,
 				  implementation="C") {
+	## deal with missing replicates
+	## make pad of NA columns for missing replicates
+	dat <- pad_data(dat)
+	## order the new matrix
+	dat <- order_experiments(dat)		  
 	# get the experiments, i.e. the stimuli/inhibitor combinations
 	# works if format of dat is like:
 	# colnames contain the experiments in form STIMULUS_time
 	cols <- colnames(dat)
 	tmp <- sapply(cols, function(x) strsplit(x,"_")[[1]])
 	## check if number of time points is the same across all experiments
-	if(length(unique(table(tmp[2,])))!=1) {
-		stop("ERROR: Found differing number of time points across experiments.")
-	}
+	## should be possible now
+#	if(length(unique(table(tmp[2,])))!=1) {
+#		stop("ERROR: Found differing number of time points across experiments.")
+#	}
 	## check if samplelambda is either numeric or NULL
 	if(!(mode(samplelambda)=="numeric" | is.null(samplelambda))) {
 		stop("ERROR: Please specify argument samplelambda either as numeric value or NULL.")	
@@ -271,6 +277,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 				pdf(outfile,onefile=TRUE)
 			}
 			if(plotresults) {
+				x11()
+				par(mfrow=c(4,4))
 				plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
 				if(ncol(ltraces)>1)
 					sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)

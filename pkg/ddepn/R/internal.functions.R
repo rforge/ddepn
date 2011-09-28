@@ -2,6 +2,42 @@
 # 
 # Author: benderc
 ###############################################################################
+## get the numbers of the replicates and the timepoints for each experiment
+## returns a list containing a list tps with the timepoint labels for each experiment
+##         and a vector with the replicate numbers for each experiment
+get_reps_tps <- function(nx) {	
+	tpsx <- unique(sapply(nx, function(xx) strsplit(xx,"_")[[1]][2]))
+	r1 <- table(sub("_[0-9].*$","",nx)) / length(tpsx)
+	list(tps=tpsx, reps=r1)
+}
+
+## make a pad of NA columns, whenever there are unequal numbers of replicates 
+pad_data <- function(dat) {
+	tcd <- table(colnames(dat))
+	topad <- which(tcd!=max(tcd))
+	if(length(topad)>0) {
+		xxx <- max(tcd) - tcd[topad]
+		cn_pad <- rep(names(xxx), times=xxx)
+		pad <- matrix(NA, nrow=nrow(dat), ncol=length(cn_pad), dimnames=list(rownames(dat), cn_pad))
+		dat <- cbind(dat, pad)
+	}
+	dat
+}
+
+## sort a data matrix according to experiment, timepoint and replicate indicator
+order_experiments <- function(dat) {
+	#exper <- gsub("-[0-9]_[0-9]*$","",colnames(dat))
+	#brepl <- as.numeric(gsub("(^.*-)([0-9])(_[0-9]*$)","\\2",colnames(dat)))
+	#timep <- as.numeric(gsub("^.*_","",colnames(dat)))
+	#ord <- order(exper, timep, brepl)
+	s1 <- gsub("_.*$","",colnames(dat))
+	s2 <- gsub("^.*_","",colnames(dat))
+	ord <- order(s1, s2)
+	dat <- dat[,ord]
+	dat
+}
+
+
 reverse.direction <- function(phi, i, switchtype=FALSE) {
 	cs <- coord(i,phi)
 	phi[cs[2],cs[1]] <- phi[cs[1],cs[2]]

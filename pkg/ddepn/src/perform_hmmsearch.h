@@ -22,7 +22,7 @@ double hmmsearch_singleest(int *phi, const int N,
     int *G, int *Glen, double *TH,
     const int *tps,
     const int *stimids, const int *stimgrps,
-    const int *numexperimentsx, const int hmmit);
+    const int *numexperimentsx, const int hmmit, int *Ms);
 
 void initialise_A(double *A, int M);
 
@@ -42,7 +42,7 @@ void perform_hmmsearch(int *Px, int *Nx, int *Tx, int *Rx,
                        int *tpsx,
                        int *stimidsx, int *stimgrpsx,
                        int *numexperimentsx, double *Likx,
-                       int *hmmiterations);
+                       int *hmmiterations, int *Msx);
 /*
  * Effect Propagation for one stimulus. Generates the
  * reachable states Gamma
@@ -56,6 +56,6 @@ int runviterbi(int *phi, const int N, const int T, int R,
     const double *X, int *GS, int start, int end,
     int *G, int *Glen,
     int *stids, int lstids,
-    int Gstart, const int hmmit);
+    int Gstart, const int hmmit, int M);
 
 #endif /* PERFORM_HMMSEARCH_H__ */

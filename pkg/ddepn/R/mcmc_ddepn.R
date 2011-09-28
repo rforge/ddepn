@@ -28,9 +28,13 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	if(!priortype %in% c("laplaceinhib","laplace","scalefree","uniform"))
 		stop("Error, for MCMC, usebics must be FALSE and priortype one out of 'laplaceinhib', 'laplace', 'scalefree' or 'uniform'.")
 	antibodies <- rownames(dat)
-	tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
-	reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
-	gammaposs <- propagate.effect.set(phi,stimuli, allow.stim.off=allow.stim.off)
+	## get the timepoints in each experiment
+	#tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
+	#reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
+	tmp <- tapply(colnames(dat), gsub("_.*$","",colnames(dat)), get_reps_tps)
+	tps <- lapply(tmp, function(x) x$tps)
+	reps <- sapply(tmp, function(x) as.numeric(x$reps))
+	gammaposs <- propagate.effect.set(phi, stimuli, allow.stim.off=allow.stim.off)
 	# now get an initial gamma matrix
 	if(!is.null(retobj)) {
 		gammax <- retobj$gamma
@@ -39,7 +43,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		for(sti in 1:length(stimuli)) {
 			st <- stimuli[[sti]]
 			indices <- grep(paste("^",paste(names(st),collapse="&"),"_",sep=""),colnames(gammaposs))
-			gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps[sti])
+			gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps[[sti]]),replace=TRUE))],reps[sti])
+			#gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps[sti])
 			gammax <- cbind(gammax, gx)
 		}
 	}

@@ -10,7 +10,9 @@
 \alias{tp.median}
 \alias{detailed.to.simple.regulations}
 \alias{reverse.direction}
-
+\alias{pad_data}
+\alias{order_experiments}
+\alias{get_reps_tps}
 \title{
 internal.functions
 get.data
@@ -22,6 +24,9 @@ transitive.closure
 tp.median
 detailed.to.simple.regulations
 reverse.direction
+pad_data
+order_experiments
+get_reps_tps
 }
 \description{
 Some internal functions, usually not to be called directly.
@@ -47,6 +52,13 @@ tp.median(dat)
 detailed.to.simple.regulations(phi)
 
 reverse.direction(phi, i, switchtype=FALSE)
+
+pad_data(dat)
+
+order_experiments(dat)
+
+get_reps_tps(nx)  
+
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -66,6 +78,7 @@ Functions are usually not called directly.
 \item{phi}{todo}
 \item{i}{todo}
 \item{switchtype}{todo}
+\item{nx}{todo}
  }
 \details{
 Some internal functions, usually not to be called directly.

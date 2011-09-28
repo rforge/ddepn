@@ -164,7 +164,9 @@ resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=
       leading to rather inhomogeneous parameter estimates with large variances. Using only one HMM for all experiments
       overcomes this problem, since the states are chosen with respect to all experiments. However, deriving the combined 
       state matrix leads to higher number of possible system states to be regarded in the viterbi algorithm, and this will slow down
-      the HMM. The default is to use the \code{"C"} implementation.}
+      the HMM. The default is to use \code{"C"} with a reasonable trade off of quality and speed.}
+      %Because of the presumably better parameter estimation the global estimation paradigm is used (C_globalest). However, 
+      %the faster \code{"C"} implementation can still be used, if shorter computation times are desired.}
   }
 }
 \value{

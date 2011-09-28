@@ -16,12 +16,16 @@ makedata(phi, stimuli, R.t = 3, R.b = 3, TT = 10, mu.bg = 0, sd.bg = 0.1, mu.sig
   \item{stimuli}{List containing all stimuli.
   }
   \item{R.t}{Integer. Number of technical replicates. So far, no distinction is done between technical and 
-    biological replicates, so in total a number of \eqn{R.t \cdot R.b} replicates is generated. 
+    biological replicates, so in total a number of \eqn{R.t \cdot R.b} replicates is generated. If given as vector 
+    of length equal to the length of \code{stimuli}, then each element denotes the numbers of replicates in 
+    each experiment, denoted by the corresponding element in \code{stimuli}.
   }
   \item{R.b}{Integer. Number of biological replicates. So far, no distinction is done between technical and 
-    biological replicates, so in total a number of \eqn{R.t \cdot R.b} replicates is generated.
+    biological replicates, so in total a number of \eqn{R.t \cdot R.b} replicates is generated. Can also be given 
+    as vector, with the same effect as for \code{R.t}.
   }
-  \item{TT}{Integer.Number of timepoints in the experiment.
+  \item{TT}{Integer.Number of timepoints in the experiment. Analogously to \code{R.t} and \code{R.b}, can be 
+    given as vector, denoting the numbers of time points in each separate experiment.
   }
   \item{mu.bg}{Double. Mean background intensity (for passive state of the protein.
   }

@@ -24,6 +24,11 @@ replicatecolumns <- function(mat, replicates=4) {
 perform.hmmsearch <- function(phi.n, bestmodel) {
 	## select implementation
 	implementation <- get("IMPLEMENTATION", pos=globalenv())
+	## do this only until different number of timepoints  
+	## in each experiment is implemented in C
+	if(class(bestmodel$tps)=="list")
+		bestmodel$tps <- bestmodel$tps[[1]]
+	
 	switch(implementation,
 			R=perform.hmmsearch_R(phi.n, bestmodel),
 			R_globalest=perform.hmmsearch_globalest(phi.n, bestmodel),
@@ -210,29 +215,28 @@ perform.hmmsearch_C <- function(phi.n, bestmodel) {
 	dat <- bestmodel$dat
 	hmmiterations <- bestmodel$hmmiterations
 	GS <- matrix(0, nrow=nrow(dat), ncol=ncol(dat), dimnames=dimnames(dat))
-	gammaposs <- NULL
-	for(s in stimuli) {
-		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
-		RR <- length(exind)/length(T)
-		datx <- dat[,exind]
-		gammaposs <- cbind(gammaposs,propagate.effect.simple(phi.n,stimulus=s,stimuli=stimuli))
-	}	
+	gammaposs <- propagate.effect.set(phi.n, stimuli=stimuli)
 	G <- gammaposs
-	G[G!=0] <- 0
+	#G[G!=0] <- 0
 	TH <- matrix(0.0, nrow=nrow(dat), ncol=4, dimnames=dimnames(bestmodel$theta))
 	stimids <- unlist(stimuli)
 	stimnames <- names(stimids)
 	stimgrps <- sapply(stimuli, length)
 	numexperiments <- length(bestmodel$reps)
-	Lik <- 0
-	
+	## get the M_i: the number of possible states for each experiment, same dimension of R
+	Ms <- table(gsub("_[0-9]$","",colnames(gammaposs)))
+	## sort according to the experiments, as they are in the data matrices
+	Ms <- Ms[order(match(names(Ms), sub("_[0-9]$","",colnames(gammaposs))))]
+	Lik <- 0.0
+
 	# separate HMM for each experiment, i.e. each stimulus	
 	ret <- .C("perform_hmmsearch",P=as.integer(phi.n), N=as.integer(nrow(dat)),
 			T=as.integer(length(tps)), R=as.integer(bestmodel$reps), X=as.double(dat),
 			GS=as.integer(GS), G=as.integer(G), Glen=as.integer(length(G)),
 			TH=as.double(TH), 	tps=as.integer(tps), stimids=as.integer(stimids-1),
 			stimgrps=as.integer(stimgrps), numexperiments=as.integer(numexperiments),
-			Likx=as.double(Lik), hmmiterations=as.integer(bestmodel$hmmiterations), PACKAGE="ddepn", NAOK=TRUE)
+			Likx=as.double(Lik), hmmiterations=as.integer(bestmodel$hmmiterations),
+			Msx=as.integer(Ms), PACKAGE="ddepn", NAOK=TRUE)
 	
 	Lik <- ret$Likx
 	aic <- get.aic(phi.n, Lik)
@@ -480,6 +484,7 @@ perform.hmmsearch_C_globalest <- function(phi.n, bestmodel) {
 	Ms <- table(gsub("_[0-9]$","",colnames(gammaposs)))
 	## sort according to the experiments, as they are in the data matrices
 	Ms <- Ms[order(match(names(Ms), sub("_[0-9]$","",colnames(gammaposs))))]
+		
 	# separate HMM for each experiment, i.e. each stimulus	
 	ret <- .C("perform_hmmsearch_globalest",P=as.integer(phi.n), N=as.integer(nrow(dat)),
 			T=as.integer(length(tps)), R=as.integer(bestmodel$reps), X=as.double(dat),
