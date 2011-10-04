@@ -15,7 +15,9 @@
 void checkC(int *phi, int *GS, int ch, int pa, int N, int T, int R, int *consvec);
 
 void extract_transitionmatrix(double *src, double *dst, int nstates, int index);
+
 void extract_datamatrix(const double *X, double *Xexp, int N, int T, int R, int start);
+
 void extract_statematrix(int *X, int *Xexp, int N, int cols, int start);
 
 int find_switchable(double *TH, int N, int *toswitch);
@@ -28,7 +30,7 @@ int get_parents(int *phi, int N, int *parents, int leaf);
  * Perform Viterbi Training for a single network phi
  */
 double hmmsearch(int *phi, const int N,
-		const int T, const int *R,
+		const int *Tx, const int *Rx,
 		const double *X, int *GS,
 		int *G, int Glen, double *TH,
 		const int *tps,

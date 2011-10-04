@@ -27,7 +27,7 @@ perform_hmmsearch(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int *GSx,
   // the run. the non - const objects are passed as reference and will be overridden
   // P is an array of length n * n, the adjacency matrix
   const int N = *Nx;
-  const int T = *Tx;
+  //const int T = *Tx;
   const int hmmit = *hmmiterations;
   const double *X = Xx;
   double *TH = THx;
@@ -39,7 +39,7 @@ perform_hmmsearch(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int *GSx,
   //srand(time(NULL) + getpid());
 
   // hmm search start
-  Lik = hmmsearch_singleest(Px, N, T, Rx, Xx, GSx, Gx, Glenx, THx, tpsx, stimidsx, stimgrpsx,
+  Lik = hmmsearch_singleest(Px, N, Tx, Rx, Xx, GSx, Gx, Glenx, THx, tpsx, stimidsx, stimgrpsx,
       numexperimentsx, hmmit, Msx);
   *Likx = Lik;
   //printf("Likx: %f\n",*Likx);
@@ -51,7 +51,7 @@ perform_hmmsearch(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int *GSx,
  * For one network phi and one experiment extracted from the total data matrix X,
  * for one experiments states Gx use the viterbi algorithm
 */
-double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
+double hmmsearch_singleest(int *phi, const int N, const int *Tx, const int *R,
     const double *X, int *GS,
     int *G, int *Glen, double *TH,
     const int *tps,
@@ -59,7 +59,7 @@ double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
     const int *numexperimentsx, const int hmmit, int *Ms)
 {
   // fixed for the moment, number of iterations in the em-algorithm
-  int lenofexp, allR=0;
+  int lenofexp, allR=0, allT=0, T;
   int start = 0, end; // start and end positions in the data and gamma matrix
   int numstims, idstart=0, Gstart=0, M;
 
@@ -68,8 +68,11 @@ double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
   // rind is equivalent to the experiment index
   // this defines the stimuli to take from stimgrps
   for(int rind=0; rind!=*numexperimentsx; rind++) {
-    //printf("replicates: %d\n", R[rind]);
+    T = Tx[rind];
+    //printf("replicates: %d, T: %d\n", R[rind], T);
     allR += R[rind]; // count the total number of replicates
+    allT += T; // count the total number of timepoints
+
     M = Ms[rind];
     // extract the stimuli for the rind'th experiment
     int lstids = stimgrps[rind];
@@ -97,12 +100,17 @@ double hmmsearch_singleest(int *phi, const int N, const int T, const int *R,
     free(stids);
   }
 
+  // number of replicates are the same in each experiment, since
+  // pad-columns containing NAs were added
+  allR = allR / *numexperimentsx;
+
   // now the GS and G matrices are ready, get the final likelihood and TH values
   // update the theta matrix
-  estimate_theta(X, GS, TH, N, T, allR);
+  estimate_theta(X, GS, TH, N, allT, allR);
 
   // calculate the new likelihood
   double Lik = calculate_likelihood(X, GS, TH, N, T, allR); //Liktmp$L
+
   return(Lik);
 }
 
@@ -145,6 +153,7 @@ runviterbi(int *phi, const int N, const int T, int R, const double *X, int *GS,
 
   // run the hmm
   hmm(X, Gsub, GSsub, THsub, N, T, R, M, hmmit);
+
   // start, end denote the start and end *columns*, get the indices:
   int GSstart = start * N;
   int GSend = end * N;
@@ -154,23 +163,19 @@ runviterbi(int *phi, const int N, const int T, int R, const double *X, int *GS,
       runningindex++;
   }
   int temp = (Gstart+M*N);
-  // allocate more space if G wasn't big enough before
+  // check if G is too small - shouldn't happen, though
   if(temp>*Glen) {
-      //G = realloc(G, (Gstart+M*N) * sizeof(int));
-      printf("Warning: Too little memory allocated for G!\n");
+      //G = realloc(G, (Gstart+M*N) * sizeof(int)); //allocate more space if G wasn't big enough before
+      printf("Warning: Too little memory allocated for G! temp: %d, Gstart %d, M: %d, N: %d\n", temp, Gstart, M, N);
   }
-  //    printf("start: %d, end: %d, GSstart: %d, GSend: %d, Gstart: %d, temp: %d\n",start, end,GSstart, GSend, Gstart, temp);
-  /*runningindex = 0;
-  for(k=Gstart; k!=temp; k++) {
-      G[k] = Gsub[runningindex];
-      runningindex++;
-  }
-  */
+
+  // printf("start: %d, end: %d, GSstart: %d, GSend: %d, Gstart: %d, temp: %d\n",start, end,GSstart, GSend, Gstart, temp);
   free(GSsub);
   free(Gsub);
   free(THsub);
   return(temp);
 }
+
 void
 hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
     const int T, const int R, int M, const int hmmit)
@@ -189,17 +194,21 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
   // the viterbi matrix as vector
   double *viterbi = malloc(M * T * R * sizeof(double));
 
+  // will hold the state indices with maximum likelihood
   int *maxemissionind = malloc(T * sizeof(int));
 
   double Lik = infinity, Lold;
-  int diffold = -100, equally = 0, it = 0, restarts = 0, tmp;
+  int diffold = -100, equally = 0, it, restarts = 0, tmp;
   double diff, diffsold[hmmit];
-  for(int i=0; i!=hmmit; ++i) { diffsold[i] = HUGE_VAL; }
+  for(int ddd=0; ddd!=hmmit; ++ddd) { diffsold[ddd] = ddd; } //HUGE_VAL; }
 
-  double Lnew = calculate_likelihood(X, GSsub, THsub, N, T, R);
-  while (it <= hmmit)
+  // get initial likelihood
+  //double Lnew = calculate_likelihood(X, GSsub, THsub, N, T, R);
+
+  // main baum-welch loop
+  //while (it <= hmmit)
+  for(it=0; it!=hmmit; ++it)
     {
-       it++;
       //old likelihood
       Lold = Lik;
 
@@ -239,9 +248,7 @@ hmm(const double *X, int *Gsub, int *GSsub, double *THsub, const int N,
                     {
                       //printf("RESTART!!\n");
                       // reset to some non-repeating dummy values
-                      for(int ddd=0; ddd!=it; ++ddd) {
-                        diffsold[ddd] = -1*it;
-                      }
+                      for(int ddd=0; ddd!=it; ++ddd) { diffsold[ddd] = ddd; }
                       // again initialise the state matrix
                       //initialise_A(A, M);
                       initialise_GS(GSsub, Gsub, N, T, R, M);
@@ -351,6 +358,11 @@ initialise_A(double *A, int M)
   normalise_rows(A, M, M, rowsums);
   free(rowsums);
 }
+
+/*
+ * look for value diff in vector diffsold and count
+ * occurrences. maxit is the length of diffsold
+ */
 int
 find_diff(double diff, double *diffsold, int maxit)
 {

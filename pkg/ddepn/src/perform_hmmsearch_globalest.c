@@ -36,9 +36,11 @@ perform_hmmsearch_globalest(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int 
 	// the run. the non - const objects are passed as reference and will be overridden
 	// P is an array of length N * N, the adjacency matrix
 	const int N = *Nx; // num of nodes
-	const int T = *Tx; // num of timepoints
+	//const int T = *Tx; // num of timepoints
 	const int hmmit = *hmmiterations;
 	const double *X = Xx; // data matrix
+	const int *Txx = Tx; // the time point vector
+	const int *Rxx = Rx; // the time point vector
 	const int Glen = *Glenx;
 	const int numexperiments = *numexperimentsx;
 	double *TH = THx; // parameter matrix
@@ -47,7 +49,7 @@ perform_hmmsearch_globalest(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int 
 	*Likx = 0.0;
 
 	// hmm search start
-	Lik = hmmsearch(Px, N, T, Rx, Xx, GSx, Gx, Glen, THx, tpsx, stimidsx, stimgrpsx,
+	Lik = hmmsearch(Px, N, Txx, Rxx, Xx, GSx, Gx, Glen, THx, tpsx, stimidsx, stimgrpsx,
 			numexperiments, hmmit, Msx);
 	*Likx = Lik;
 	return;
@@ -70,7 +72,7 @@ perform_hmmsearch_globalest(int *Px, int *Nx, int *Tx, int *Rx, double *Xx, int 
  * hmmit: number of hmmiterations
  * Ms: number of system states for each experiment
  */
-double hmmsearch(int *phi, const int N, const int T, const int *R,
+double hmmsearch(int *phi, const int N, const int *Tx, const int *Rx,
 		const double *X, int *GS,
 		int *G, int Glen, double *TH,
 		const int *tps,
@@ -82,7 +84,7 @@ double hmmsearch(int *phi, const int N, const int T, const int *R,
 	int numstims, idstart=0, Gstart=0;
 
 	for(int i=0; i!=numexperiments; ++i) {
-		ncol_GS += T*R[i];
+		ncol_GS += Tx[i]*Rx[i];
 	}
 	//  printf("~~~~~ \n ncol_GS: %d\n",ncol_GS);
 	// init A, TH and L
@@ -105,13 +107,13 @@ double hmmsearch(int *phi, const int N, const int T, const int *R,
 	 * perform viterbi for each experiment separately
 	 * get the parameters TH and updates for A and GS for all experiments combined
 	 */
-	int Mexp;
+	int Mexp, T, R;
 	int startA=0, startX=0, startG=0;
 	double *Aexp = NULL;
 	double *Xexp = NULL;
 	int *Gexp = NULL;
 	int *GSexp = NULL;
-	int allR;
+	int allR, allT;
 	double Lik = -1*infinity;
 	double Likold = -1*infinity;
 	int nLikEqual = 0;
@@ -127,6 +129,7 @@ double hmmsearch(int *phi, const int N, const int T, const int *R,
 	// new state matrix object
 	for(int it=0; it!=hmmit; ++it) {
 		allR=0;
+		allT=0;
 		startA=0;
 		startX=0;
 		startG=0;
@@ -148,7 +151,10 @@ double hmmsearch(int *phi, const int N, const int T, const int *R,
 			// try switching the theta parameters upto
 			// maxsw times to reduce the number of inconsitencies
 			//maxsw = min(nsw, N);
-			allR += R[expind];
+                        T = Tx[expind];
+                        R = Rx[expind];
+			allR += R;
+			allT += T;
 			Mexp = Ms[expind];
 			for(int swind=0; swind!=maxsw; ++swind) {
 
@@ -157,22 +163,22 @@ double hmmsearch(int *phi, const int N, const int T, const int *R,
 				extract_transitionmatrix(A, Aexp, Mexp, startA);
 
 				// extract the sub-data matrix
-				Xexp = realloc(Xexp, N*T*R[expind]*sizeof(double));
-				extract_datamatrix(X, Xexp, N, T, R[expind], startX);
+				Xexp = realloc(Xexp, N*T*R*sizeof(double));
+				extract_datamatrix(X, Xexp, N, T, R, startX);
 
 				// extract the sub-state matrix
 				Gexp = realloc(Gexp, N*Mexp*sizeof(int));
 				extract_statematrix(G, Gexp, N, Mexp, startG);
 
 				// extract the sub-optimstate matrix
-				GSexp = realloc(GSexp, N*T*R[expind]*sizeof(int));
-				extract_statematrix(GS, GSexp, N, T*R[expind], startX);
+				GSexp = realloc(GSexp, N*T*R*sizeof(int));
+				extract_statematrix(GS, GSexp, N, T*R, startX);
 
 				// run the viterbi
-				viterbi(T, Mexp, Xexp, Gexp, TH, N, R[expind], Aexp, GSexp);
+				viterbi(T, Mexp, Xexp, Gexp, TH, N, R, Aexp, GSexp);
 
 				// consitency check
-				int inc = is_consistent(phi, GSexp, Gexp, N, T, R[expind]);
+				int inc = is_consistent(phi, GSexp, Gexp, N, T, R);
 
 				if(inc>0 && nsw>0) {
 					//printf("Inconsitensies in state series. Repeat HMM with modified thetaprime.\n");
@@ -193,7 +199,7 @@ double hmmsearch(int *phi, const int N, const int T, const int *R,
 					nsw--;
 				} else {
 					// update the GSnew matrix
-					update_statematrix(GS, GSexp, startX, N, T, R[expind]);
+					update_statematrix(GS, GSexp, startX, N, T, R);
 
 					// update the new transition prob matrix
 					update_transitionmatrix(A, Aexp, Mexp, startA);
@@ -202,16 +208,20 @@ double hmmsearch(int *phi, const int N, const int T, const int *R,
 			} // switch loop end
 			// increment the experiment start indices
 			startA += pow(Mexp, 2);
-			startX += N*T*R[expind];
+			startX += N*T*R;
 			startG += N*Mexp;
 		} // experiment loop end
 
+		// number of replicates are the same in each experiment, since
+		// pad-columns containing NAs were added
+		allR = allR/numexperiments;
+
 		// M-step
 		// update the theta matrix
-		estimate_theta(X, GS, TH, N, T, allR);
+		estimate_theta(X, GS, TH, N, allT, allR);
 
 		// calculate the new likelihood
-		Lik = calculate_likelihood(X, GS, TH, N, T, allR); //Liktmp$L
+		Lik = calculate_likelihood(X, GS, TH, N, allT, allR); //Liktmp$L
 		diff = fabs((fabs(Lik) - fabs(Likold)));
 
 		// count number of equal differences in the last 10 likelihoods

@@ -323,10 +323,9 @@ also can be a combination of several treatments, e.g. stimulation by \emph{EGF} 
 inhibition by a drug \emph{X}. In this case, each stimulus has to be separated by an ampersand
 (\emph{$\&$}). The time point is separated from the stimuli via an underscore character
 (\emph{$\_$}), and can be on any scale (minutes, hours etc.). An example data matrix is
-shown below. In this table, the dummy rows for the treatments are already included (rows EGF and X).
+shown table \ref{tab:exampledatamatrix}. In this table, the dummy rows for the treatments are already included (rows EGF and X).
 However, they are not mandatory as input to \emph{ddepn} and, if missing, will be generated 
-automatically, only requiring the correct labeling of the columns. An example for a data matrix is 
-given in table \ref{tab:exampledatamatrix}.
+automatically, only requiring the correct labeling of the columns. 
 
 %\begin{scriptsize}
 \begin{table}[h]

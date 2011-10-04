@@ -29,9 +29,9 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		stop("Error, for MCMC, usebics must be FALSE and priortype one out of 'laplaceinhib', 'laplace', 'scalefree' or 'uniform'.")
 	antibodies <- rownames(dat)
 	## get the timepoints in each experiment
-	#tps <- unique(sapply(colnames(dat), function(x) strsplit(x,"_")[[1]][2]))
-	#reps <- table(sub("_[0-9].*$","",colnames(dat))) / length(tps)
+	ordstim <- sapply(stimuli, function(x) paste(names(x),collapse="&"))
 	tmp <- tapply(colnames(dat), gsub("_.*$","",colnames(dat)), get_reps_tps)
+	tmp <- tmp[ordstim]		
 	tps <- lapply(tmp, function(x) x$tps)
 	reps <- sapply(tmp, function(x) as.numeric(x$reps))
 	gammaposs <- propagate.effect.set(phi, stimuli, allow.stim.off=allow.stim.off)

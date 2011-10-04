@@ -139,8 +139,8 @@ resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=
     \item{dat}{
       Data matrix. Rows correspond to measured proteins/genes etc.
       Columns contain all experiments, i.e. separate perturbations.
-      Each experiment consists of T time points and each time point is
-      assumed to be measured in R replicates. The time is indicated as a
+      Each experiment \code{i} consists of \code{T_i} time points and each time point is
+      assumed to be measured in \code{R_i} replicates. The time is indicated as a
       numeric value, separated by an underscore in the column name.
       Example:
       \tabular{lcccccccc}{
@@ -153,8 +153,8 @@ resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=
       }
       For example, \code{EGF_1} means EGF treatment at time 1, \code{EGF&X_2} means simultaneous treatment with EGF and X at time 2
       etc. One could use function \code{\link{addstimuli}} to automatically add the additional rows for the 
-      treatments to the data matrix, if they are not present. See the vignette for more details on the format 
-      of the data matrix.
+      treatments to the data matrix, if they are not present. Unequal numbers of time points and replicates are allowed 
+      for each experiment. See the vignette for more details on the format of the data matrix.
     }
     \item{implementation}{Several implementations are provided, differing in the way that the Gaussian parameters are 
       estimated in the HMM. The \code{"R"} and \code{"C"} implementations derive separate optimal state matrices

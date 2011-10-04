@@ -86,8 +86,14 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 				stop("Error: please provide either a list of or a single seed network in argument phi, or leave it as NULL.")
 			}
 			#V <- rownames(dat)
-			tps <- unique(sapply(cols, function(x) strsplit(x,"_")[[1]][2]))
-			reps <- table(sub("_[0-9].*$","",cols)) / length(tps)
+			ordstim <- sapply(stimuli, function(x) paste(names(x),collapse="&"))
+			tmp <- tapply(colnames(dat), gsub("_.*$","",colnames(dat)), get_reps_tps)
+			tmp <- tmp[ordstim]
+			tps <- lapply(tmp, function(x) x$tps)
+			reps <- unique(sapply(tmp, function(x) as.numeric(x$reps)))
+			if(length(reps)>1) {
+				stop("Number of replicates differ in the experiments. Please add columns containing NAs to obtain equal number of replicates.")
+			}
 			X <- vector("list",p)
 			for(i in 1:p) {
 				X[[i]] <- phi[[i]]

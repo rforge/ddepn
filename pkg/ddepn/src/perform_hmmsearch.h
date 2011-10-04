@@ -17,7 +17,7 @@ void hmm(const double *X, int *Gsub, int *GSsub, double *TH, const int N, const 
  * Perform Viterbi Training for a single network phi
  */
 double hmmsearch_singleest(int *phi, const int N,
-    const int T, const int *R,
+    const int *Tx, const int *R,
     const double *X, int *GS,
     int *G, int *Glen, double *TH,
     const int *tps,

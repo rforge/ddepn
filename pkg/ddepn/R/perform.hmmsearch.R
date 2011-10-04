@@ -26,8 +26,8 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 	implementation <- get("IMPLEMENTATION", pos=globalenv())
 	## do this only until different number of timepoints  
 	## in each experiment is implemented in C
-	if(class(bestmodel$tps)=="list")
-		bestmodel$tps <- bestmodel$tps[[1]]
+	#if(class(bestmodel$tps)=="list")
+	#	bestmodel$tps <- bestmodel$tps[[1]]
 	
 	switch(implementation,
 			R=perform.hmmsearch_R(phi.n, bestmodel),
@@ -45,7 +45,10 @@ perform.hmmsearch <- function(phi.n, bestmodel) {
 ### viterbi: M x T matrix: which path to take
 perform.hmmsearch_R <- function(phi.n, bestmodel) {
 	#cat(".")
-	tps <- bestmodel$tps
+	#browser()
+	tpsall <- bestmodel$tps
+	tps <- unlist(tpsall) ## vector representation for c-function
+	Tall <- sapply(tpsall, length)
 	stimuli <- bestmodel$stimuli
 	dat <- bestmodel$dat
 	hmmiterations <- bestmodel$hmmiterations
@@ -54,9 +57,14 @@ perform.hmmsearch_R <- function(phi.n, bestmodel) {
 	gamprimetotal <- NULL
 	gamposstotal <- NULL
 	# separate HMM for each experiment, i.e. each stimulus
-	for(s in stimuli) {
+	#for(s in stimuli) {
+	for(i in 1:length(stimuli)) {
+		s <- stimuli[[i]]
+		tps <- tpsall[[i]]
+		T <- Tall[i]
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
-		R <- length(exind)/length(tps)
+		#R <- length(exind)/length(tps)
+		R <- bestmodel$reps[i]
 		datx <- dat[,exind]
 		gammaposs <- propagate.effect.simple(phi.n,stimulus=s,stimuli=stimuli,allow.stim.off=allow.stim.off)
 		colnames(gammaposs) <- paste(paste(names(s),collapse="&"), colnames(gammaposs), sep="_")
@@ -64,7 +72,7 @@ perform.hmmsearch_R <- function(phi.n, bestmodel) {
 		TC <- unique(colnames(datx))
 		M <- ncol(gammaposs)
 		N <- nrow(datx)
-		T <- length(tps)
+		#T <- length(tps)
 		## initial transition matrix
 		Adimn <- colnames(gammaposs)
 		# all transitions equally likely
@@ -121,6 +129,7 @@ perform.hmmsearch_R <- function(phi.n, bestmodel) {
 							Lik <- -Inf
 							diffold <- -100
 							equally <- 0
+							diffsold <- rep(NA, hmmiterations)
 							next
 						} else {
 							break
@@ -208,9 +217,13 @@ perform.hmmsearch_R <- function(phi.n, bestmodel) {
 #### A: M x M matrix: Transition matrix
 #### viterbi: M x T matrix: which path to take
 perform.hmmsearch_C <- function(phi.n, bestmodel) {
+	#browser()
 	#cat(".")
-	tps <- bestmodel$tps
-	T <- length(tps)
+	tpsall <- bestmodel$tps
+	tps <- unlist(tpsall) ## vector representation for c-function
+	T <- sapply(tpsall, length)
+	#tps <- bestmodel$tps
+	#T <- length(tps)
 	stimuli <- bestmodel$stimuli
 	dat <- bestmodel$dat
 	hmmiterations <- bestmodel$hmmiterations
@@ -231,7 +244,7 @@ perform.hmmsearch_C <- function(phi.n, bestmodel) {
 
 	# separate HMM for each experiment, i.e. each stimulus	
 	ret <- .C("perform_hmmsearch",P=as.integer(phi.n), N=as.integer(nrow(dat)),
-			T=as.integer(length(tps)), R=as.integer(bestmodel$reps), X=as.double(dat),
+			T=as.integer(T), R=as.integer(bestmodel$reps), X=as.double(dat),
 			GS=as.integer(GS), G=as.integer(G), Glen=as.integer(length(G)),
 			TH=as.double(TH), 	tps=as.integer(tps), stimids=as.integer(stimids-1),
 			stimgrps=as.integer(stimgrps), numexperiments=as.integer(numexperiments),
@@ -268,13 +281,15 @@ perform.hmmsearch_C <- function(phi.n, bestmodel) {
 ## 3) "C": use the C-version with separate parameter estimation for each experiment
 ## TODO: (2) add argument "C_globalest": C version of 1)
 perform.hmmsearch_globalest <- function(phi.n, bestmodel) {
+	#browser()
 	#cat(".")
-	tps <- bestmodel$tps
-	T <- length(tps)
+	tpsall <- bestmodel$tps
+	#T <- length(tps)
 	stimuli <- bestmodel$stimuli
 	dat <- bestmodel$dat
 	cols <- colnames(dat)
-	reps <- table(sub("_[0-9].*$","",cols)) / length(tps)
+	#reps <- table(sub("_[0-9].*$","",cols)) / length(tps)
+	reps <- bestmodel$reps
 	hmmiterations <- bestmodel$hmmiterations
 	scale_lik <- bestmodel$scale_lik
 	allow.stim.off <- bestmodel$allow.stim.off
@@ -287,8 +302,11 @@ perform.hmmsearch_globalest <- function(phi.n, bestmodel) {
 	Ms <- 0
 	for(si in 1:length(stimuli)) {
 		s <- stimuli[[si]]
+		R <- reps[[si]]
+		tps <- tpsall[[si]]
+		T <- length(tps)
 		exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
-		R <- length(exind)/length(tps)
+		#R <- length(exind)/length(tps)
 		datx <- dat[,exind]
 		gammaposs <- propagate.effect.simple(phi.n,stimulus=s,stimuli=stimuli,allow.stim.off=allow.stim.off)
 		colnames(gammaposs) <- paste(paste(names(s),collapse="&"), colnames(gammaposs), sep="_")
@@ -363,8 +381,10 @@ perform.hmmsearch_globalest <- function(phi.n, bestmodel) {
 					# only up to a number of restarts
 					if(restarts < 3){
 						initgamp <- NULL
-						Ms <- 0
+						Ms <- 0									
 						for(si in 1:length(Mold)) {
+							tps <- tpsall[[si]]
+							T <- length(tps)
 							M <- Mold[si]
 							#print(M)
 							R <- reps[si]
@@ -388,7 +408,12 @@ perform.hmmsearch_globalest <- function(phi.n, bestmodel) {
 		## hmm for each stimulus separately
 		gamprime <- NULL
 		An <- A
-		for(s in stimuli) {
+		#for(s in stimuli) {
+		for(si in 1:length(stimuli)) {
+			s <- stimuli[[si]]
+			tps <- tpsall[[si]]
+			T <- length(tps)
+			R <- reps[[si]]
 			toswitch <- which(!apply(thetaprime, 1, function(x) any(is.na(x))|all(x==0)))
 			thetaprime.backup <- thetaprime
 			done <- FALSE
@@ -403,15 +428,14 @@ perform.hmmsearch_globalest <- function(phi.n, bestmodel) {
 			## runtime will increase a lot when doing it for all possible substitutions
 			## in thetaprime, so just try one substitution of a random number of 
 			## switchable rows in thetaprime
+			exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
+			gpind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(gamposstotal))
+			Aind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(A))
+			datx <- dat[,exind,drop=FALSE]
+			gammaposs <- gamposstotal[,gpind,drop=FALSE]
+			M <- ncol(gammaposs)
+			Asel <- A[Aind,Aind,drop=FALSE] 
 			while(TRUE) {
-				exind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(dat))
-				gpind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(gamposstotal))
-				Aind <- grep(paste("^",paste(names(s), collapse="&"),"_[0-9]*$",sep=""),colnames(A))
-				R <- length(exind)/length(tps)
-				datx <- dat[,exind,drop=FALSE]
-				gammaposs <- gamposstotal[,gpind,drop=FALSE]
-				M <- ncol(gammaposs)
-				Asel <- A[Aind,Aind,drop=FALSE] 
 				## viterbi algorithm
 				maxima.ind <- viterbi(gammaposs, datx, thetaprime, T, R, M, Asel)
 				## get new gamma suggestion and estimate parameters
@@ -466,8 +490,11 @@ perform.hmmsearch_globalest <- function(phi.n, bestmodel) {
 #### viterbi: M x T matrix: which path to take
 perform.hmmsearch_C_globalest <- function(phi.n, bestmodel) {
 	#cat(".")
-	tps <- bestmodel$tps
-	T <- length(tps)
+	tpsall <- bestmodel$tps
+	tps <- unlist(tpsall) ## vector representation for c-function
+	T <- sapply(tpsall, length)	
+	#tps <- bestmodel$tps
+	#T <- length(tps)
 	stimuli <- bestmodel$stimuli
 	dat <- bestmodel$dat
 	hmmiterations <- bestmodel$hmmiterations
@@ -487,7 +514,7 @@ perform.hmmsearch_C_globalest <- function(phi.n, bestmodel) {
 		
 	# separate HMM for each experiment, i.e. each stimulus	
 	ret <- .C("perform_hmmsearch_globalest",P=as.integer(phi.n), N=as.integer(nrow(dat)),
-			T=as.integer(length(tps)), R=as.integer(bestmodel$reps), X=as.double(dat),
+			T=as.integer(T), R=as.integer(bestmodel$reps), X=as.double(dat),
 			GS=as.integer(GS), G=as.integer(G), Glen=as.integer(length(G)),
 			TH=as.double(TH), 	tps=as.integer(tps), stimids=as.integer(stimids-1),
 			stimgrps=as.integer(stimgrps), numexperiments=as.integer(numexperiments),

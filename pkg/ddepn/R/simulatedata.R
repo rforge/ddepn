@@ -15,7 +15,7 @@ simulatedata <- function(phi, mu.bg=0, sd.bg=0.1,
 	reps <- R.t*R.b
 	#gammaposs <- uniquegammaposs(propagate.effect.simple(phi,1:TT,stimulus,reps))
 	gammaposs <- propagate.effect.simple(phi,stimulus=stimulus,stimuli=stimuli, allow.stim.off=allow.stim.off)
-	gammax <- gammaposs[,sort(sample(1:ncol(gammaposs), TT, replace=T))]
+	gammax <- gammaposs[,sort(sample(1:ncol(gammaposs), TT, replace=TRUE))]
 	colnames(gammax) <- tps
 	gammax <- expand.gamma(gammax,reps)
 	DD <- get.data(gammax,mu.bg,sd.bg,mu.signal.a,sd.signal.a,mu.signal.i,sd.signal.i,stimulus,TT,R.t,R.b)

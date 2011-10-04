@@ -37,9 +37,9 @@ samplephi <- function(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=
 		indices <- grep(paste("^",paste(names(st),collapse="&"),"_",sep=""),colnames(gammaposs))
 		## gammaposs are the unique states, they should be repeated by the number of replicates per stimulus
 		if(length(indices)==1)
-			gx <- replicatecolumns(gammaposs[,rep(indices,length(tps))],reps[sti])
+			gx <- replicatecolumns(gammaposs[,rep(indices,length(tps[[sti]]))],reps[sti])
 		else
-			gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps),replace=TRUE))],reps[sti])
+			gx <- replicatecolumns(gammaposs[,sort(sample(indices,length(tps[[sti]]),replace=TRUE))],reps[sti])
 		gammax <- cbind(gammax, gx)
 	}
 	Ltmplist <- likl(dat,gammax,scale_lik)
