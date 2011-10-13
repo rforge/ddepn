@@ -283,15 +283,22 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 				pdf(outfile,onefile=TRUE)
 			}
 			if(plotresults) {
-				x11()
-				par(mfrow=c(4,4))
+				if(is.null(outfile))
+					x11()
+				## find a suitable plot layout with little empty segments
+				nplots <- length(retlist)+1
+				mfdim1 <- mfdim2 <- ceiling(sqrt(nplots))
+				if((mfdim1*mfdim2 - nplots) > mfdim1) {
+					mfdim2 <- mfdim2 - 1
+				} 
+				par(mfrow=c(mfdim1,mfdim2))
 				plot(as.numeric(rownames(ltraces)),ltraces[,1],type="l",xlab="iteration",ylab="Score",ylim=range(ltraces,na.rm=TRUE),col=colors[1],main="Score traces")
 				if(ncol(ltraces)>1)
 					sapply(2:ncol(ltraces), function(j,ltraces,colors) lines(as.numeric(rownames(ltraces)),ltraces[,j],col=colors[j]), ltraces=ltraces, colors=colors)
 				## get the final network from all cores inferences and plot
 				for(netnr in 1:length(retlist)) {
 					ret2 <- retlist[[netnr]]
-					plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights)
+					plotdetailed(ret2$phi,stimuli=ret2$stimuli,weights=ret2$weights, main=paste("MCMC run", netnr))
 				}
 			}
 			if(!is.null(outfile))

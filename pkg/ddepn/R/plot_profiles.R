@@ -173,7 +173,7 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 				actprofind <- which(actprofexpers==expf)
 				## the splines
 				plot(xn, ddmat[i,],type="n",
-						ylab=paste(yl,"Intensity"),xlab="time [min]",ylim=range(dat[j,]),
+						ylab=paste(yl,"Intensity"),xlab="time [min]",ylim=range(dat[j,], na.rm=TRUE),
 						main=c(paste("Stimulus:",expf),paste("Protein:",rownames(dat)[j])))
 				ind <- which(expers==expf)
 				y <- dat[j,ind]
