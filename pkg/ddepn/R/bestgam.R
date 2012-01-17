@@ -15,7 +15,7 @@ bestgam <- function(y, tp, xn, selection.criterion="aic") {
 	gamres=vector("list", length=numPoints+1)
 	gamres[[1]] = gam(y~1) # constant fit
 	gamres[[2]] = gam(y~tp) # straight line fit
-	for(i in 2:length(gamres)-1) {	
+	for(i in 2:(length(gamres)-1)) {	
 		# create an expression for the gam function
 		# first use quote to assemble the expression
 		expre <- quote(y~s(tp,i))
