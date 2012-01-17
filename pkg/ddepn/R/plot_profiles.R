@@ -141,7 +141,7 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 			y <- y[ord]
 			tp <- tp[ord]
 			## make a fit through the data points 
-			if(all(y==-Inf) || all(y==0) || all(is.na(y))){
+			if(all(y==-Inf) || all(na.omit(y)==0) || all(is.na(y))){
 				pred <- rep(median(dat,na.rm=TRUE), length(xn))
 			} else {
 				pred <- bestgam(y,tp,xn,selection.criterion=selection.criterion)
