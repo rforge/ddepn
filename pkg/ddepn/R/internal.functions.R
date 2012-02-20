@@ -32,7 +32,7 @@ order_experiments <- function(dat) {
 	#ord <- order(exper, timep, brepl)
 	s1 <- gsub("_.*$","",colnames(dat))
 	s2 <- gsub("^.*_","",colnames(dat))
-	ord <- order(s1, as.numeric(s2)
+	ord <- order(s1, as.numeric(s2))
 	dat <- dat[,ord]
 	dat
 }
