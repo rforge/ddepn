@@ -9,7 +9,7 @@ get_reps_tps <- function(nx) {
 	tpsx <- unique(sapply(nx, function(xx) strsplit(xx,"_")[[1]][2]))
 	r1 <- table(sub("_[0-9].*$","",nx)) / length(tpsx)
 	list(tps=tpsx, reps=r1)
-}
+} 
 
 ## make a pad of NA columns, whenever there are unequal numbers of replicates 
 pad_data <- function(dat) {
