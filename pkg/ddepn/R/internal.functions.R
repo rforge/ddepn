@@ -241,7 +241,7 @@ tp.median <- function(dat) {
 	}
 	colnames(dat.m) <- levs
 	return(dat.m)
-}
+} 
 
 # transform multiple edge types to only one edge type
 detailed.to.simple.regulations <- function(phi) {
