@@ -60,8 +60,8 @@ void print_matrix(double *x, int rows, int cols);
 
 void print_matrix_stats(double *x, int rows, int cols);
 
-void print_transitions(double *A, int *Ms, int numexperiments, int Msum);
-
+/*void print_transitions(double *A, int *Ms, int numexperiments, int Msum);
+*/
 void switch_theta_row(double *TH, int rnum, int N);
 
 void updateA(double *A, int *maxemissionind, const int M, const int T);

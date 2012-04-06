@@ -172,7 +172,7 @@ dnorm(double dp, double mu, double sd)
 }
 /*
  * print row sums and sum of a matrix
- */
+ * /
 void
 print_matrix_stats(double *x, int rows, int cols)
 {
@@ -194,10 +194,10 @@ print_matrix_stats(double *x, int rows, int cols)
 	free(rowsums);
 	return;
 }
-
+*/
 /*
  * print a data matrix, passed as pointer
- */
+ * /
 void
 print_matrix(double *x, int rows, int cols)
 {
@@ -227,7 +227,7 @@ print_intmatrix(int *x, int rows, int cols)
 	printf("\n");
 	return;
 }
-
+*/
 void
 normalise_rows(double *x, int rows, int cols, double *rowsums)
 {

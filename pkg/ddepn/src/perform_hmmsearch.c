@@ -163,12 +163,13 @@ runviterbi(int *phi, const int N, const int T, int R, const double *X, int *GS,
       runningindex++;
   }
   int temp = (Gstart+M*N);
+  /*
   // check if G is too small - shouldn't happen, though
   if(temp>*Glen) {
       //G = realloc(G, (Gstart+M*N) * sizeof(int)); //allocate more space if G wasn't big enough before
       printf("Warning: Too little memory allocated for G! temp: %d, Gstart %d, M: %d, N: %d\n", temp, Gstart, M, N);
   }
-
+  */
   // printf("start: %d, end: %d, GSstart: %d, GSend: %d, Gstart: %d, temp: %d\n",start, end,GSstart, GSend, Gstart, temp);
   free(GSsub);
   free(Gsub);

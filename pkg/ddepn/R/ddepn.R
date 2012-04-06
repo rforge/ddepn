@@ -283,8 +283,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 				pdf(outfile,onefile=TRUE)
 			}
 			if(plotresults) {
-				if(is.null(outfile))
-					x11()
+				#if(is.null(outfile))
+				#	x11()
 				## find a suitable plot layout with little empty segments
 				nplots <- length(retlist)+1
 				mfdim1 <- mfdim2 <- ceiling(sqrt(nplots))

@@ -1,105 +1,107 @@
-# Plot graphs containing inhibitions
-# input is an adjacency matrix phi with
-#  phi[i,j]==1 : activation
-#  phi[i,j]==2 : inhibition
-#  phi[i,j]==0 : no edge from i to j
+# source("~/projects/rfunctions/graph/plotdetailed_igraph.R")
 # 
 # Author: benderc
 ###############################################################################
 
-get.labels <- function(phi) {
-	labels <- NULL
-	l.names <- NULL
-	for(i in 1:nrow(phi)) {
-		for(j in 1:ncol(phi)) {
-			#if(phi[i,j]==0) {
-			#	next
-			#}
-			labels <- c(labels,phi[i,j])
-			l.names <- c(l.names, paste(rownames(phi)[i],colnames(phi)[j],sep="~"))
-		}
-	}
-	names(labels) <- l.names
-	labels
+layout.ellipsis <- function(ig, a=1, b=1.5) {
+    N <- length(V(ig))
+    # circle angles
+    ang <- seq(0, 2*pi, length.out=(N+1))[-1]
+    x <- a*cos(ang)
+    y <- b*sin(ang)
+    cbind(x,y)
 }
-get.arrowhead <- function(phi) {
-	arrowhead <- NULL
-	l.names <- NULL	
-	for(i in 1:nrow(phi)) {
-		for(j in 1:ncol(phi)) {
-			#if(phi[i,j]==0) {
-			#	next
-			#}
-			if(phi[i,j]==3) {
-				# can be both activation or inhibition
-				arrowhead <- c(arrowhead,"odot")				
-			} else {
-				if(phi[i,j]==2){
-					arrowhead <- c(arrowhead,"tee")
-				} else {
-					arrowhead <- c(arrowhead,"open")	
-				}
-			}
-			l.names <- c(l.names, paste(rownames(phi)[i],colnames(phi)[j],sep="~"))
-		}
-	}
-	names(arrowhead) <- l.names
-	arrowhead
-}
-get.arrowtail <- function(phi) {
-	arrowtail <- NULL
-	l.names <- NULL
-	for(i in 1:nrow(phi)) {
-		for(j in 1:ncol(phi)) {
-			arrowtail <- c(arrowtail,"none")
-			l.names <- c(l.names, paste(rownames(phi)[i],colnames(phi)[j],sep="~"))
-		}
-	}
-	names(arrowtail) <- l.names
-	arrowtail
-}
-plotdetailed <- function(phi, weights=NULL,main="",stimuli=NULL, layoutType="dot", fontsize=20) {
+plotdetailed <- function(phi, weights = NULL, main = "", stimuli = NULL, #layoutType = layout.graphopt,
+		node.color="grey",node.size1=30, node.size2=7,
+		edge.width=1,edge.arrowsize=0.5,
+		layout=layout.circle, pdf=NULL, pointsize=12,
+		edge.width.inhib=1.5, plot.legend=TRUE, label.cex=1, vlabel.cex=0.6, tk=FALSE,
+		fontsize=20, rescale=TRUE)
+{
+	#stopifnot(require(igraph))
+	edge.color="black"
+	edge.lty="solid"
 	phix <- phi
-	if(all(phix==0)) {
-		phix[1,1] <- 1
-		emptygraph <- TRUE
-	} else {
-		emptygraph <- FALSE
+	phix[which(phix == 2)] <- 1
+	ig <- graph.adjacency(phix)
+	ig.nodes <- as.matrix(print.igraph.vs(V(ig))) # keggid
+	if(tk) {
+		tkplot(ig, vertex.label=V(ig)$name)
+		return(ig)
 	}
-	phix[which(phix==2)] <- 1
-	g1 <- as(phix,"graphNEL")
-	if(!is.null(weights)) {
-		labels <- get.labels(weights)
-	} 
-	arrowhead <- get.arrowhead(phi)
-	gpar <- list(graph = list(main = main), edges = list(lwd = 1))
-	if(emptygraph)
-		gpar <- list(edges = list(lwd = 0))
-	## something with the edgeRenderInfo function doesn't work, so pass edgeAttrs directly
-	## to layoutGraph
-	## In stead, passing nodeAttrs directly to layoutGraph doesn't seem to work, so
-	## use the nodeRenderInfo function here
-	#edgeRenderInfo(g1) <- list(label = labels, arrowhead=arrowhead) # , arrowtail=arrowtail)
-	if(is.null(stimuli)) {
-		nodeRenderInfo(g1) <- list(shape = "box", fill="lightgray", fontsize=fontsize)
-	} else {
-		fills <- rep("lightgray",length(nodes(g1)))
-		names(fills) <- nodes(g1)
-		fills[unique(names(unlist(stimuli)))] <- "red"
-		nodeRenderInfo(g1) <- list(shape = "box", fill=fills, fontsize=fontsize)
+	vertex.color <- rep(node.color, length(ig.nodes))
+	if(!is.null(stimuli)) {
+		snodes <- unique(names(unlist(stimuli)))
+		vertex.color[match(snodes, ig.nodes)] <- "red"
 	}
-	if(!is.null(weights)) {
-		if(emptygraph) {
-			g1 <- layoutGraph(g1, layoutType=layoutType) #, recipEdges = "distinct", layoutType=layoutType)
-		} else {
-			g1 <- layoutGraph(g1, recipEdges = "distinct", edgeAttrs = list(label = labels, 
-							arrowhead = arrowhead), layoutType=layoutType)
+	#browser()
+	#inhib.coord <- t(sapply(which(phi==2),coord,mat=phi))
+	inhib.coord <- which(phi==2,arr.ind=TRUE)
+	if(!all(phix==0)) {
+		ig.edges <- gsub(" ","",as.matrix(print.igraph.es(E(ig))))
+		if(length(inhib.coord)!=0) {
+			inhib.froms <- rownames(phi)[inhib.coord[,1]]
+			inhib.tos <- rownames(phi)[inhib.coord[,2]]
+			inhib.ed <- paste(inhib.froms,inhib.tos,sep="->")
+			edge.color <- rep(edge.color, length(ig.edges))
+			edge.lty <- rep(edge.lty, length(ig.edges))
+			#edge.color[match(inhib.ed, ig.edges)] <- "darkgreen"
+			edge.lty[match(inhib.ed, ig.edges)] <- "dashed"
+			edge.width <- rep(edge.width, length(ig.edges))
+			edge.width[match(inhib.ed, ig.edges)] <- edge.width.inhib
 		}
-	} else {
-		g1 <- layoutGraph(g1, recipEdges = "distinct", edgeAttrs = list(arrowhead = arrowhead),
-						layoutType=layoutType)
+		if(!is.null(weights)) {
+			wind <- t(sapply(ig.edges,function(x) strsplit(x,split="->")[[1]]))
+			edge.labels <- apply(wind, 1, function(x,ww) ww[x[1],x[2]], ww=weights)
+			E(ig)$label <- edge.labels
+			E(ig)$label.cex <- label.cex
+			E(ig)$label.color <- "darkred"
+		}
+		## make reciprocated edges be curved
+		ecurved <- rep(0,length(ig.edges))
+		ed <- which(phix!=0,arr.ind=TRUE)
+		erecipn <- NULL
+		for(ei in 1:nrow(ed)) {
+			edd <- ed[ei,]
+			eddg <- phix[edd[1],edd[2]]
+			eddgr <- phix[edd[2],edd[1]]
+			if(eddgr!=0)
+				erecipn <- c(erecipn,paste(rownames(phix)[edd[1]],colnames(phix)[edd[2]],sep="->"))
+		}
+		ecurved[match(erecipn,ig.edges)] <- 0.3
+		E(ig)$curved <- ecurved
+		
+		## attributes
+		print("Setting graph attributes...")
+		E(ig)$color <- edge.color
+		E(ig)$lty <- edge.lty
+		E(ig)$width <- edge.width
+		E(ig)$arrow.size <- edge.arrowsize
+		#E(ig)$curved <- -0.3
+		#E(ig)$curved <- -1 #TRUE
+		V(ig)$label.cex <- vlabel.cex #0.6
 	}
-	renderGraph(g1,graph.pars=gpar)
-	if(emptygraph)
-		graph.par(list(edges = list(lwd = 1)))
+	V(ig)$color <- vertex.color
+	V(ig)$shape <- rep("crectangle",length(ig.nodes))
+	V(ig)$size <- rep(node.size1,length(ig.nodes))
+	V(ig)$size2 <- rep(node.size2,length(ig.nodes))
+	
+	## set the layout		
+	ig$layout <- layout
+	
+	print("..and plot.")
+	if(!is.null(pdf))
+		pdf(pdf,pointsize=pointsize)
+	par(mar=c(1,1,1,1)) #, oma=c(0,0,0,0))
+	plot(ig, vertex.label=V(ig)$name, main=main, rescale=rescale)
+	#plot(ig, vertex.label=V(ig)$name, layout = layout, main=main)
+	if(plot.legend) {
+		legend("bottomright",legend=c("activation","inhibition"), col=c("black","black"), bty="n",
+			lty=c("solid","dashed"), lwd=c(2,2), inset=c(0,-0.1), xpd=NA)
+	}
+	par(mar=c(5,4,4,2))
+	if(!is.null(pdf))
+		dev.off()
+	invisible(list(ig=ig, layout=layout))
 }
+

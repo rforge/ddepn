@@ -31,12 +31,12 @@ double log2(double x);
 
 void normalise_rows(double *x, int rows, int cols, double *rowsums);
 
-void print_intmatrix(int *x, int rows, int cols);
+/*void print_intmatrix(int *x, int rows, int cols);
 
 void print_matrix(double *x, int rows, int cols);
 
 void print_matrix_stats(double *x, int rows, int cols);
-
+*/
 void updateA(double *A, int *maxemissionind, const int M, const int T);
 
 

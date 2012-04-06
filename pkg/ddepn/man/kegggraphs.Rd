@@ -8,12 +8,10 @@ kegggraphs
 \description{
 Contains a list of selected KEGG pathways, downloaded in October 2010.
 }
-\format{List of 78, each Element holding the KEGG pathway id, a graphNEL
- object and an adjacency matrix.}
+\format{List of 78, each Element holding the KEGG pathway id and an adjacency matrix.}
 \details{
 The KEGG Hierarchy was downloaded and transformed into graphNEL objects
-by using KEGGgraph. The helper \code{\link{kegggraph.to.detailed.adjacency}} 
-can be used to convert the graphNEL objects into simple adjacency matrices.
+by using the KEGGgraph R-package. Each graphNEL was converted to simple adjacency matrices.
 A selection of pathways was performed to restrict to the signalling and disease
 pathways:\cr
 

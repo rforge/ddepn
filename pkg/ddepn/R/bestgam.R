@@ -39,7 +39,7 @@ bestgam <- function(y, tp, xn, selection.criterion="aic") {
 	if(selection.criterion=="aic") {
 		aic <- 2*df - 2*log(pval) # maximise aic
 		i <- min(which(aic==max(aic)))
-	} else if(selection.criterion=="aic") {
+	} else if(selection.criterion=="bic") {
 		bic <- -2*log(pval) + df * log(N)
 		i <- min(which(bic==max(bic))) # maximise bic
 	} else {

@@ -23,9 +23,13 @@ wrapddepn <- function(dataset, phit, stimuli, debug=FALSE, plotresults=TRUE, ...
 			## is a list containing the samplings and traces
 			if("samplings" %in% names(msg)) {
 				print("inhibMCMC done.")
-			} else { # GA was used
 				if(plotresults)
-					plotdetailed(msg$phi,stimuli=stimuli,fontsize=20)
+					plot_mcmctraces(msg,thin=10)
+				#browser()
+			} else { # GA was used
+				print("GA done.")
+				#if(plotresults)
+				#	plotdetailed(msg$phi,stimuli=stimuli,fontsize=20)
 			}
 			msg <- "passed"
 		}
@@ -50,6 +54,8 @@ run_checks <- function(outfile=NULL, plotresults=TRUE) {
 	B <- phit
 	B[B==2] <- -1
 	
+	## plots will be stored in a file, ask for a name if not given
+	## if empty input, then use default name
 	if(plotresults) {
 		if(is.null(outfile)) {
 			defaultstr <- "testddepn.pdf"

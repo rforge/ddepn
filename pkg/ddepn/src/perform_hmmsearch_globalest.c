@@ -679,7 +679,7 @@ int find_bin(int *Ms, int num, int numexperiments)
 }
 /*
  * print the transition vector in matrix form
- */
+ * /
 void
 print_transitions(double *A, int *Ms, int numexperiments, int Msum)
 {
@@ -719,7 +719,7 @@ print_transitions(double *A, int *Ms, int numexperiments, int Msum)
 	}
 	free(indmat);
 }
-
+*/
 
 
 

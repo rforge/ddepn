@@ -14,5 +14,5 @@ plot_mcmctraces <- function(ret, thin=1) {
 		lst[[i]] <- mcmcobj
 	}
 	mcmclst <- mcmc.list(lst)
-	plot(mcmclst, main="Posterior traces, 10 chains",auto.layout=FALSE,density=FALSE)
+	plot(mcmclst, main=paste("Posterior traces,",ncol(ltr), "chains"),auto.layout=FALSE,density=FALSE)
 }
