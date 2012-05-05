@@ -185,6 +185,16 @@ plot_profiles <- function(ret, log=FALSE, ord=NULL,
 				## the data
 				bcol <- actcols[actp[j,actprofind]+1] #/reps[i])+1)]
 				#bcol <- actcols[actprof[j,actprofind]+1]
+                
+                ## if some timepoints are completely NA, the boxplot function will complain
+                ## for plotting, set these values to 0 for convenience
+                yna <- table(names(which(is.na(y))))
+                for(k in 1:length(reps)) {
+                    ynas <- yna[grep(names(reps)[k], names(yna))]
+                    if(any(ynas==reps[k]))
+                        y[which(names(y)==names(ynas))] <- 0
+                }
+                
 				boxplot(y~tp,add=TRUE,at=at,border="#08080850", axes=FALSE,col=bcol)
 				lines(xn, ddmat[i,],lwd=2)
 				## the parameters
