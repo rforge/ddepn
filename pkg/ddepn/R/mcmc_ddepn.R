@@ -28,6 +28,10 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	if(!priortype %in% c("laplaceinhib","laplace","scalefree","uniform"))
 		stop("Error, for MCMC, usebics must be FALSE and priortype one out of 'laplaceinhib', 'laplace', 'scalefree' or 'uniform'.")
 	antibodies <- rownames(dat)
+    
+    ## create a vector holding all network structures
+    networkvec <- list()
+    
 	## get the timepoints in each experiment
 	ordstim <- sapply(stimuli, function(x) paste(names(x),collapse="&"))
 	tmp <- tapply(colnames(dat), gsub("_.*$","",colnames(dat)), get_reps_tps)
@@ -173,6 +177,10 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		posteriorratio <- bestmodel$posterior - b1[[1]]$posterior
 		proposalratio <- b1[[1]]$pegmundo - b1[[1]]$pegm
 		bestmodel <- ret$bestproposal
+        
+        ## save the current network into a vector
+        networkvec[[iter]] <- bestmodel$phi
+        
 		## during burnin: find scalefac parameter to adjust the acceptance rate
 		### -> perhaps the scalefactor should be calculated all the time,
 		### in the profiles, there seems to be a kink in the likelihood profile when the 
@@ -307,6 +315,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 	bestmodel[["stats"]] <- stats
 	bestmodel[["freqa"]] <- freqa
 	bestmodel[["freqi"]] <- freqi
+    bestmodel[["networks"]] <- networkvec
 	gc(verbose=FALSE)
 	bestmodel
 }

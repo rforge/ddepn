@@ -43,6 +43,7 @@ The format of the output file is especially adapted to the \cite{loadNetwork} fu
 \code{\link{create_signetwork}}, \cite{loadNetwork}
 }
 \examples{
+\dontrun{
 library(ddepn)
 library(BoolNet)
 
@@ -54,5 +55,6 @@ example.out<-"exampleOutput.txt"
 
 # convert adjacency matrix to logical rules
 adjacencyMatrix_to_logicalRules(adjMatrix=example.mat, outfile=example.out)
+}
 }
 
