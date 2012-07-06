@@ -17,7 +17,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 
   <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title><?php echo $group_name; ?></title>
+	<title><?php echo $group_name; ?>, Christian Bender, Bioinformatics</title>
 	<link href="<?php echo $themeroot; ?>styles/estilo1.css" rel="stylesheet" type="text/css" />
   </head>
 
@@ -87,9 +87,9 @@ The method is described in the following publications:<br/>
   </dl></li>
 </ul>
 
-<p> The <strong>project summary page</strong>
+<p> The <b>project summary page</b>
 you can find <a href="http://<?php echo $domain; ?>/projects/<?php
-echo $group_name; ?>/"><strong>here</strong></a>. Also visit the DKFZ homepage for more information on the <a href="http://www.dkfz.de/mga2/people/bender">author</a>.</p>
+echo $group_name; ?>/"><b>here</b></a>. Also visit Christian Bender's homepage for more information on the <a href="http://www.christianbender.org">author</a>.</p>
 
 </body>
 </html>
