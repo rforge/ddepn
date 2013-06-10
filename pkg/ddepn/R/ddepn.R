@@ -162,7 +162,9 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 	#	lambda <- NA
 	#}
 	## assign global variable IMPLEMENTATION
-	assign("IMPLEMENTATION", implementation, .GlobalEnv)
+    envDDEPN <- new.env()
+    assign("IMPLEMENTATION", implementation, envDDEPN)
+	#assign("IMPLEMENTATION", implementation, .GlobalEnv)
 	
 	## if GA should be used
 	if(inference=="netga") {
