@@ -97,7 +97,7 @@ initialphi <- function(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
 		}
 	}
 	if(multicores)
-		jobs.res <- collect(jobs, wait=TRUE)
+		jobs.res <- mccollect(jobs, wait=TRUE)
 	else
 		jobs.res <- jobs
 	

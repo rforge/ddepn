@@ -12,10 +12,12 @@ Internal function.
 \usage{
 samplephi(phi,stimuli, antibodies, tps, reps, dat, searchstatespace=FALSE,
 		hmmiterations=5, phiasis=FALSE, lambda=NULL, B=NULL, Z=NULL, fanin=4,
-		gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE, allow.stim.off=TRUE)
+		gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE,
+		 allow.stim.off=TRUE)
 initialphi(dat, phi, stimuli, Lmax, thetax, gammax, gammaposs,
-		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, B=NULL, Z=NULL,
-		gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE, allow.stim.off=TRUE)
+		tps, reps, antibodies, n=100, multicores=FALSE, lambda=NULL, 
+		B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, priortype="none", 
+		scale_lik=FALSE, allow.stim.off=TRUE)
 }
 \arguments{
   \item{dat}{The data matrix}

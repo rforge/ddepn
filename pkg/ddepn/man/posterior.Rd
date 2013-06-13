@@ -9,7 +9,8 @@ Posterior probability calculation.
 Posterior probability calculation. Usually called internally.
 }
 \usage{
-posterior(phi, L, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, K=NULL, priortype="laplaceinhib")
+posterior(phi, L, lambda=NULL, B=NULL, Z=NULL, gam=NULL, it=NULL, 
+		K=NULL, priortype="laplaceinhib")
 pri(i,gam,N)
 pgs(phi,gam,K=0.8,it=500)
 }

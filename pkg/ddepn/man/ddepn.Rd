@@ -20,10 +20,11 @@ ddepn(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga",
       hmmiterations=100, fanin=4,
       gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,
       debug=0, burnin=500, thin=FALSE, plotresults=TRUE,
-      always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE, implementation="C")
+      always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=FALSE, 
+      implementation="C")
       
-resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL,
-      implementation="C", thin=FALSE)
+resume_ddepn(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,
+		debug=0,cores=NULL, implementation="C", thin=FALSE)
 
 }
 \arguments{
@@ -280,7 +281,8 @@ plotdetailed(ret1$phi,stimuli=ret1$stimuli)
 ## mcmc, laplaceinhib prior
 ret2 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
               maxiterations=300, burnin=100,
-              usebics=FALSE, lambda=0.01, B=B, gam=1, priortype="laplaceinhib") 
+              usebics=FALSE, lambda=0.01, B=B, gam=1, 
+              priortype="laplaceinhib") 
       
 x11()
 plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
@@ -292,15 +294,20 @@ plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
  	ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
                 multicores=TRUE, cores=2,
                 maxiterations=300, burnin=100,
-                usebics=FALSE, lambda=0.01, B=B, gam=1, priortype="laplaceinhib")
+                usebics=FALSE, lambda=0.01, B=B, gam=1, 
+                priortype="laplaceinhib")
  }
 
 ## resuming the inference from an inhibMCMC run and add another 100 iterations
-ret4 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc", maxiterations=100, burnin=30, lambda=0.01, B=B, priortype="laplaceinhib", usebics=FALSE)
+ret4 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc", 
+			maxiterations=100, burnin=30, lambda=0.01, B=B, 
+			priortype="laplaceinhib", usebics=FALSE)
 ret4 <- resume_ddepn(ret4,maxiterations=100)
 
 ## resuming the inference from an netga run and add another 30 iterations
-ret5 <- ddepn(dataset$datx,phiorig=phit, inference="netga", maxiterations=20, p=10, q=0.3, m=0.8, lambda=0.01, B=B, priortype="laplaceinhib", usebics=FALSE)
+ret5 <- ddepn(dataset$datx,phiorig=phit, inference="netga", 
+			maxiterations=20, p=10, q=0.3, m=0.8, lambda=0.01, B=B, 
+			priortype="laplaceinhib", usebics=FALSE)
 ret5 <- resume_ddepn(ret5,maxiterations=30)
  
 }

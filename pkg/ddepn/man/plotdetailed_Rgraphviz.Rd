@@ -58,8 +58,10 @@ Christian Bender
 \examples{
 \dontrun{
 library(ddepn)
-mat <- matrix(sample(c(0,1,2),25,replace=TRUE), nrow=5,ncol=5, dimnames=list(LETTERS[1:5],LETTERS[1:5]))
-weights <- matrix(sample(c(1:25),25,replace=TRUE), nrow=5,ncol=5, dimnames=list(LETTERS[1:5],LETTERS[1:5]))
+mat <- matrix(sample(c(0,1,2),25,replace=TRUE), nrow=5,ncol=5, 
+	dimnames=list(LETTERS[1:5],LETTERS[1:5]))
+weights <- matrix(sample(c(1:25),25,replace=TRUE), nrow=5,ncol=5, 
+	dimnames=list(LETTERS[1:5],LETTERS[1:5]))
 stimuli <- list(list(A=1))
 plotdetailed_Rgraphviz(mat,weights,"Some random graph",stimuli,layoutType="dot")
 plotdetailed_Rgraphviz(mat,weights,"Some random graph",stimuli,layoutType="neato")

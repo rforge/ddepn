@@ -7,8 +7,9 @@ Generate artificial dataset given a network and list of stimuli.
 Dataset generation using an input network, list of stimuli and various experiment parameters.
 }
 \usage{
-makedata(phi, stimuli, R.t = 3, R.b = 3, TT = 10, mu.bg = 0, sd.bg = 0.1, mu.signal.a = 2, sd.signal.a = 0.5, mu.signal.i = -2, sd.signal.i = 0.5,
-  allow.stim.off = FALSE)
+makedata(phi, stimuli, R.t = 3, R.b = 3, TT = 10, mu.bg = 0, sd.bg = 0.1, 
+	mu.signal.a = 2, sd.signal.a = 0.5, mu.signal.i = -2, sd.signal.i = 0.5,
+	allow.stim.off = FALSE)
 }
 \arguments{
   \item{phi}{Adjacency matrix.The input network.
@@ -61,7 +62,8 @@ Christian Bender
 \examples{
 \dontrun{
 library(ddepn)
-dataset <- makedata(matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,dimnames=list(LETTERS[1:3],LETTERS[1:3])), list(A=1))
+dataset <- makedata(matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,
+	dimnames=list(LETTERS[1:3],LETTERS[1:3])), list(A=1))
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

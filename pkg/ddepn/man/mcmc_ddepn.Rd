@@ -16,8 +16,8 @@ mcmc_ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
     usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
     samplelambda=NULL, hmmiterations=30, fanin=4,
     gam=NULL, it=NULL, K=NULL, burnin=1000, priortype="laplaceinhib",
-    plotresults=TRUE,always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=TRUE,debug=0,
-    retobj=NULL)
+    plotresults=TRUE,always_sample_sf=FALSE, scale_lik=FALSE, 
+    allow.stim.off=TRUE,debug=0,retobj=NULL)
     
 runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
 		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,priortype,
@@ -140,7 +140,8 @@ phit <- signet$phi
 stimuli <- signet$stimuli
 
 ## sample data
-dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
+dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, 
+	mu.signal.a=2000, sd.signal.a=1000)
 
 ## prior normalisation factor
 lambda <- 0.01 

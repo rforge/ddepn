@@ -48,13 +48,16 @@ library(ddepn)
 library(BoolNet)
 
 # create example adjacency matrix
-example.mat<-matrix(sample(0:2, size=16, replace=TRUE), nrow=4, ncol=4, dimnames=list(x=paste("protein",letters[1:4],sep="_"), y=paste("protein",letters[1:4],sep="_")))
+example.mat <- matrix(sample(0:2, size=16, replace=TRUE), nrow=4,
+ ncol=4, dimnames=list(x=paste("protein",letters[1:4],sep="_"),
+  y=paste("protein",letters[1:4],sep="_")))
 
 # define output file
-example.out<-"exampleOutput.txt"
+example.out <- "exampleOutput.txt"
 
 # convert adjacency matrix to logical rules
-adjacencyMatrix_to_logicalRules(adjMatrix=example.mat, outfile=example.out)
+adjacencyMatrix_to_logicalRules(adjMatrix=example.mat,
+ outfile=example.out)
 }
 }
 

@@ -118,7 +118,10 @@ ret <- ddepn(dataset$datx, phiorig=phit, maxiterations=300, burnin=50,
             multicores=TRUE, cores=4)
             
 ## perform netga inference, using 4 CPU cores
-ret2 <- ddepn(dataset$datx, phiorig=phit, maxiterations=20, p=15, q=0.3, m=0.8, plotresults=FALSE, inference="netga", usebics=FALSE, priortype="laplaceinhib", lambda=0.01, B=B, multicores=TRUE, cores=4)
+ret2 <- ddepn(dataset$datx, phiorig=phit, maxiterations=20, p=15, q=0.3,
+				m=0.8, plotresults=FALSE, inference="netga", usebics=FALSE, 
+				priortype="laplaceinhib", lambda=0.01, B=B, 
+				multicores=TRUE, cores=4)
 
 ## plot the data and fits
 ## mcmc

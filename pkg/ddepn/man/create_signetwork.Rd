@@ -14,13 +14,19 @@ of independent MCMC runs (performed by passing \code{inference="mcmc"} to the \c
 function call).
 }
 \usage{
-create_signetwork(ret, alpha = 0.05, adj.method = "BY", plot = FALSE, type = "wilcox", alternative = "one.sided", paired = FALSE, ord = NULL)
+create_signetwork(ret, alpha = 0.05, adj.method = "BY", plot = FALSE, 
+				type = "wilcox", alternative = "one.sided", 
+				paired = FALSE, ord = NULL)
 
-create_signetwork_cv(ret, alpha = 0.05, adj.method = "BY", plot = FALSE, type = "wilcox", alternative = "one.sided", paired = FALSE, ord = NULL, sel_policy = "strict")
+create_signetwork_cv(ret, alpha = 0.05, adj.method = "BY", plot = FALSE, 
+				type = "wilcox", alternative = "one.sided", paired = FALSE, 
+				ord = NULL, sel_policy = "strict")
 
-perform_network_tests(ret, alpha=0.05, plot=FALSE, type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL)
+perform_network_tests(ret, alpha=0.05, plot=FALSE, type="wilcox", 
+					alternative="one.sided", paired=FALSE, ord=NULL)
 
-perform_edge_test(ret, from, to, alpha=0.05, plot=TRUE, type="wilcox", alternative="one.sided", paired=FALSE)
+perform_edge_test(ret, from, to, alpha=0.05, plot=TRUE, type="wilcox", 
+					alternative="one.sided", paired=FALSE)
 
 draw_segments(tx, rng, alpha)
 }
@@ -122,7 +128,8 @@ n <- 6
 signet <- signalnetwork(n=n, nstim=2, cstim=0, prop.inh=0.2)
 phit <- signet$phi
 stimuli <- signet$stimuli
-dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400, mu.signal.a=2000, sd.signal.a=1000)
+dataset <- makedata(phit, stimuli, mu.bg=1200, sd.bg=400,
+				mu.signal.a=2000, sd.signal.a=1000)
 
 ## use original network as prior matrix
 ## reset all entries for inhibiting edges 
@@ -137,15 +144,19 @@ ret <- ddepn(dataset$datx, phiorig=phit, maxiterations=300, burnin=50,
             multicores=TRUE, cores=4)
             
 ## get the signal network containing the significant edges
-net <- create_signetwork(ret, alpha=0.05, adj.method="none", plot=FALSE, type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL)
+net <- create_signetwork(ret, alpha=0.05, adj.method="none", plot=FALSE,
+ type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL)
 
 ## compare inferred net and prior
 par(mfrow=c(1,2))
 plotdetailed(net, main="inferred", stimuli=ret$samplings[[1]]$stimuli )
-plotdetailed(ret$samplings[[1]]$phi.orig, main="prior", stimuli=ret$samplings[[1]]$stimuli )
+plotdetailed(ret$samplings[[1]]$phi.orig, main="prior", 
+			stimuli=ret$samplings[[1]]$stimuli )
 
 ## use the LOO crossvalidation for finding edges
-net2 <- create_signetwork_cv(ret, alpha=0.05, adj.method="none", plot=FALSE, type="wilcox", alternative="one.sided", paired=FALSE, ord=NULL, sel_policy="strict")
+net2 <- create_signetwork_cv(ret, alpha=0.05, adj.method="none", 
+					plot=FALSE, type="wilcox", alternative="one.sided", 
+					paired=FALSE, ord=NULL, sel_policy="strict")
 
 }
 }

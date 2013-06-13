@@ -12,11 +12,11 @@ of edges to sample the search space.
 }
 \usage{
 netga(dat, stimuli, P=NULL, maxiterations=1000, p=100,
-		q=0.3, m=0.8, hmmiterations=30, multicores=FALSE, usebics=FALSE, cores=2,
-		lambda=NULL, B=NULL,
-		Z=NULL, scorefile=NULL, fanin = 4,
-		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,priortype="none", plotresults=TRUE,
-		scale_lik=FALSE, allow.stim.off=TRUE,debug=0,retobj=NULL)
+		q=0.3, m=0.8, hmmiterations=30, multicores=FALSE, usebics=FALSE, 
+		cores=2, lambda=NULL, B=NULL, Z=NULL, scorefile=NULL, fanin = 4,
+		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5,priortype="none", 
+		plotresults=TRUE, scale_lik=FALSE, allow.stim.off=TRUE,
+		debug=0,retobj=NULL)
 }
 \arguments{
   \item{dat}{

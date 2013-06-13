@@ -11,8 +11,9 @@ adjacency matrix with activation edge represented by a 1, inhibition by a 2.
 }
 \usage{
 plotdetailed(phi, weights = NULL, main = "", stimuli = NULL,
-  node.color = "grey", node.size1 = 30, node.size2 = 7, edge.width = 1, edge.arrowsize = 0.5,
-  layout = layout.circle, pdf = NULL, pointsize = 12, edge.width.inhib = 1.5, plot.legend = TRUE,
+  node.color = "grey", node.size1 = 30, node.size2 = 7, edge.width = 1, 
+  edge.arrowsize = 0.5, layout = layout.circle, pdf = NULL, pointsize = 12, 
+  edge.width.inhib = 1.5, plot.legend = TRUE,
   label.cex = 1, vlabel.cex = 0.6, tk = FALSE, fontsize=20, rescale=TRUE)
 
 layout.ellipsis(ig, a=1, b=1.5)
@@ -86,9 +87,11 @@ Christian Bender
 \examples{
 \dontrun{
 library(ddepn)
-mat <- matrix(sample(c(0,1,2),25,replace=TRUE), nrow=5,ncol=5, dimnames=list(LETTERS[1:5],LETTERS[1:5]))
+mat <- matrix(sample(c(0,1,2),25,replace=TRUE), nrow=5,ncol=5, 
+		dimnames=list(LETTERS[1:5],LETTERS[1:5]))
 diag(mat) <- 0
-weights <- matrix(sample(c(1:25),25,replace=TRUE), nrow=5,ncol=5, dimnames=list(LETTERS[1:5],LETTERS[1:5]))
+weights <- matrix(sample(c(1:25),25,replace=TRUE), nrow=5,ncol=5, 
+	dimnames=list(LETTERS[1:5],LETTERS[1:5]))
 stimuli <- list(list(A=1))
 plotdetailed(mat,weights,"Some random graph",stimuli,layout=layout.graphopt)
 layoutmat <- cbind(c(1,2,3,4,5), c(5,4,3,2,1))

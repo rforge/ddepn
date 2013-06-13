@@ -10,7 +10,8 @@
 }
 \usage{
 getfirstphi(x, dat, stimuli, V, tps, reps, hmmiterations,
- lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, K=NULL, priortype="none", scale_lik=FALSE,
+ lambda=NULL, B=NULL, Z=NULL, fanin=4, gam=NULL, it=NULL, 
+ K=NULL, priortype="none", scale_lik=FALSE,
  allow.stim.off=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.

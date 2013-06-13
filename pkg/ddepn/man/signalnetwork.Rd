@@ -8,7 +8,8 @@ Sample a random signalling network.
 For \eqn{n} nodes, sample a network with \eqn{nstim} stimuli and \eqn{cstim} combinatorial stimuli.
 }
 \usage{
-signalnetwork(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=NULL,V=NULL,stimuli=NULL)
+signalnetwork(n=10, nstim=2, cstim=0, prop.inh=.2,plot=F,gamma=1,B=NULL,
+	V=NULL,stimuli=NULL)
 }
 \arguments{
   \item{n}{Integer. Number of nodes.}
