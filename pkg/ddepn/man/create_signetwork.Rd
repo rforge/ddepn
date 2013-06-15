@@ -19,8 +19,8 @@ create_signetwork(ret, alpha = 0.05, adj.method = "BY", plot = FALSE,
 				paired = FALSE, ord = NULL)
 
 create_signetwork_cv(ret, alpha = 0.05, adj.method = "BY", plot = FALSE, 
-				type = "wilcox", alternative = "one.sided", paired = FALSE, 
-				ord = NULL, sel_policy = "strict")
+				type = "wilcox", alternative = "one.sided", 
+				paired = FALSE, ord = NULL, sel_policy = "strict")
 
 perform_network_tests(ret, alpha=0.05, plot=FALSE, type="wilcox", 
 					alternative="one.sided", paired=FALSE, ord=NULL)

@@ -20,9 +20,11 @@ mcmc_ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
     allow.stim.off=TRUE,debug=0,retobj=NULL)
     
 runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
-		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,priortype,
-    plotresults=TRUE,always_sample_sf=FALSE, scale_lik=FALSE, allow.stim.off=TRUE,debug=0,
-    retobj=NULL)
+		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,
+		fanin,gam,it,K,burnin,priortype,
+		plotresults=TRUE,always_sample_sf=FALSE, 
+		scale_lik=FALSE, allow.stim.off=TRUE,debug=0,
+		retobj=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
