@@ -17,14 +17,14 @@ mcmc_ddepn(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
     samplelambda=NULL, hmmiterations=30, fanin=4,
     gam=NULL, it=NULL, K=NULL, burnin=1000, priortype="laplaceinhib",
     plotresults=TRUE,always_sample_sf=FALSE, scale_lik=FALSE, 
-    allow.stim.off=TRUE,debug=0,retobj=NULL)
+    allow.stim.off=TRUE,debug=0,retobj=NULL, implementation="C")
     
 runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
 		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,
 		fanin,gam,it,K,burnin,priortype,
 		plotresults=TRUE,always_sample_sf=FALSE, 
 		scale_lik=FALSE, allow.stim.off=TRUE,debug=0,
-		retobj=NULL)
+		retobj=NULL, implementation="C")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -73,6 +73,11 @@ runmcmc(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
     for \code{debug=1}).}
   \item{retobj}{List. The output generated during an inhibMCMC run (see \code{\link{ddepn}} for argument 
     \code{inference="mcmc"}). Passed by function \code{resume_ddepn} to resume the inference.}
+  \item{implementation}{String. One of \code{"C","R","R_globalest","C_globalest"}. Different implementations of the HMM in 
+    \code{\link{perform.hmmsearch}}. If \code{"R"}, the original pure R-implementation is 
+    used, if \code{"C"}, a ported C-implementation is used. If \code{"R_globalest"}, an experimental version of
+    the parameter estimation is used in the HMM, \code{"C_globalest"} is the C-port of 
+    this version. See \code{details} for a description.}
 }
 \details{
 Usually this function is called internally by \code{\link{ddepn}}.

@@ -8,7 +8,8 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		lambda=NULL, B=NULL,
 		Z=NULL, scorefile=NULL,fanin=4,
 		gam=NULL,it=NULL,K=NULL,quantL=.5,quantBIC=.5, priortype="none", plotresults=TRUE,
-		scale_lik=FALSE, allow.stim.off=TRUE,debug=0,retobj=NULL) {
+		scale_lik=FALSE, allow.stim.off=TRUE,debug=0,retobj=NULL,
+		implementation="C") {
   dat[is.na(dat)] <- 0
   V <- rownames(dat)
   ordstim <- sapply(stimuli, function(x) paste(names(x),collapse="&"))
@@ -33,10 +34,12 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 	  if(multicores) {
 		P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,
 				                      fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off,
+				                      implementation=implementation,
 									  mc.preschedule=FALSE,mc.cores=cores)		
 	  } else {
 		P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,
-				                    fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off)
+				                    fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off,
+				                    implementation=implementation)
 	  }
   }
   ## check if all individuals are set correctly
@@ -48,7 +51,7 @@ netga <- function(dat, stimuli, P=NULL, maxiterations=1000, p=100,
 		  browser()
 	  }	  
 	  if(class(P[[i]])=="try-error" || is.null(P[[i]])){
-		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off)
+		  P[[i]] <- getfirstphi(X[[i]], dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off, implementation=implementation)
 	  }
 	  # store the GA parameters
 	  #P[[i]]$q <- q

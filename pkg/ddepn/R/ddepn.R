@@ -99,9 +99,9 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 				X[[i]] <- phi[[i]]
 			}
 			if(multicores) {
-				P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off, mc.preschedule=FALSE,mc.cores=cores)		
+				P <- mclapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off, implementation=implementation, mc.preschedule=FALSE,mc.cores=cores)		
 			} else {
-				P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off)
+				P <- lapply(X, getfirstphi, dat=dat,stimuli=stimuli,V=V,tps=tps,reps=reps,hmmiterations=hmmiterations,lambda=lambda,B=B,Z=Z,fanin=fanin,gam=gam,it=it,K=K,priortype=priortype,scale_lik=scale_lik, allow.stim.off=allow.stim.off, implementation=implementation)
 			}
 		} else if(inference=="mcmc") {
 			## if a list of networks is given, create a named list that is used for mcmc_ddepn
@@ -162,8 +162,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 	#	lambda <- NA
 	#}
 	## assign global variable IMPLEMENTATION
-    envDDEPN <- new.env()
-    assign("IMPLEMENTATION", implementation, envDDEPN)
+    ##envDDEPN <- new.env()
+    ##assign("IMPLEMENTATION", implementation, envDDEPN)
 	#assign("IMPLEMENTATION", implementation, .GlobalEnv)
 	
 	## if GA should be used
@@ -181,7 +181,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 						scorefile=scorefile,fanin=fanin,
 						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype,
 						plotresults=plotresults,scale_lik=scale_lik, allow.stim.off=allow.stim.off,
-						debug=debug))
+						debug=debug, implementation=implementation))
 		P <- retnetga$P
 		scorestats <- retnetga$scorestats
 		rm(retnetga)
@@ -205,7 +205,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 					phi.orig=phiorig, phi=NULL, weights=NULL,
 					weights.tc=weights.tc, stats=result, conf.act=conf.act,conf.inh=conf.inh,
 					stimuli=stimuli,
-					quantBIC=quantBIC,quantL=quantL,q=q,m=m,usebics=usebics)
+					quantBIC=quantBIC,quantL=quantL,q=q,m=m,usebics=usebics, implementation=implementation)
 					#p=p,q=q,m=m,multicores=multicores,usebics=usebics,
 					#cores=cores,lambda=lambda,B=B,Z=Z,hmmiterations=hmmiterations,
 					#fanin=fanin, gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype,
@@ -242,7 +242,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
 						priortype=priortype, plotresults=plotresults,always_sample_sf=always_sample_sf,scale_lik=scale_lik,
-						allow.stim.off=allow.stim.off,debug=debug,
+						allow.stim.off=allow.stim.off,debug=debug, implementation=implementation,
 						mc.preschedule=FALSE,mc.cores=cores)
 				#retlist <- get.phi.final.mcmc(retlist, maxiterations, prob=.3333, qu=.99999)
 				##### end experimental
@@ -263,7 +263,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 						usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 						hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K, burnin=burnin,
 						priortype=priortype, plotresults=plotresults,always_sample_sf=always_sample_sf,scale_lik=scale_lik,
-						allow.stim.off=allow.stim.off,debug=debug)
+						allow.stim.off=allow.stim.off,debug=debug, implementation=implementation)
 				## convert the return value to a list, to keep it in the same format
 				## as for the multicore==TRUE case
 				retlist <- list()
@@ -312,8 +312,8 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 
 ## uses a returned object from netga or inhibMCMC and resumes the sampling/optimisation
 resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults=TRUE,debug=0,cores=NULL, implementation="C", thin=FALSE) {
-	envDDEPN <- new.env()
-    assign("IMPLEMENTATION", implementation, envDDEPN)
+	#envDDEPN <- new.env()
+    #assign("IMPLEMENTATION", implementation, envDDEPN)
 	## close all x11 connections
 	graphics.off()
 	if(is.null(ret$samplings)) {
@@ -359,7 +359,7 @@ resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults
 						scorefile=scorefile,fanin=fanin,
 						gam=gam,it=it,K=K,quantL=quantL,quantBIC=quantBIC,priortype=priortype,
 						plotresults=plotresults,scale_lik=scale_lik, allow.stim.off=allow.stim.off,
-						debug=debug,retobj=ret))
+						debug=debug,retobj=ret, implementation=implementation))
 		P <- retnetga$P
 		scorestats <- retnetga$scorestats
 		rm(retnetga)
@@ -383,7 +383,7 @@ resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults
 				phi.orig=phiorig, phi=NULL, weights=NULL,
 				weights.tc=weights.tc, stats=result, conf.act=conf.act,conf.inh=conf.inh,
 				stimuli=stimuli,
-				quantBIC=quantBIC,quantL=quantL,q=q,m=m,usebics=usebics)
+				quantBIC=quantBIC,quantL=quantL,q=q,m=m,usebics=usebics, implementation=implementation)
 		ret <- get.phi.final(ret,th)
 		if(plotresults)
 			plotrepresult(ret,outfile)
@@ -420,12 +420,13 @@ resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults
 						usebics=usebics, cores=cores, lambda=rs$lambda, B=rs$B, Z=rs$Z, samplelambda=rs$samplelambda,
 						hmmiterations=rs$hmmiterations,fanin=rs$fanin, gam=rs$gam, it=rs$it, K=rs$K, burnin=rs$burnin,
 						priortype=rs$priortype, plotresults=plotresults,always_sample_sf=rs$always_sample_sf,scale_lik=rs$scale_lik,
-						allow.stim.off=rs$allow.stim.off,debug=debug,
+						allow.stim.off=rs$allow.stim.off,debug=debug, implementation=implementation,
 						mc.preschedule=FALSE,mc.cores=cores)
 		} else {
 			ret <- runmcmc(X[[1]],rs$dat,rs$phi.orig,phi=NULL,rs$stimuli,th,mc,outfile=NULL,maxiterations,
 						usebics,cores,rs$lambda,rs$B,Z=NULL,samplelambda=rs$samplelambda,rs$hmmiterations,rs$fanin,rs$gam,rs$it,rs$K,burnin=rs$burnin,
-						rs$priortype,plotresults=plotresults,always_sample_sf=rs$always_sample_sf,rs$scale_lik,rs$allow.stim.off,debug=debug)
+						rs$priortype,plotresults=plotresults,always_sample_sf=rs$always_sample_sf,rs$scale_lik,rs$allow.stim.off,debug=debug, 
+						implementation=implementation)
 			retlist <- list()
 			retlist[[1]] <- ret	
 		}

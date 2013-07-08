@@ -23,14 +23,15 @@ replicatecolumns <- function(mat, replicates=4) {
 
 perform.hmmsearch <- function(phi.n, bestmodel) {
 	## select implementation
-	env <- get("envDDEPN")
-    implementation <- get("IMPLEMENTATION", envir=env)
+	#env <- get("envDDEPN")
+    #implementation <- get("IMPLEMENTATION", pos="envDDEPN")
 	#implementation <- get("IMPLEMENTATION", pos=globalenv())
 	## do this only until different number of timepoints  
 	## in each experiment is implemented in C
 	#if(class(bestmodel$tps)=="list")
 	#	bestmodel$tps <- bestmodel$tps[[1]]
-	
+	implementation <- bestmodel$implementation
+	stopifnot(!is.null(implementation))
 	switch(implementation,
 			R=perform.hmmsearch_R(phi.n, bestmodel),
 			R_globalest=perform.hmmsearch_globalest(phi.n, bestmodel),

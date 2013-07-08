@@ -5,13 +5,13 @@
 runmcmc <- function(x,dat,phiorig,phi,stimuli,th,multicores,outfile,maxiterations,
 		usebics,cores,lambda,B,Z,samplelambda,hmmiterations,fanin,gam,it,K,burnin,
 		priortype,plotresults=TRUE,always_sample_sf=FALSE,scale_lik=FALSE, allow.stim.off=TRUE,
-		debug=0, retobj=NULL) {
+		debug=0, retobj=NULL, implementation="C") {
 	ret <- mcmc_ddepn(dat, phiorig=phiorig, phi=x$phi, stimuli=stimuli,
 			th=th, multicores=multicores, outfile=x$outfile, maxiterations=maxiterations,
 			usebics=usebics, cores=cores, lambda=lambda, B=B, Z=Z, samplelambda=samplelambda,
 			hmmiterations=hmmiterations,fanin=fanin, gam=gam, it=it, K=K,
 			burnin=burnin,priortype=priortype,plotresults=plotresults,always_sample_sf=always_sample_sf,scale_lik=scale_lik, allow.stim.off=allow.stim.off,
-			debug=debug, retobj=x$retobj)
+			debug=debug, retobj=x$retobj, implementation=implementation)
 	ret
 }
 
@@ -20,7 +20,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		usebics=FALSE, cores=2, lambda=NULL, B=NULL,Z=NULL,
 		samplelambda=NULL, hmmiterations=30, fanin=4,
 		gam=NULL, it=NULL, K=NULL, burnin=1000,priortype="laplaceinhib",plotresults=TRUE,
-		always_sample_sf=FALSE,scale_lik=FALSE, allow.stim.off=TRUE,debug=0,retobj=NULL) {
+		always_sample_sf=FALSE,scale_lik=FALSE, allow.stim.off=TRUE,debug=0,retobj=NULL,
+		implementation="C") {
 	if(!is.null(outfile))
 		outfile <- sub("\\.pdf","_stats.pdf", outfile)
 	if(!is.null(B))
@@ -93,7 +94,8 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			lambda=lambda,B=B,Z=Z,pegm=1,pegmundo=1,nummoves=length(movetypes),fanin=fanin,
 			gam=gam,it=it,K=K,phi.orig=phiorig, burnin=burnin,priortype=priortype,pr=prinit
 			,mu_run=mu_run,Qi=Qi,sd_run=NA,freqa=freqa,freqi=freqi,eoccur=eoccur,scalefac=0.005,scale_lik=scale_lik,
-			allow.stim.off=allow.stim.off,iter=iter,samplelambda=samplelambda,always_sample_sf=always_sample_sf)
+			allow.stim.off=allow.stim.off,iter=iter,samplelambda=samplelambda,always_sample_sf=always_sample_sf, 
+			implementation=implementation)
 	## setup a matrix holding the statistics
 	## TODO if thin==TRUE, this matrix
 	## is of size maxiterations/x=10000, i.e. store every xth element
