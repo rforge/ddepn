@@ -1,16 +1,16 @@
-\name{compare.graphs.tc}
+\name{compareGraphs}
 \Rdversion{1.1}
-\alias{compare.graphs.tc}
+\alias{compareGraphs}
 
 \title{
-compare.graphs.tc
+compareGraphs
 }
 \description{
 Given an original and inferred network, count number of true/false positives and negatives. 
 Calculate sensitivity and specificity measures.
 }
 \usage{
-compare.graphs.tc(phiorig,phi,ignore.type=FALSE)
+compareGraphs(phiorig,phi,ignore.type=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -49,7 +49,7 @@ Christian Bender
   library(ddepn)
   phi <- matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,ncol=3)
   phiorig <- matrix(sample(c(0,1,2),9,replace=TRUE),nrow=3,ncol=3)
-  compare.graphs.tc(phi,phiorig)
+  compareGraphs(phi,phiorig)
 }
 }
 

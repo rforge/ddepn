@@ -244,7 +244,7 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		else
 			lst <- bestmodel # if in burnin, just use whatever is there
 		if(!is.null(phiorig) & iter > burnin) {
-			comp <- compare.graphs.tc(phiorig=phiorig,phi=lst$phi)
+			comp <- compareGraphs(phiorig=phiorig,phi=lst$phi)
 		} else {
 			comp <- rep(0,8)
 			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
@@ -266,43 +266,48 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 			if(plotresults) {
 				if(!is.null(outfile))
 					pdf(outfile,width=10,height=10)
-				start <- burnin + 1
-				layout(matrix(c(1,2,3,4,5,6,7,8,9), 3, 3, byrow = TRUE))
-				## posterior
-				plot(1:iter, stats[1:iter,"MAP"], type='l', ylab="", xlab="iteration", main="Posterior trace")
-				abline(v=start,col="green")
-				plot(1:iter, stats[1:iter,"postratio"], type='l', ylab="", xlab="iteration", main="Posterior ratios")
-				abline(v=start,col="green")	
-				## orig/inferred network
-				if(is.null(phiorig)) {
-					plot.new()
-					text(0.5,0.5,labels="no origininal network given")
-				} else {
-					plotdetailed(phiorig,stimuli=lst$stimuli,fontsize=15,main="Original net")
+					
+				## only plot if outfile is given or if cores==1
+				## if multiple cores are use, no plotting to display is permitted
+				if(!is.null(outfile) | cores==1) {
+					start <- burnin + 1
+					layout(matrix(c(1,2,3,4,5,6,7,8,9), 3, 3, byrow = TRUE))
+					## posterior
+					plot(1:iter, stats[1:iter,"MAP"], type='l', ylab="", xlab="iteration", main="Posterior trace")
+					abline(v=start,col="green")
+					plot(1:iter, stats[1:iter,"postratio"], type='l', ylab="", xlab="iteration", main="Posterior ratios")
+					abline(v=start,col="green")	
+					## orig/inferred network
+					if(is.null(phiorig)) {
+						plot.new()
+						text(0.5,0.5,labels="no origininal network given")
+					} else {
+						plotdetailed(phiorig,stimuli=lst$stimuli,fontsize=15,main="Original net")
+					}
+					## liklihood
+					plot(1:iter, stats[1:iter,"liklihood"], type='l', ylab="", xlab="iteration", main="Liklihood trace")
+					abline(v=start,col="green")
+					plot(1:iter, stats[1:iter,"lratio"], type='l', ylab="", xlab="iteration", main="Liklihood ratios")
+					abline(v=start,col="green")
+					## inferred network
+					plotdetailed(lst$phi,stimuli=lst$stimuli,weights=lst$weights,fontsize=15, main="Inferred net")	
+					## prior
+					plot(1:iter, stats[1:iter,"prior"], type='l', ylab="", xlab="iteration", main="Prior trace")
+					abline(v=start,col="green")
+					plot(1:iter, stats[1:iter,"prratio"], type='l', ylab="", xlab="iteration", main="Prior ratios")
+					abline(v=start,col="green")
+					## roc curve
+					perf <- mcmc_performance(lst)
+					# some more statistics that could be plotted
+					### acceptance rate
+					#stpl <- stats[1:iter,"acpt"]
+					#hist(stpl[stpl!=1],breaks=100,main="Acceptance rates (only != 1)")
+					### sn/sp plot
+					#boxplot(as.data.frame(stats[((burnin+1):iter),c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
+					#		main=paste("avgSN: ", signif(median(stats[(burnin:iter),"sn"]),digits=4), "avgSP: ", signif(median(stats[(burnin:iter),"sp"]),digits=4)))
+					# partial autocorrelation function:
+					#R <- acf(stats[1:iter,"MAP"])
 				}
-				## liklihood
-				plot(1:iter, stats[1:iter,"liklihood"], type='l', ylab="", xlab="iteration", main="Liklihood trace")
-				abline(v=start,col="green")
-				plot(1:iter, stats[1:iter,"lratio"], type='l', ylab="", xlab="iteration", main="Liklihood ratios")
-				abline(v=start,col="green")
-				## inferred network
-				plotdetailed(lst$phi,stimuli=lst$stimuli,weights=lst$weights,fontsize=15, main="Inferred net")	
-				## prior
-				plot(1:iter, stats[1:iter,"prior"], type='l', ylab="", xlab="iteration", main="Prior trace")
-				abline(v=start,col="green")
-				plot(1:iter, stats[1:iter,"prratio"], type='l', ylab="", xlab="iteration", main="Prior ratios")
-				abline(v=start,col="green")
-				## roc curve
-				perf <- mcmc_performance(lst)
-				# some more statistics that could be plotted
-				### acceptance rate
-				#stpl <- stats[1:iter,"acpt"]
-				#hist(stpl[stpl!=1],breaks=100,main="Acceptance rates (only != 1)")
-				### sn/sp plot
-				#boxplot(as.data.frame(stats[((burnin+1):iter),c("sn","sp","acpt","lacpt")]), ylim=c(0,1),
-				#		main=paste("avgSN: ", signif(median(stats[(burnin:iter),"sn"]),digits=4), "avgSP: ", signif(median(stats[(burnin:iter),"sp"]),digits=4)))
-				# partial autocorrelation function:
-				#R <- acf(stats[1:iter,"MAP"])
 				if(!is.null(outfile))
 					dev.off()
 			}

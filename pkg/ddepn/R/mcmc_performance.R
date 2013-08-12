@@ -16,7 +16,7 @@ mcmc_performance <- function(lst, plot=TRUE) {
 			comp <- rep(0,8)
 			names(comp) <- c("tp","tn","fp","fn","sn","sp","prec","f1")
 		} else {
-			comp <- compare.graphs.tc(phiorig=phiorig,phi=lst$phi,ignore.type=FALSE)
+			comp <- compareGraphs(phiorig=phiorig,phi=lst$phi,ignore.type=FALSE)
 		}
 		stats <- rbind(stats,comp[1:6])
 	}

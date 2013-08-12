@@ -290,7 +290,7 @@ plotdetailed(ret2$samplings[[1]]$phi,stimuli=ret2$samplings[[1]]$stimuli)
 ## use mcmc with multiple cores, i.e. perform two independent runs
 ## requires package multicore and, of course multiple cores in the hardware
 ## use the original net as prior
- if(require(multicore)) {
+ if(require(parallel)) {
  	ret3 <- ddepn(dataset$datx,phiorig=phit, inference="mcmc",
                 multicores=TRUE, cores=2,
                 maxiterations=300, burnin=100,

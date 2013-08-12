@@ -1,2 +1,6 @@
 useDynLib(ddepn)
+importFrom( genefilter, rowSds )
+importFrom( gam, gam )
+importFrom( gplots, heatmap.2 )
+importFrom( gplots, colorpanel )
 exportPattern("^[[:alpha:]]+")

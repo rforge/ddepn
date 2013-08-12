@@ -4,7 +4,8 @@
 ###############################################################################
 
 
-compare.graphs.tc <- function(phiorig,phi,ignore.type=FALSE) {
+#compare.graphs.tc <- function(phiorig,phi,ignore.type=FALSE) {
+compareGraphs <- function(phiorig,phi,ignore.type=FALSE) {
 	if(ignore.type) {
 		originalnc <- detailed.to.simple.regulations(phiorig)
 		matnc <- detailed.to.simple.regulations(phi)

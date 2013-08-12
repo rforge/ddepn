@@ -191,7 +191,7 @@ ddepn <- function(dat, phiorig=NULL, phi=NULL, th=0.8, inference="netga", outfil
 		resultep <- NULL
         for(i in 1:length(P)) {
 			if(!is.null(phiorig))
-            	result <- rbind(result, cbind(compare.graphs.tc(phiorig, P[[i]]$phi,ignore.type=FALSE),t(as.matrix(stime))))
+            	result <- rbind(result, cbind(compareGraphs(phiorig, P[[i]]$phi,ignore.type=FALSE),t(as.matrix(stime))))
 			#resultep <- rbind(resultep, cbind(compare.graphs.ep(phiorig, P[[i]]$phi,tps=1:50,stimuli=stimuli), t(as.matrix(stime))))
 			phi.activation.count[which(P[[i]]$phi==1)] <- phi.activation.count[which(P[[i]]$phi==1)] + 1
 			phi.inhibition.count[which(P[[i]]$phi==2)] <- phi.inhibition.count[which(P[[i]]$phi==2)] + 1
@@ -369,7 +369,7 @@ resume_ddepn <- function(ret,maxiterations=10000,outfile=NULL,th=0.8,plotresults
 		resultep <- NULL
 		for(i in 1:length(P)) {
 			if(!is.null(phiorig))
-				result <- rbind(result, cbind(compare.graphs.tc(phiorig, P[[i]]$phi,ignore.type=FALSE),t(as.matrix(stime))))
+				result <- rbind(result, cbind(compareGraphs(phiorig, P[[i]]$phi,ignore.type=FALSE),t(as.matrix(stime))))
 			#resultep <- rbind(resultep, cbind(compare.graphs.ep(phiorig, P[[i]]$phi,tps=1:50,stimuli=stimuli), t(as.matrix(stime))))
 			phi.activation.count[which(P[[i]]$phi==1)] <- phi.activation.count[which(P[[i]]$phi==1)] + 1
 			phi.inhibition.count[which(P[[i]]$phi==2)] <- phi.inhibition.count[which(P[[i]]$phi==2)] + 1
