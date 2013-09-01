@@ -21,8 +21,20 @@ plotdetailed <- function(phi, weights = NULL, main = "", stimuli = NULL, #layout
 	#stopifnot(require(igraph))
 	edge.color="black"
 	edge.lty="solid"
+	
+	## make sure the adjacency matrix is discrete. any edge weights have to be 
+	## specified using the weights argument. format required here is: 1 activating,
+	## 2 inhibiting and 0 no edge
+	phi[phi==2] <- -2
+	phi[phi>0] <- 1
+	phi[phi<0] <- 2
 	phix <- phi
-	phix[which(phix == 2)] <- 1
+	
+	## for making the igraph object: only info if there is an edge needed
+	## type of edge is added later
+	## any edge == 2 or with negative weight is regarded as inhibition edge
+	phix[which(phix!=0)] <- 1
+	#phix[which(phix == 2)] <- 1
 	ig <- graph.adjacency(phix)
 	ig.nodes <- as.matrix(print.igraph.vs(V(ig))) # keggid
 	if(tk) {
