@@ -314,11 +314,17 @@ mcmc_ddepn <- function(dat, phiorig=NULL, phi=NULL, stimuli=NULL,
 		}
 		if(iter%%1000==1 && !is.null(outfile)) {
 			rdfile <- sub(".pdf$","_mcmcdata.RData",outfile)
-			save(bestmodel,stats,freqa,freqi,iter,file=rdfile)
+			save(bestmodel,stats,freqa,freqi,iter,networkvec,file=rdfile,compress="xz")
 		}
 		iter <- iter + 1
 	}
 	print("done.")
+	## save the results
+	if(!is.null(outfile)) {
+		rdfile <- sub(".pdf$","_mcmcdata.RData",outfile)
+		save(bestmodel,stats,freqa,freqi,iter,networkvec,file=rdfile,compress="xz")
+	}
+
 	bestmodel[["stats"]] <- stats
 	bestmodel[["freqa"]] <- freqa
 	bestmodel[["freqi"]] <- freqi
